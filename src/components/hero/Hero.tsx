@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { HeroCanvas } from "./HeroCanvas";
+import { HeroVideo } from "./HeroVideo";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 
 /**
@@ -13,7 +13,7 @@ import { AnimatedText } from "@/components/ui/AnimatedText";
  * scroll. Lá dentro, um wrapper `sticky top-0 h-screen` fica colado no ecrã —
  * usamos sticky CSS em vez de pin do GSAP porque coopera melhor com o smooth
  * scroll do Lenis e não reflowa a página. O `HeroCanvas` lê o progresso do
- * scroll DESTA secção (via `triggerRef`) e transforma-o na rotação 360º.
+ * scroll DESTA secção (via `triggerRef`) e transforma-o no tempo do vídeo.
  *
  * A camada de texto por cima é `pointer-events-none` (exceto os CTAs) para não
  * roubar o scroll ao canvas.
@@ -28,9 +28,9 @@ export function Hero() {
       aria-label="Viatura em destaque"
     >
       <div className="sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden">
-        {/* Sequência 360º */}
-        <div className="absolute inset-0">
-          <HeroCanvas triggerRef={sectionRef} />
+        {/* Vídeo controlado pelo scroll */}
+        <div className="absolute inset-0 bg-ink">
+          <HeroVideo triggerRef={sectionRef} src="/hero/hero.mp4" />
         </div>
 
         {/* Vinheta para garantir contraste AA do texto sobre o canvas. */}
