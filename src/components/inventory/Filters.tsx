@@ -1,0 +1,229 @@
+"use client";
+
+import type {
+  VehicleFilters,
+  FuelType,
+  Transmission,
+  SortKey,
+} from "@/types/vehicle";
+
+interface FiltersProps {
+  filters: VehicleFilters;
+  sort: SortKey;
+  options: {
+    makes: string[];
+    models: string[];
+    fuels: FuelType[];
+    transmissions: Transmission[];
+  };
+  resultCount: number;
+  onChange: (patch: Partial<VehicleFilters>) => void;
+  onSort: (sort: SortKey) => void;
+  onReset: () => void;
+}
+
+const SORT_LABELS: Record<SortKey, string> = {
+  relevance: "Relevância",
+  "price-asc": "Preço ↑",
+  "price-desc": "Preço ↓",
+  "year-desc": "Mais recentes",
+  "mileage-asc": "Menos km",
+};
+
+/** Barra de filtros do inventário — totalmente controlada, sem estado próprio. */
+export function Filters({
+  filters,
+  sort,
+  options,
+  resultCount,
+  onChange,
+  onSort,
+  onReset,
+}: FiltersProps) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-ink-soft p-5 md:p-6">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <Field label="Marca">
+          <Select
+            value={filters.make ?? ""}
+            onChange={(v) => onChange({ make: v || null, model: null })}
+          >
+            <option value="">Todas</option>
+            {options.makes.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        <Field label="Modelo">
+          <Select
+            value={filters.model ?? ""}
+            onChange={(v) => onChange({ model: v || null })}
+          >
+            <option value="">Todos</option>
+            {options.models.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        <Field label="Combustível">
+          <Select
+            value={filters.fuel ?? ""}
+            onChange={(v) => onChange({ fuel: (v || null) as FuelType | null })}
+          >
+            <option value="">Todos</option>
+            {options.fuels.map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        <Field label="Caixa">
+          <Select
+            value={filters.transmission ?? ""}
+            onChange={(v) =>
+              onChange({ transmission: (v || null) as Transmission | null })
+            }
+          >
+            <option value="">Todas</option>
+            {options.transmissions.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        <Field label="Preço mín. (€)">
+          <NumberInput
+            value={filters.minPrice}
+            placeholder="0"
+            onChange={(v) => onChange({ minPrice: v })}
+          />
+        </Field>
+
+        <Field label="Preço máx. (€)">
+          <NumberInput
+            value={filters.maxPrice}
+            placeholder="—"
+            onChange={(v) => onChange({ maxPrice: v })}
+          />
+        </Field>
+
+        <Field label="Ano desde">
+          <NumberInput
+            value={filters.minYear}
+            placeholder="—"
+            onChange={(v) => onChange({ minYear: v })}
+          />
+        </Field>
+
+        <Field label="Km até">
+          <NumberInput
+            value={filters.maxMileage}
+            placeholder="—"
+            onChange={(v) => onChange({ maxMileage: v })}
+          />
+        </Field>
+      </div>
+
+      <div className="mt-5 flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-5 sm:flex-row sm:items-center">
+        <p className="text-sm text-paper/60" role="status" aria-live="polite">
+          <span className="font-semibold text-paper">{resultCount}</span>{" "}
+          {resultCount === 1 ? "viatura" : "viaturas"}
+        </p>
+
+        <div className="flex items-center gap-3">
+          <Field label="Ordenar" inline>
+            <Select value={sort} onChange={(v) => onSort(v as SortKey)}>
+              {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
+                <option key={k} value={k}>
+                  {SORT_LABELS[k]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <button
+            type="button"
+            onClick={onReset}
+            className="whitespace-nowrap rounded-lg px-3 py-2 text-sm text-paper/60 transition-colors hover:text-paper"
+          >
+            Limpar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+  inline,
+}: {
+  label: string;
+  children: React.ReactNode;
+  inline?: boolean;
+}) {
+  return (
+    <label className={inline ? "flex items-center gap-2" : "block"}>
+      <span
+        className={`text-xs font-medium uppercase tracking-wider text-paper/40 ${
+          inline ? "" : "mb-1.5 block"
+        }`}
+      >
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function Select({
+  value,
+  onChange,
+  children,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full rounded-lg border border-white/10 bg-ink px-3 py-2 text-sm text-paper transition-colors focus:border-accent"
+    >
+      {children}
+    </select>
+  );
+}
+
+function NumberInput({
+  value,
+  placeholder,
+  onChange,
+}: {
+  value: number | null;
+  placeholder?: string;
+  onChange: (v: number | null) => void;
+}) {
+  return (
+    <input
+      type="number"
+      inputMode="numeric"
+      min={0}
+      value={value ?? ""}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
+      className="w-full rounded-lg border border-white/10 bg-ink px-3 py-2 text-sm text-paper transition-colors focus:border-accent"
+    />
+  );
+}

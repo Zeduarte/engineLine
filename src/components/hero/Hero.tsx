@@ -1,0 +1,110 @@
+"use client";
+
+import { useRef } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { HeroCanvas } from "./HeroCanvas";
+import { AnimatedText } from "@/components/ui/AnimatedText";
+
+/**
+ * Hero de topo.
+ *
+ * Arquitetura do pin: a secção exterior tem 320vh de altura, dando "pista" ao
+ * scroll. Lá dentro, um wrapper `sticky top-0 h-screen` fica colado no ecrã —
+ * usamos sticky CSS em vez de pin do GSAP porque coopera melhor com o smooth
+ * scroll do Lenis e não reflowa a página. O `HeroCanvas` lê o progresso do
+ * scroll DESTA secção (via `triggerRef`) e transforma-o na rotação 360º.
+ *
+ * A camada de texto por cima é `pointer-events-none` (exceto os CTAs) para não
+ * roubar o scroll ao canvas.
+ */
+export function Hero() {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  return (
+    <section
+      ref={sectionRef}
+      className="relative h-[320vh]"
+      aria-label="Viatura em destaque"
+    >
+      <div className="sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden">
+        {/* Sequência 360º */}
+        <div className="absolute inset-0">
+          <HeroCanvas triggerRef={sectionRef} />
+        </div>
+
+        {/* Vinheta para garantir contraste AA do texto sobre o canvas. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink/70 via-transparent to-ink"
+        />
+
+        {/* Conteúdo */}
+        <div className="container-px pointer-events-none relative z-10 text-center">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="eyebrow mb-6"
+          >
+            Stand premium · Portugal
+          </motion.p>
+
+          <AnimatedText
+            as="h1"
+            splitBy="word"
+            className="mx-auto max-w-5xl text-display font-bold text-paper"
+          >
+            Cada viatura conta uma história de precisão
+          </AnimatedText>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.8 }}
+            className="mx-auto mt-8 max-w-xl text-lg font-light text-paper/70"
+          >
+            Uma seleção rigorosa de automóveis premium. Roda para explorar.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.6 }}
+            className="pointer-events-auto mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
+          >
+            <Link
+              href="/inventario"
+              className="rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-ink transition-transform duration-300 ease-premium hover:scale-[1.03]"
+            >
+              Ver inventário
+            </Link>
+            <Link
+              href="/sobre"
+              className="rounded-full border border-paper/20 px-8 py-3.5 text-sm font-medium text-paper transition-colors duration-300 hover:border-paper/60"
+            >
+              Conhecer o stand
+            </Link>
+          </motion.div>
+        </div>
+
+        {/* Indicador de scroll. */}
+        <motion.div
+          aria-hidden
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.1, duration: 0.8 }}
+          className="pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2"
+        >
+          <div className="flex h-10 w-6 items-start justify-center rounded-full border border-paper/30 p-1.5">
+            <motion.span
+              className="block h-2 w-1 rounded-full bg-paper/60"
+              animate={{ y: [0, 8, 0] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
