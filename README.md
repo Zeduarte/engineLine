@@ -59,14 +59,20 @@ O `LenisProvider` desliga o RAF interno do Lenis e conduz o smooth scroll a
 partir do ticker do GSAP, e liga `lenis.on("scroll", ScrollTrigger.update)`. Ter
 duas fontes de tempo provoca *jitter*; com uma só, scrubs e pins ficam colados.
 
-### Hero 360º em `<canvas>`
+### Hero em vídeo "scrubbed" pelo scroll
 
-Um único `<canvas>` (em vez de 90 `<img>`) evita 90 nós no DOM e redesenha
-apenas quando o índice de frame muda. O `ScrollTrigger` com `scrub` mapeia o
-progresso do scroll para o frame. Os frames reais são pré-carregados em
-background (`useImageSequence`, por lotes, em `requestIdleCallback`) para não
-competir com o LCP. Sem frames reais, desenha-se um **placeholder procedural**
-que roda — ver `public/hero/frames/README.md` para ligar as ~90 fotos reais.
+O hero (`HeroVideo`) reproduz um vídeo cujo `currentTime` é conduzido pela
+posição do scroll: descer avança o vídeo, subir recua-o. O GSAP faz o tween da
+propriedade `currentTime` com `scrub`, e a secção tem 320vh de "pista" (o pin é
+feito com `position: sticky`). O vídeo fica `muted`/`playsInline` para permitir
+o seeking por JS. Há duas fontes (`hero.webm` VP9 + `hero.mp4` H.264) para
+cobrir todos os browsers, com `poster` para o primeiro paint.
+
+> O vídeo neon incluído (`public/hero/hero.*`) foi **gerado proceduralmente**
+> (animação em canvas → frames → ffmpeg, todos os frames keyframe para um scrub
+> perfeito). Para o substituir, troca os ficheiros em `public/hero/` mantendo os
+> nomes, ou passa `sources` ao `<HeroVideo>`. Dica de scrubbing suave:
+> re-encoda com keyframes densos, ex. `-g 1`.
 
 ### SplitText manual
 

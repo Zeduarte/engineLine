@@ -5,6 +5,8 @@ import { site } from "@/lib/site";
 import { LenisProvider } from "@/components/providers/LenisProvider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { ScrollProgress } from "@/components/ui/ScrollProgress";
+import { GrainOverlay } from "@/components/ui/GrainOverlay";
 
 // next/font: auto-host, sem pedido a terceiros, sem layout shift. Exposto
 // como CSS var e consumido pelo Tailwind (font-sans).
@@ -52,9 +54,11 @@ export default function RootLayout({
           Saltar para o conteúdo
         </a>
         <LenisProvider>
+          <ScrollProgress />
           <Header />
           <main id="conteudo">{children}</main>
           <Footer />
+          <GrainOverlay />
         </LenisProvider>
       </body>
     </html>

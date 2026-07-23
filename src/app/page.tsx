@@ -1,4 +1,5 @@
 import { Hero } from "@/components/hero/Hero";
+import { BrandMarquee } from "@/components/home/BrandMarquee";
 import { FeaturedVehicles } from "@/components/home/FeaturedVehicles";
 import { PinnedTrust } from "@/components/home/PinnedTrust";
 import { ContactCTA } from "@/components/home/ContactCTA";
@@ -12,6 +13,7 @@ export default async function HomePage() {
   return (
     <>
       <Hero />
+      <BrandMarquee />
       <FeaturedVehicles vehicles={featured} />
       <PinnedTrust />
       <ContactCTA />

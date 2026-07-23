@@ -5,14 +5,28 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useIsomorphicLayoutEffect } from "@/hooks/useIsomorphicLayoutEffect";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
+interface VideoSource {
+  src: string;
+  type: string;
+}
+
 interface HeroVideoProps {
   /** Elemento que define a área de scroll (o wrapper alto do hero). */
   triggerRef: React.RefObject<HTMLElement | null>;
-  /** Caminho do vídeo em /public. */
-  src?: string;
+  /**
+   * Fontes do vídeo por ordem de preferência. O browser escolhe a primeira que
+   * suporta: webm/VP9 (mais leve, Chrome/Firefox) com fallback mp4/H.264
+   * (Safari e todos os outros).
+   */
+  sources?: VideoSource[];
   /** Imagem de cartaz mostrada antes do vídeo carregar (opcional). */
   poster?: string;
 }
+
+const DEFAULT_SOURCES: VideoSource[] = [
+  { src: "/hero/hero.webm", type: "video/webm" },
+  { src: "/hero/hero.mp4", type: "video/mp4" },
+];
 
 /**
  * Vídeo do hero "scrubbed" pelo scroll: em vez de reproduzir sozinho, o
@@ -35,7 +49,7 @@ interface HeroVideoProps {
  */
 export function HeroVideo({
   triggerRef,
-  src = "/hero/hero.mp4",
+  sources = DEFAULT_SOURCES,
   poster,
 }: HeroVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -43,7 +57,6 @@ export function HeroVideo({
 
   useIsomorphicLayoutEffect(() => {
     const video = videoRef.current;
-    const trigger = triggerRef.current;
     if (!video) return;
 
     let st: ScrollTrigger | undefined;
@@ -51,6 +64,12 @@ export function HeroVideo({
 
     const setup = () => {
       const duration = video.duration;
+      // Lemos o trigger aqui (não no topo do efeito): o `loadedmetadata` pode
+      // disparar noutro tick, e queremos a ref já garantidamente montada.
+      // O trigger é a secção alta do hero. Preferimos a ref explícita, mas
+      // recorremos ao ancestral <section> mais próximo — robusto a qualquer
+      // ordem de attach da ref.
+      const trigger = triggerRef.current ?? video.closest("section");
       if (!duration || Number.isNaN(duration)) return;
 
       // Sem movimento: mostra um frame estático e não liga o scroll.
@@ -87,19 +106,22 @@ export function HeroVideo({
       st?.kill();
       tween?.kill();
     };
-  }, [prefersReduced, src]);
+  }, [prefersReduced]);
 
   return (
     <video
       ref={videoRef}
       className="h-full w-full object-cover"
-      src={src}
       poster={poster}
       muted
       playsInline
       preload="auto"
       // O vídeo é decorativo; o significado está no texto do hero.
       aria-hidden="true"
-    />
+    >
+      {sources.map((s) => (
+        <source key={s.src} src={s.src} type={s.type} />
+      ))}
+    </video>
   );
 }

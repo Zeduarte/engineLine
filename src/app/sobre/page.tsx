@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { Reveal } from "@/components/ui/Reveal";
 import { Parallax } from "@/components/ui/Parallax";
+import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -28,10 +29,10 @@ const VALUES = [
 ];
 
 const STATS = [
-  { kpi: "12", label: "anos de experiência" },
-  { kpi: "2 400+", label: "viaturas entregues" },
-  { kpi: "4,9/5", label: "satisfação de clientes" },
-  { kpi: "150", label: "pontos de inspeção" },
+  { value: 12, suffix: "", decimals: 0, label: "anos de experiência" },
+  { value: 2400, suffix: "+", decimals: 0, label: "viaturas entregues" },
+  { value: 4.9, suffix: "/5", decimals: 1, label: "satisfação de clientes" },
+  { value: 150, suffix: "", decimals: 0, label: "pontos de inspeção" },
 ];
 
 export default function AboutPage() {
@@ -76,9 +77,12 @@ export default function AboutPage() {
         >
           {STATS.map((s) => (
             <div key={s.label}>
-              <p className="text-5xl font-bold text-accent md:text-6xl">
-                {s.kpi}
-              </p>
+              <AnimatedCounter
+                value={s.value}
+                suffix={s.suffix}
+                decimals={s.decimals}
+                className="block text-5xl font-bold text-accent md:text-6xl"
+              />
               <p className="mt-2 text-sm text-paper/50">{s.label}</p>
             </div>
           ))}

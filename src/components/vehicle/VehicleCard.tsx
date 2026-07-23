@@ -39,7 +39,7 @@ export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {
       >
         <motion.div
           layoutId={`card-media-${vehicle.slug}`}
-          className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-ink-muted"
+          className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-ink-muted ring-1 ring-white/5 transition-shadow duration-500 group-hover:shadow-[0_20px_60px_-15px_rgba(232,177,90,0.35)] group-hover:ring-accent/40"
         >
           <motion.div
             variants={{ hover: { scale: 1.05 } }}

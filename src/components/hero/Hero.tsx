@@ -12,11 +12,12 @@ import { AnimatedText } from "@/components/ui/AnimatedText";
  * Arquitetura do pin: a secção exterior tem 320vh de altura, dando "pista" ao
  * scroll. Lá dentro, um wrapper `sticky top-0 h-screen` fica colado no ecrã —
  * usamos sticky CSS em vez de pin do GSAP porque coopera melhor com o smooth
- * scroll do Lenis e não reflowa a página. O `HeroCanvas` lê o progresso do
- * scroll DESTA secção (via `triggerRef`) e transforma-o no tempo do vídeo.
+ * scroll do Lenis e não reflowa a página. O `HeroVideo` lê o progresso do
+ * scroll DESTA secção (via `triggerRef`) e transforma-o no `currentTime` do
+ * vídeo (avança ao descer, recua ao subir).
  *
  * A camada de texto por cima é `pointer-events-none` (exceto os CTAs) para não
- * roubar o scroll ao canvas.
+ * roubar o scroll ao vídeo.
  */
 export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -30,7 +31,7 @@ export function Hero() {
       <div className="sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden">
         {/* Vídeo controlado pelo scroll */}
         <div className="absolute inset-0 bg-ink">
-          <HeroVideo triggerRef={sectionRef} src="/hero/hero.mp4" />
+          <HeroVideo triggerRef={sectionRef} poster="/hero/hero-poster.jpg" />
         </div>
 
         {/* Vinheta para garantir contraste AA do texto sobre o canvas. */}
