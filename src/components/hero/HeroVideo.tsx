@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useIsomorphicLayoutEffect } from "@/hooks/useIsomorphicLayoutEffect";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { asset } from "@/lib/asset";
 
 interface VideoSource {
   src: string;
@@ -24,8 +25,8 @@ interface HeroVideoProps {
 }
 
 const DEFAULT_SOURCES: VideoSource[] = [
-  { src: "/hero/hero.webm", type: "video/webm" },
-  { src: "/hero/hero.mp4", type: "video/mp4" },
+  { src: asset("/hero/hero.webm"), type: "video/webm" },
+  { src: asset("/hero/hero.mp4"), type: "video/mp4" },
 ];
 
 /**

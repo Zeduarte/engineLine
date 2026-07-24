@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { HeroVideo } from "./HeroVideo";
 import { AnimatedText } from "@/components/ui/AnimatedText";
+import { asset } from "@/lib/asset";
 
 /**
  * Hero de topo.
@@ -31,7 +32,10 @@ export function Hero() {
       <div className="sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden">
         {/* Vídeo controlado pelo scroll */}
         <div className="absolute inset-0 bg-ink">
-          <HeroVideo triggerRef={sectionRef} poster="/hero/hero-poster.jpg" />
+          <HeroVideo
+            triggerRef={sectionRef}
+            poster={asset("/hero/hero-poster.jpg")}
+          />
         </div>
 
         {/* Vinheta para garantir contraste AA do texto sobre o canvas. */}

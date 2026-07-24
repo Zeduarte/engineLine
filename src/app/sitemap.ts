@@ -2,6 +2,9 @@ import type { MetadataRoute } from "next";
 import { getAllSlugs } from "@/lib/vehicles";
 import { site } from "@/lib/site";
 
+// Necessário para gerar o ficheiro estático na exportação (`output: export`).
+export const dynamic = "force-static";
+
 /** Sitemap gerado dinamicamente a partir das rotas estáticas + viaturas. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const slugs = await getAllSlugs();
