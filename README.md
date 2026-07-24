@@ -68,11 +68,12 @@ feito com `position: sticky`). O vídeo fica `muted`/`playsInline` para permitir
 o seeking por JS. Há duas fontes (`hero.webm` VP9 + `hero.mp4` H.264) para
 cobrir todos os browsers, com `poster` para o primeiro paint.
 
-> O vídeo neon incluído (`public/hero/hero.*`) foi **gerado proceduralmente**
-> (animação em canvas → frames → ffmpeg, todos os frames keyframe para um scrub
-> perfeito). Para o substituir, troca os ficheiros em `public/hero/` mantendo os
-> nomes, ou passa `sources` ao `<HeroVideo>`. Dica de scrubbing suave:
-> re-encoda com keyframes densos, ex. `-g 1`.
+> O vídeo incluído (`public/hero/hero.*`) — um desportivo em andamento ao pôr
+> do sol — foi **gerado proceduralmente** (animação em canvas → frames →
+> ffmpeg, todos os frames keyframe para um scrub perfeito). Para o substituir
+> por um clip real (ex.: um stock video com licença livre), troca os ficheiros
+> em `public/hero/` mantendo os nomes, ou passa `sources` ao `<HeroVideo>`.
+> Dica de scrubbing suave: re-encoda com keyframes densos, ex. `-g 1`.
 
 ### SplitText manual
 
