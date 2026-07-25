@@ -10,7 +10,7 @@ import { asset } from "@/lib/asset";
 /**
  * Hero de topo.
  *
- * Arquitetura do pin: a secção exterior tem 320vh de altura, dando "pista" ao
+ * Arquitetura do pin: a secção exterior tem 224vh de altura, dando "pista" ao
  * scroll. Lá dentro, um wrapper `sticky top-0 h-screen` fica colado no ecrã —
  * usamos sticky CSS em vez de pin do GSAP porque coopera melhor com o smooth
  * scroll do Lenis e não reflowa a página. O `HeroVideo` lê o progresso do
@@ -26,7 +26,7 @@ export function Hero() {
   return (
     <section
       ref={sectionRef}
-      className="relative h-[320vh]"
+      className="relative h-[224vh]"
       aria-label="Viatura em destaque"
     >
       <div className="sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden">
