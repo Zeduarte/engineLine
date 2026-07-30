@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
-import { getAllSlugs } from "@/lib/vehicles";
+import { getAllSlugs } from "@/lib/queries";
 import { site } from "@/lib/site";
+
+export const revalidate = 300;
 
 /** Sitemap gerado dinamicamente a partir das rotas estáticas + viaturas. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

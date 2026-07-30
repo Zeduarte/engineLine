@@ -1,5 +1,5 @@
 import type { Vehicle } from "@/types/vehicle";
-import { formatPrice } from "@/lib/format";
+import { priceLabel } from "@/lib/format";
 import { site, whatsappHref } from "@/lib/site";
 
 /**
@@ -7,7 +7,7 @@ import { site, whatsappHref } from "@/lib/site";
  * WhatsApp e telefone — sempre acessíveis enquanto o utilizador lê a ficha.
  */
 export function ContactBar({ vehicle }: { vehicle: Vehicle }) {
-  const message = `Olá! Tenho interesse no ${vehicle.make} ${vehicle.model} ${vehicle.year} (${formatPrice(vehicle.price)}).`;
+  const message = `Olá! Tenho interesse no ${vehicle.make} ${vehicle.model} ${vehicle.year} (${priceLabel(vehicle.price, vehicle.priceOnRequest)}).`;
 
   return (
     <div className="sticky bottom-0 z-40 border-t border-white/10 bg-ink/90 backdrop-blur-xl">
@@ -17,7 +17,7 @@ export function ContactBar({ vehicle }: { vehicle: Vehicle }) {
             {vehicle.make} {vehicle.model}
           </p>
           <p className="text-lg font-semibold text-accent">
-            {formatPrice(vehicle.price)}
+            {priceLabel(vehicle.price, vehicle.priceOnRequest)}
           </p>
         </div>
         <div className="flex flex-1 gap-3 sm:flex-none">

@@ -1,37 +1,12 @@
-import { vehicles } from "@/data/vehicles";
-import type {
-  Vehicle,
-  VehicleFilters,
-  SortKey,
-} from "@/types/vehicle";
+import type { Vehicle, VehicleFilters, SortKey } from "@/types/vehicle";
 
 /**
- * Camada de acesso a dados.
+ * Helpers PUROS de inventário (filtros, ordenação).
  *
- * Hoje lê do mock síncrono. As assinaturas são propositadamente `async` para
- * que a migração para `fetch("/api/vehicles")` não altere os call-sites nem
- * os componentes servidor que fazem `await getVehicles()`.
+ * Sem dependências de servidor — podem ser importados por Client Components.
+ * As leituras à base de dados (Supabase) vivem em `src/lib/queries.ts`
+ * (server-only). Esta separação evita puxar `next/headers` para o browser.
  */
-
-export async function getVehicles(): Promise<Vehicle[]> {
-  // TODO(api): return (await fetch(`${API_URL}/vehicles`)).json();
-  return vehicles;
-}
-
-export async function getFeaturedVehicles(): Promise<Vehicle[]> {
-  return vehicles.filter((v) => v.featured);
-}
-
-export async function getVehicleBySlug(
-  slug: string,
-): Promise<Vehicle | undefined> {
-  // TODO(api): return (await fetch(`${API_URL}/vehicles/${slug}`)).json();
-  return vehicles.find((v) => v.slug === slug);
-}
-
-export async function getAllSlugs(): Promise<string[]> {
-  return vehicles.map((v) => v.slug);
-}
 
 /** Lista ordenada e sem duplicados de valores de um campo — alimenta os filtros. */
 export function distinctValues<K extends keyof Vehicle>(

@@ -1,9 +1,9 @@
 /**
  * Modelo de domínio de uma viatura.
  *
- * Este ficheiro é a "fonte da verdade" de tipos. O mock (`data/vehicles.ts`)
- * e uma futura API REST devem ambos satisfazer estes tipos, de forma a que a
- * troca de fonte de dados seja transparente para os componentes.
+ * Este ficheiro é a "fonte da verdade" de tipos do domínio público. O mapper
+ * `src/lib/mappers.ts` converte as linhas do Supabase (`cars` + `car_media`)
+ * neste tipo, de forma a que os componentes não conheçam o formato da BD.
  */
 
 export type FuelType =
@@ -11,7 +11,8 @@ export type FuelType =
   | "Diesel"
   | "Híbrido"
   | "Híbrido Plug-in"
-  | "Elétrico";
+  | "Elétrico"
+  | "GPL";
 
 export type Transmission = "Manual" | "Automática";
 
@@ -21,7 +22,16 @@ export type BodyType =
   | "Coupé"
   | "Carrinha"
   | "Citadino"
-  | "Descapotável";
+  | "Descapotável"
+  | "Monovolume";
+
+export type VehicleStatus = "draft" | "published" | "reserved" | "sold";
+
+export interface VehicleVideo {
+  src: string;
+  /** mp4 | webm — usado no `type` do <source>. */
+  type: string;
+}
 
 export interface VehicleImage {
   /** URL absoluta ou caminho em /public. */
@@ -39,6 +49,8 @@ export interface VehicleSpec {
 }
 
 export interface Vehicle {
+  /** UUID na base de dados (ausente em dados de mock). */
+  id?: string;
   /** Identificador estável, usado como chave e em URLs de detalhe. */
   slug: string;
   make: string;
@@ -61,13 +73,25 @@ export interface Vehicle {
   seats: number;
   /** Destaque na homepage. */
   featured: boolean;
+  /** Estado comercial. As páginas públicas só recebem `published`. */
+  status?: VehicleStatus;
+  /** `true` quando o preço é "sob consulta" (então `price` é 0). */
+  priceOnRequest?: boolean;
+  /** Equipamento / extras. */
+  extras?: string[];
+  /** Stand / localização. */
+  location?: string;
   /** Frase curta de marketing. */
   tagline: string;
   description: string;
   /** Primeira imagem = capa; restantes = galeria. */
   images: VehicleImage[];
+  /** Vídeo opcional do anúncio (mp4/webm). */
+  video?: VehicleVideo | null;
   /** Ficha técnica alargada apresentada na secção pinned e no detalhe. */
   highlights: VehicleSpec[];
+  /** ISO da última atualização (para sitemap / ordenação). */
+  updatedAt?: string;
 }
 
 /** Payload dos filtros do inventário. */

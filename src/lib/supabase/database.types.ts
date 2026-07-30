@@ -1,0 +1,234 @@
+/**
+ * Tipos da base de dados.
+ *
+ * Escritos à mão a espelhar `supabase/migrations/0001_init.sql`. Em produção
+ * podem ser (re)gerados com:
+ *
+ *   npx supabase gen types typescript --project-id <ref> --schema public \
+ *     > src/lib/supabase/database.types.ts
+ *
+ * Manter sincronizado com o schema é a fonte da verdade de tipos do backend.
+ */
+
+export type UserRole = "admin" | "vendedor";
+export type FuelType =
+  | "Gasolina"
+  | "Diesel"
+  | "Híbrido"
+  | "Híbrido Plug-in"
+  | "Elétrico"
+  | "GPL";
+export type Transmission = "Manual" | "Automática";
+export type BodyType =
+  | "Berlina"
+  | "SUV"
+  | "Coupé"
+  | "Carrinha"
+  | "Citadino"
+  | "Descapotável"
+  | "Monovolume";
+export type CarStatus = "draft" | "published" | "reserved" | "sold";
+export type MediaKind = "image" | "video";
+export type LeadKind = "contact" | "test_drive" | "finance";
+export type LeadStatus = "new" | "contacted" | "closed";
+
+export type HighlightJson = {
+  label: string;
+  value: string;
+}
+
+// ---- profiles --------------------------------------------------------------
+type ProfilesRow = {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  role: UserRole;
+  created_at: string;
+  updated_at: string;
+}
+type ProfilesInsert = {
+  id: string;
+  email?: string | null;
+  full_name?: string | null;
+  role?: UserRole;
+}
+type ProfilesUpdate = {
+  id?: string;
+  email?: string | null;
+  full_name?: string | null;
+  role?: UserRole;
+}
+
+// ---- cars ------------------------------------------------------------------
+type CarsRow = {
+  id: string;
+  slug: string;
+  make: string;
+  model: string;
+  variant: string | null;
+  year: number;
+  license_plate: string | null;
+  mileage: number;
+  fuel: FuelType;
+  transmission: Transmission;
+  body: BodyType;
+  power: number;
+  displacement: number;
+  color: string | null;
+  doors: number;
+  seats: number;
+  price: number | null;
+  price_on_request: boolean;
+  status: CarStatus;
+  featured: boolean;
+  tagline: string | null;
+  description: string | null;
+  extras: string[];
+  location: string | null;
+  highlights: HighlightJson[];
+  created_by: string | null;
+  published_at: string | null;
+  sold_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+type CarsInsert = {
+  id?: string;
+  slug: string;
+  make: string;
+  model: string;
+  variant?: string | null;
+  year: number;
+  license_plate?: string | null;
+  mileage?: number;
+  fuel: FuelType;
+  transmission: Transmission;
+  body: BodyType;
+  power?: number;
+  displacement?: number;
+  color?: string | null;
+  doors?: number;
+  seats?: number;
+  price?: number | null;
+  price_on_request?: boolean;
+  status?: CarStatus;
+  featured?: boolean;
+  tagline?: string | null;
+  description?: string | null;
+  extras?: string[];
+  location?: string | null;
+  highlights?: HighlightJson[];
+  created_by?: string | null;
+}
+type CarsUpdate = Partial<CarsInsert>;
+
+// ---- car_media -------------------------------------------------------------
+type CarMediaRowT = {
+  id: string;
+  car_id: string;
+  kind: MediaKind;
+  storage_path: string;
+  alt: string;
+  position: number;
+  is_cover: boolean;
+  width: number | null;
+  height: number | null;
+  created_at: string;
+}
+type CarMediaInsert = {
+  id?: string;
+  car_id: string;
+  kind?: MediaKind;
+  storage_path: string;
+  alt?: string;
+  position?: number;
+  is_cover?: boolean;
+  width?: number | null;
+  height?: number | null;
+}
+type CarMediaUpdate = Partial<CarMediaInsert>;
+
+// ---- leads -----------------------------------------------------------------
+type LeadsRow = {
+  id: string;
+  car_id: string | null;
+  car_label: string | null;
+  kind: LeadKind;
+  status: LeadStatus;
+  name: string;
+  email: string;
+  phone: string | null;
+  message: string | null;
+  preferred_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+type LeadsInsert = {
+  id?: string;
+  car_id?: string | null;
+  car_label?: string | null;
+  kind?: LeadKind;
+  status?: LeadStatus;
+  name: string;
+  email: string;
+  phone?: string | null;
+  message?: string | null;
+  preferred_date?: string | null;
+}
+type LeadsUpdate = Partial<LeadsInsert>;
+
+export type Database = {
+  public: {
+    Tables: {
+      profiles: {
+        Row: ProfilesRow;
+        Insert: ProfilesInsert;
+        Update: ProfilesUpdate;
+        Relationships: [];
+      };
+      cars: {
+        Row: CarsRow;
+        Insert: CarsInsert;
+        Update: CarsUpdate;
+        Relationships: [];
+      };
+      car_media: {
+        Row: CarMediaRowT;
+        Insert: CarMediaInsert;
+        Update: CarMediaUpdate;
+        Relationships: [];
+      };
+      leads: {
+        Row: LeadsRow;
+        Insert: LeadsInsert;
+        Update: LeadsUpdate;
+        Relationships: [];
+      };
+    };
+    Views: Record<string, never>;
+    Functions: {
+      is_staff: { Args: Record<string, never>; Returns: boolean };
+    };
+    Enums: {
+      user_role: UserRole;
+      fuel_type: FuelType;
+      transmission: Transmission;
+      body_type: BodyType;
+      car_status: CarStatus;
+      media_kind: MediaKind;
+      lead_kind: LeadKind;
+      lead_status: LeadStatus;
+    };
+    CompositeTypes: Record<string, never>;
+  };
+}
+
+export type CarRow = CarsRow;
+export type CarInsert = CarsInsert;
+export type CarUpdate = CarsUpdate;
+export type CarMediaRow = CarMediaRowT;
+export type LeadRow = LeadsRow;
+export type ProfileRow = ProfilesRow;
+
+/** Carro com a sua media (join usado nas queries). */
+export type CarWithMedia = CarRow & { car_media: CarMediaRow[] };

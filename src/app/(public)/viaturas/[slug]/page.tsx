@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getVehicleBySlug, getAllSlugs } from "@/lib/vehicles";
-import { formatPrice, formatKm } from "@/lib/format";
+import { getVehicleBySlug, getAllSlugs } from "@/lib/queries";
+import { formatKm, priceLabel } from "@/lib/format";
 import { Gallery } from "@/components/vehicle/Gallery";
 import { Specs } from "@/components/vehicle/Specs";
 import { FinanceSimulator } from "@/components/vehicle/FinanceSimulator";
@@ -10,6 +10,10 @@ import { TestDriveForm } from "@/components/vehicle/TestDriveForm";
 import { ContactBar } from "@/components/vehicle/ContactBar";
 import { VehicleJsonLd } from "@/components/seo/VehicleJsonLd";
 import { AnimatedText } from "@/components/ui/AnimatedText";
+
+// ISR: páginas conhecidas são pré-geradas; novas viaturas publicadas depois do
+// build são renderizadas on-demand e cacheadas (dynamicParams = true, default).
+export const revalidate = 60;
 
 // Em Next 15, `params` é assíncrono.
 type Params = Promise<{ slug: string }>;
@@ -34,7 +38,7 @@ export async function generateMetadata({
   if (!vehicle) return { title: "Viatura não encontrada" };
 
   const title = `${vehicle.make} ${vehicle.model} ${vehicle.year}`;
-  const description = `${vehicle.tagline} ${formatPrice(vehicle.price)} · ${formatKm(vehicle.mileage)} · ${vehicle.fuel}.`;
+  const description = `${vehicle.tagline} ${priceLabel(vehicle.price, vehicle.priceOnRequest)} · ${formatKm(vehicle.mileage)} · ${vehicle.fuel}.`;
 
   return {
     title,
@@ -83,7 +87,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
               )}
             </div>
             <p className="text-4xl font-bold text-accent">
-              {formatPrice(vehicle.price)}
+              {priceLabel(vehicle.price, vehicle.priceOnRequest)}
             </p>
           </header>
 
@@ -122,6 +126,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
               <FinanceSimulator price={vehicle.price} />
               <TestDriveForm
                 vehicleName={`${vehicle.make} ${vehicle.model}`}
+                vehicleId={vehicle.id}
               />
             </div>
           </div>

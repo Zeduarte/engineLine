@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import { getVehicles } from "@/lib/vehicles";
+import { getVehicles } from "@/lib/queries";
 import { InventoryClient } from "@/components/inventory/InventoryClient";
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Inventário",

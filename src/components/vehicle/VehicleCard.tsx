@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import type { Vehicle } from "@/types/vehicle";
-import { formatPrice, formatKm } from "@/lib/format";
+import { formatKm, priceLabel } from "@/lib/format";
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -35,7 +35,7 @@ export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {
       <Link
         href={`/viaturas/${vehicle.slug}`}
         className="block focus:outline-none"
-        aria-label={`${vehicle.make} ${vehicle.model} ${vehicle.year} — ${formatPrice(vehicle.price)}`}
+        aria-label={`${vehicle.make} ${vehicle.model} ${vehicle.year} — ${priceLabel(vehicle.price, vehicle.priceOnRequest)}`}
       >
         <motion.div
           layoutId={`card-media-${vehicle.slug}`}
@@ -72,7 +72,7 @@ export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {
             </p>
           </div>
           <p className="whitespace-nowrap text-lg font-semibold text-accent">
-            {formatPrice(vehicle.price)}
+            {priceLabel(vehicle.price, vehicle.priceOnRequest)}
           </p>
         </div>
       </Link>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { Reveal } from "@/components/ui/Reveal";
+import { ContactForm } from "@/components/forms/ContactForm";
 import { site, whatsappHref } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -69,15 +70,19 @@ export default function ContactsPage() {
           </div>
         </Reveal>
 
-        {/* Mapa (OpenStreetMap — sem API key nem cookies de terceiros). */}
-        <div className="min-h-[24rem] overflow-hidden rounded-3xl border border-white/10">
-          <iframe
-            title={`Mapa da localização do ${site.name}`}
-            src={mapSrc}
-            className="h-full min-h-[24rem] w-full grayscale"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
+        <div className="space-y-8">
+          <ContactForm />
+
+          {/* Mapa (OpenStreetMap — sem API key nem cookies de terceiros). */}
+          <div className="min-h-[20rem] overflow-hidden rounded-3xl border border-white/10">
+            <iframe
+              title={`Mapa da localização do ${site.name}`}
+              src={mapSrc}
+              className="h-full min-h-[20rem] w-full grayscale"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
         </div>
       </section>
     </div>

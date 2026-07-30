@@ -1,95 +1,186 @@
 # engineLine
 
-Website de um stand de automóveis premium em Portugal, com animações ligadas ao
-scroll ao estilo dos sites de produto da Apple.
+Website de um stand de automóveis premium em Portugal, com **backoffice
+completo** e inventário dinâmico. As animações ligadas ao scroll (estilo Apple)
+do site público mantêm-se; os dados passaram de _hardcoded_ para uma base de
+dados real (Supabase).
 
 ## Stack
 
-| Camada            | Tecnologia                                  |
-| ----------------- | ------------------------------------------- |
-| Framework         | Next.js 15 (App Router) + TypeScript estrito |
-| Estilos           | Tailwind CSS                                |
-| Scroll animations | GSAP + ScrollTrigger                        |
-| Smooth scroll     | Lenis                                       |
-| Micro-interações  | Framer Motion                               |
-| Imagens           | `next/image`                                |
-| Dados             | Mock tipado em `data/vehicles.ts`           |
+| Camada            | Tecnologia                                       |
+| ----------------- | ------------------------------------------------ |
+| Framework         | Next.js 15 (App Router) + React 19 + TS estrito  |
+| Estilos           | Tailwind CSS                                      |
+| Animações         | GSAP + ScrollTrigger · Lenis · Framer Motion     |
+| Backend / BD      | **Supabase** (Postgres + Auth + Storage)         |
+| Auth / sessão     | `@supabase/ssr` (cookies) + middleware           |
+| Validação         | Zod + React Hook Form                            |
+| Gráficos          | Recharts                                          |
+| Toasts            | Sonner                                            |
+| Deploy            | **Vercel** (SSR + ISR)                            |
 
-## Arranque
+## Arquitetura e decisão de hosting
+
+O site era estático (GitHub Pages). Um backoffice precisa de **autenticação,
+Server Actions e dados dinâmicos**, que o Pages não suporta. Migrámos o deploy
+para a **Vercel**, mantendo o GitHub como repositório:
+
+- **Site público** — Server Components com **ISR** (`revalidate = 60`). Novas
+  viaturas publicadas aparecem sem rebuild manual.
+- **Backoffice** (`/admin`) — Server Actions + middleware de sessão. Rotas
+  protegidas, renderização dinâmica.
+- **Segurança** — imposta na base de dados por **Row Level Security (RLS)**:
+  o público lê apenas viaturas `published`; a escrita exige um utilizador
+  autenticado (staff). A chave anónima é segura no browser porque toda a
+  autorização vive nas políticas.
+
+### Fluxo de dados
+
+```
+Site público  ──► supabasePublic (anón, sem cookies) ──► RLS: só published
+Backoffice    ──► supabase/server (cookies)         ──► RLS: staff → tudo
+Server Actions──► validação Zod ──► Supabase ──► revalidatePath() do público
+Uploads       ──► browser → Supabase Storage ──► registerMedia() grava metadados
+```
+
+## Setup local
+
+### 1. Dependências
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
-npm run build    # build de produção (SSG)
-npm run typecheck
-npm run lint
+```
+
+### 2. Criar o projeto Supabase
+
+1. Em [supabase.com](https://supabase.com) crie um novo projeto.
+2. **SQL Editor → New query** → cole e corra `supabase/migrations/0001_init.sql`.
+   Cria tabelas, enums, índices, triggers, políticas RLS **e** o bucket de
+   Storage `car-media` com as respetivas políticas.
+3. (Opcional) Corra `supabase/seed.sql` para importar o inventário de exemplo.
+
+> Alternativa com a Supabase CLI: `supabase db push` (migrations) e
+> `supabase db execute -f supabase/seed.sql`.
+
+### 3. Variáveis de ambiente
+
+```bash
+cp .env.example .env.local
+```
+
+Preencha a partir de **Supabase → Project Settings**:
+
+| Variável                        | Onde obter                              |
+| ------------------------------- | --------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Settings → Data API → Project URL       |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Settings → API Keys → `anon public`     |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Settings → API Keys → `service_role` \* |
+| `NEXT_PUBLIC_SITE_URL`          | O domínio público do site               |
+
+\* Secreta — só para scripts de servidor. Nunca a exponha no browser.
+
+### 4. Criar o primeiro utilizador admin
+
+Não há registo público. Crie o vendedor manualmente:
+
+1. **Supabase → Authentication → Users → Add user** → defina email + password
+   e marque **Auto Confirm User**.
+2. O trigger `handle_new_user` cria automaticamente o `profile` (role
+   `vendedor` por defeito). Para o tornar `admin`, corra no SQL Editor:
+
+   ```sql
+   update public.profiles set role = 'admin' where email = 'voce@exemplo.pt';
+   ```
+
+### 5. Correr
+
+```bash
+npm run dev        # http://localhost:3000  (site público)
+                   # http://localhost:3000/admin  (backoffice → login)
+npm run build      # build de produção
+npm run typecheck  # tsc --noEmit
+npm run lint       # ESLint
 ```
 
 ## Estrutura
 
 ```
-data/vehicles.ts            Mock tipado (troca-se por API REST sem tocar na UI)
+supabase/
+  migrations/0001_init.sql   Schema, RLS, triggers, bucket de Storage
+  seed.sql                   Inventário de exemplo (opcional)
 src/
-  app/                      Rotas (App Router)
-    page.tsx                Home: hero + destaques + secção pinned + CTA
-    inventario/             Grelha com filtros, ordenação e stagger
-    viaturas/[slug]/        Ficha: SSG + metadata dinâmica + JSON-LD
-    sobre/  contactos/      Institucionais (contactos com mapa)
-    template.tsx            Transição de página (Framer Motion)
-    sitemap.ts  robots.ts   SEO
+  app/
+    (public)/                Site público (Header/Footer/Lenis)
+      page.tsx  inventario/  viaturas/[slug]/  sobre/  contactos/
+    admin/
+      login/                 Login (fora da shell)
+      (dashboard)/           Shell autenticada
+        page.tsx             Dashboard (KPIs + gráficos)
+        carros/              Lista, criar, editar (+ media)
+        leads/               Gestão de leads
+    layout.tsx  sitemap.ts  robots.ts
   components/
-    hero/                   Canvas 360º + placeholder procedural
-    home/  inventory/  vehicle/  layout/  ui/  seo/  providers/
-  hooks/                    useScrollAnimation, useImageSequence, …
-  lib/                      gsap (registo), vehicles (acesso a dados), format, site
-  types/vehicle.ts          Modelo de domínio (fonte da verdade)
+    admin/                   Sidebar, CarForm, CarsTable, MediaManager, charts…
+    forms/                   ContactForm (leads público)
+    hero/ home/ inventory/ vehicle/ layout/ ui/ seo/ providers/
+  lib/
+    supabase/                client · server · public · middleware · types
+    actions/                 Server Actions (cars · media · leads · auth)
+    queries.ts               Leituras públicas (server-only)
+    admin-queries.ts         Leituras do backoffice + stats
+    mappers.ts schemas.ts slug.ts storage.ts format.ts site.ts
+  types/vehicle.ts           Modelo de domínio público
+middleware.ts                Refresh de sessão + guard de /admin
 ```
 
-## Decisões técnicas
+## Deploy (Vercel)
 
-### Fonte de dados desacoplada
+**Caminho recomendado — integração Git nativa:**
 
-Os componentes nunca importam o mock diretamente — passam por `src/lib/vehicles.ts`,
-cujas funções são `async`. Migrar para uma API REST resume-se a trocar o corpo
-dessas funções por `fetch`, sem tocar em páginas nem componentes.
+1. [vercel.com](https://vercel.com) → **Add New… → Project** → importe o repo do
+   GitHub.
+2. Framework detetado: **Next.js** (sem configuração especial).
+3. **Settings → Environment Variables** → adicione as mesmas variáveis do
+   `.env.local` (para Production e Preview).
+4. Deploy. Cada push para `main` publica automaticamente; PRs geram Preview
+   Deployments.
 
-### Um único loop de animação (Lenis × GSAP)
+**Alternativa — GitHub Actions:** o workflow `.github/workflows/deploy.yml`
+faz deploy via Vercel CLI. Requer os secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
+`VERCEL_PROJECT_ID`.
 
-O `LenisProvider` desliga o RAF interno do Lenis e conduz o smooth scroll a
-partir do ticker do GSAP, e liga `lenis.on("scroll", ScrollTrigger.update)`. Ter
-duas fontes de tempo provoca *jitter*; com uma só, scrubs e pins ficam colados.
+O workflow `.github/workflows/ci.yml` corre lint + typecheck + build em cada
+push/PR.
 
-### Hero 360º em `<canvas>`
+> **Supabase Auth:** em **Authentication → URL Configuration**, adicione o
+> domínio da Vercel (produção e previews) aos _Redirect URLs_ / _Site URL_.
 
-Um único `<canvas>` (em vez de 90 `<img>`) evita 90 nós no DOM e redesenha
-apenas quando o índice de frame muda. O `ScrollTrigger` com `scrub` mapeia o
-progresso do scroll para o frame. Os frames reais são pré-carregados em
-background (`useImageSequence`, por lotes, em `requestIdleCallback`) para não
-competir com o LCP. Sem frames reais, desenha-se um **placeholder procedural**
-que roda — ver `public/hero/frames/README.md` para ligar as ~90 fotos reais.
+## Checklist de testes (validação funcional)
 
-### SplitText manual
+- [ ] **Login** — `/admin` sem sessão redireciona para `/admin/login`; login
+      com credenciais válidas entra no dashboard; credenciais erradas mostram erro.
+- [ ] **Dashboard** — KPIs e gráficos refletem o inventário; estado vazio
+      desenhado quando não há viaturas.
+- [ ] **Criar viatura** — `/admin/carros/novo`, guardar → redireciona para a
+      edição; validação Zod bloqueia dados inválidos (ex.: sem preço e sem
+      "sob consulta").
+- [ ] **Upload de fotos** — arrastar imagens no editor; definir capa; reordenar
+      por drag; apagar (com confirmação). Upload de vídeo mp4/webm.
+- [ ] **Publicar** — mudar estado para `published` na lista (toggle rápido).
+- [ ] **Site público** — a viatura publicada aparece em `/inventario` e tem
+      página própria `/viaturas/<slug>` com galeria, specs e JSON-LD.
+- [ ] **Destaque** — marcar "featured" faz aparecer na homepage.
+- [ ] **Filtros/pesquisa** — na lista do backoffice e no inventário público.
+- [ ] **Ações em lote** — selecionar várias → publicar/despublicar/apagar.
+- [ ] **Lead / contacto** — submeter o formulário de test drive (ficha) e o de
+      contacto (`/contactos`) → aparece em `/admin/leads`; mudar estado do lead.
+- [ ] **Segurança** — sem sessão, tentar `/admin/carros` redireciona; a API só
+      devolve viaturas publicadas ao público (RLS).
+- [ ] **SEO** — `/sitemap.xml` lista as viaturas publicadas; cada ficha tem
+      Open Graph e `schema.org/Vehicle`.
 
-`AnimatedText` parte o texto em unidades e anima-as com uma máscara
-(`overflow: hidden` + `yPercent`), sem o plugin pago do GreenSock. O texto
-completo mantém-se legível para leitores de ecrã via `aria-label`.
+## Decisões técnicas (site público)
 
-### Acessibilidade e `prefers-reduced-motion`
-
-`usePrefersReducedMotion` é a fonte da verdade. Quando o utilizador pede menos
-movimento: o Lenis não é instanciado, o `useScrollAnimation` não corre os
-setups, o Framer Motion desliga transições e o CSS mostra sempre o estado final.
-O conteúdo é visível mesmo sem JS (os estados "escondidos" só se aplicam sob a
-classe `.js-anim`, adicionada apenas quando o movimento é permitido).
-
-### SEO
-
-Cada viatura é uma página estática (`generateStaticParams`) com metadata
-dinâmica (Open Graph) e **JSON-LD `schema.org/Vehicle`** no HTML inicial.
-`sitemap.ts` e `robots.ts` completam a indexação.
-
-## Personalização rápida
-
-- **Acento da marca:** `--accent` em `src/app/globals.css` (+ `site.accent`).
-- **Contactos / morada / mapa:** `src/lib/site.ts`.
-- **Frames do hero:** `public/hero/frames/` + `src/components/hero/frames.ts`.
+Mantidas do projeto original: loop único Lenis × GSAP, hero 360º em `<canvas>`,
+SplitText manual (`AnimatedText`), respeito por `prefers-reduced-motion`, e
+JSON-LD por viatura. Ver histórico para detalhes.
