@@ -47,7 +47,10 @@ export function Hero() {
         trigger: section,
         start: "top top",
         end: "bottom bottom",
-        scrub: 0.5,
+        // Scrub mais alto = interpolação mais suave entre posições de scroll.
+        // (A fluidez final depende também da densidade de keyframes do vídeo —
+        // ver README/hero: re-codificar com keyframe por frame.)
+        scrub: 1.2,
         onUpdate: (self) => {
           // Mapeia 0→1 do scroll para 0→duração do vídeo.
           const t = self.progress * duration;
