@@ -67,7 +67,15 @@ export function Footer() {
             © {new Date().getFullYear()} {site.legalName}. Todos os direitos
             reservados.
           </p>
-          <p>Feito em Portugal.</p>
+          <div className="flex items-center gap-4">
+            <p>Feito em Portugal.</p>
+            <Link
+              href="/admin"
+              className="text-paper/40 transition-colors hover:text-accent"
+            >
+              Área reservada
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

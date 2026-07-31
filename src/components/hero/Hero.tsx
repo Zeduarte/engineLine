@@ -3,102 +3,45 @@
 import { useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ScrollTrigger } from "@/lib/gsap";
-import { useIsomorphicLayoutEffect } from "@/hooks/useIsomorphicLayoutEffect";
-import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { HeroVideo } from "./HeroVideo";
 import { AnimatedText } from "@/components/ui/AnimatedText";
+import { asset } from "@/lib/asset";
 
 /**
- * Hero de topo com vídeo controlado pelo scroll (scrub).
+ * Hero de topo.
  *
- * Arquitetura do pin: a secção exterior tem 180vh de altura, dando "pista" ao
- * scroll. Lá dentro, um wrapper `sticky top-0 h-dvh` fica colado no ecrã. O
- * ScrollTrigger mapeia o progresso do scroll DESTA secção para o `currentTime`
- * do vídeo — rodar a roda faz o vídeo avançar/recuar, tal como o antigo 360º.
+ * Arquitetura do pin: a secção exterior tem 224vh de altura, dando "pista" ao
+ * scroll. Lá dentro, um wrapper `sticky top-0 h-screen` fica colado no ecrã —
+ * usamos sticky CSS em vez de pin do GSAP porque coopera melhor com o smooth
+ * scroll do Lenis e não reflowa a página. O `HeroVideo` lê o progresso do
+ * scroll DESTA secção (via `triggerRef`) e transforma-o no `currentTime` do
+ * vídeo (avança ao descer, recua ao subir).
  *
- * O vídeo não faz autoplay: nós controlamos o tempo. Com `prefers-reduced-motion`
- * mostramos apenas um frame fixo e não criamos ScrollTrigger.
- *
- * Trocar o vídeo: substituir `public/hero/hero.mp4`. (mp4/H.264 é o mais
- * compatível; opcionalmente juntar `public/hero/hero.webm`.)
+ * A camada de texto por cima é `pointer-events-none` (exceto os CTAs) para não
+ * roubar o scroll ao vídeo.
  */
 export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const reduce = usePrefersReducedMotion();
-
-  useIsomorphicLayoutEffect(() => {
-    const section = sectionRef.current;
-    const video = videoRef.current;
-    if (!video) return;
-
-    video.pause();
-
-    // Sem movimento: frame fixo, sem scroll-scrub.
-    if (reduce || !section) return;
-
-    let st: ScrollTrigger | null = null;
-
-    const wire = () => {
-      const duration = video.duration;
-      if (!duration || Number.isNaN(duration)) return;
-      st?.kill();
-      st = ScrollTrigger.create({
-        trigger: section,
-        start: "top top",
-        end: "bottom bottom",
-        // Scrub mais alto = interpolação mais suave entre posições de scroll.
-        // (A fluidez final depende também da densidade de keyframes do vídeo —
-        // ver README/hero: re-codificar com keyframe por frame.)
-        scrub: 1.2,
-        onUpdate: (self) => {
-          // Mapeia 0→1 do scroll para 0→duração do vídeo.
-          const t = self.progress * duration;
-          if (Math.abs(video.currentTime - t) > 0.01) {
-            video.currentTime = t;
-          }
-        },
-      });
-      ScrollTrigger.refresh();
-    };
-
-    if (video.readyState >= 1 && video.duration) {
-      wire();
-    } else {
-      video.addEventListener("loadedmetadata", wire, { once: true });
-    }
-
-    return () => {
-      st?.kill();
-      video.removeEventListener("loadedmetadata", wire);
-    };
-  }, [reduce]);
 
   return (
     <section
       ref={sectionRef}
-      className="relative h-[180vh]"
+      className="relative h-[224vh]"
       aria-label="Viatura em destaque"
     >
       <div className="sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden">
         {/* Vídeo controlado pelo scroll */}
-        <video
-          ref={videoRef}
-          className="absolute inset-0 h-full w-full object-cover"
-          muted
-          playsInline
-          preload="auto"
-          poster="/placeholder-car.svg"
-          aria-hidden
-        >
-          <source src="/hero/hero.webm" type="video/webm" />
-          <source src="/hero/hero.mp4" type="video/mp4" />
-        </video>
+        <div className="absolute inset-0 bg-ink">
+          <HeroVideo
+            triggerRef={sectionRef}
+            poster={asset("/hero/hero-poster.jpg")}
+          />
+        </div>
 
-        {/* Vinheta para contraste AA do texto sobre o vídeo. */}
+        {/* Vinheta para garantir contraste AA do texto sobre o canvas. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink/70 via-ink/20 to-ink"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink/70 via-transparent to-ink"
         />
 
         {/* Conteúdo */}
