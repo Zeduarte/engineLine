@@ -11,7 +11,7 @@ import { AnimatedText } from "@/components/ui/AnimatedText";
 /**
  * Hero de topo com vídeo controlado pelo scroll (scrub).
  *
- * Arquitetura do pin: a secção exterior tem 300vh de altura, dando "pista" ao
+ * Arquitetura do pin: a secção exterior tem 180vh de altura, dando "pista" ao
  * scroll. Lá dentro, um wrapper `sticky top-0 h-dvh` fica colado no ecrã. O
  * ScrollTrigger mapeia o progresso do scroll DESTA secção para o `currentTime`
  * do vídeo — rodar a roda faz o vídeo avançar/recuar, tal como o antigo 360º.
@@ -74,7 +74,7 @@ export function Hero() {
   return (
     <section
       ref={sectionRef}
-      className="relative h-[300vh]"
+      className="relative h-[180vh]"
       aria-label="Viatura em destaque"
     >
       <div className="sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden">
