@@ -3,6 +3,10 @@ import { supabasePublic } from "@/lib/supabase/public";
 import { toVehicle } from "@/lib/mappers";
 import type { CarWithMedia } from "@/lib/supabase/database.types";
 import type { Vehicle } from "@/types/vehicle";
+import {
+  mergeHomeContent,
+  type HomeContent,
+} from "@/lib/home-content";
 
 /**
  * Leituras PÚBLICAS do inventário (Supabase).
@@ -63,6 +67,26 @@ export async function getVehicleBySlug(
     return undefined;
   }
   return data ? toVehicle(data as unknown as CarWithMedia) : undefined;
+}
+
+/**
+ * Conteúdo da página inicial (textos editáveis). Funde o que está guardado em
+ * `site_content` sobre os defaults — se nada foi editado, devolve o original.
+ */
+export async function getHomeContent(): Promise<HomeContent> {
+  const { data, error } = await supabasePublic
+    .from("site_content")
+    .select("content")
+    .eq("key", "home")
+    .maybeSingle();
+
+  if (error) {
+    console.error("getHomeContent:", error.message);
+    return mergeHomeContent(null);
+  }
+  return mergeHomeContent(
+    (data?.content as Partial<HomeContent> | undefined) ?? null,
+  );
 }
 
 export async function getAllSlugs(): Promise<string[]> {

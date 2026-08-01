@@ -57,7 +57,9 @@ npm install
 2. **SQL Editor → New query** → cole e corra `supabase/migrations/0001_init.sql`.
    Cria tabelas, enums, índices, triggers, políticas RLS **e** o bucket de
    Storage `car-media` com as respetivas políticas.
-3. (Opcional) Corra `supabase/seed.sql` para importar o inventário de exemplo.
+3. Corra também `supabase/migrations/0002_site_content.sql` — tabela do
+   conteúdo editável da página inicial (backoffice → "Página inicial").
+4. (Opcional) Corra `supabase/seed.sql` para importar o inventário de exemplo.
 
 > Alternativa com a Supabase CLI: `supabase db push` (migrations) e
 > `supabase db execute -f supabase/seed.sql`.

@@ -6,6 +6,10 @@ import { motion } from "framer-motion";
 import { HeroVideo } from "./HeroVideo";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { asset } from "@/lib/asset";
+import {
+  DEFAULT_HOME_CONTENT,
+  type HeroContent,
+} from "@/lib/home-content";
 
 /**
  * Hero de topo.
@@ -20,7 +24,11 @@ import { asset } from "@/lib/asset";
  * A camada de texto por cima é `pointer-events-none` (exceto os CTAs) para não
  * roubar o scroll ao vídeo.
  */
-export function Hero() {
+export function Hero({
+  content = DEFAULT_HOME_CONTENT.hero,
+}: {
+  content?: HeroContent;
+}) {
   const sectionRef = useRef<HTMLElement>(null);
 
   return (
@@ -52,7 +60,7 @@ export function Hero() {
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="eyebrow mb-6"
           >
-            Stand premium · Portugal
+            {content.eyebrow}
           </motion.p>
 
           <AnimatedText
@@ -60,7 +68,7 @@ export function Hero() {
             splitBy="word"
             className="mx-auto max-w-5xl text-display font-bold text-paper"
           >
-            Cada viatura conta uma história de precisão
+            {content.title}
           </AnimatedText>
 
           <motion.p
@@ -69,7 +77,7 @@ export function Hero() {
             transition={{ delay: 0.5, duration: 0.8 }}
             className="mx-auto mt-8 max-w-xl text-lg font-light text-paper/70"
           >
-            Uma seleção rigorosa de automóveis premium. Roda para explorar.
+            {content.subtitle}
           </motion.p>
 
           <motion.div
@@ -79,16 +87,16 @@ export function Hero() {
             className="pointer-events-auto mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
           >
             <Link
-              href="/inventario"
+              href={content.primaryCta.href}
               className="rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-ink transition-transform duration-300 ease-premium hover:scale-[1.03]"
             >
-              Ver inventário
+              {content.primaryCta.label}
             </Link>
             <Link
-              href="/sobre"
+              href={content.secondaryCta.href}
               className="rounded-full border border-paper/20 px-8 py-3.5 text-sm font-medium text-paper transition-colors duration-300 hover:border-paper/60"
             >
-              Conhecer o stand
+              {content.secondaryCta.label}
             </Link>
           </motion.div>
         </div>

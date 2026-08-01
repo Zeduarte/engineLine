@@ -2,17 +2,25 @@ import Link from "next/link";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { Reveal } from "@/components/ui/Reveal";
 import { site, whatsappHref } from "@/lib/site";
+import {
+  DEFAULT_HOME_CONTENT,
+  type CtaSectionContent,
+} from "@/lib/home-content";
 
-export function ContactCTA() {
+export function ContactCTA({
+  content = DEFAULT_HOME_CONTENT.cta,
+}: {
+  content?: CtaSectionContent;
+}) {
   return (
     <section className="container-px py-24 md:py-40">
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-ink-soft px-6 py-20 text-center md:px-16 md:py-32">
-        <p className="eyebrow mb-6">Vamos falar</p>
+        <p className="eyebrow mb-6">{content.eyebrow}</p>
         <AnimatedText
           as="h2"
           className="mx-auto max-w-3xl text-headline font-semibold text-paper"
         >
-          A sua próxima viatura está a um contacto de distância
+          {content.title}
         </AnimatedText>
 
         <Reveal className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -22,13 +30,13 @@ export function ContactCTA() {
             rel="noopener noreferrer"
             className="rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-ink transition-transform duration-300 ease-premium hover:scale-[1.03]"
           >
-            Falar por WhatsApp
+            {content.whatsappLabel}
           </a>
           <Link
-            href="/contactos"
+            href={content.secondary.href}
             className="rounded-full border border-white/20 px-8 py-3.5 text-sm font-medium text-paper transition-colors duration-300 hover:border-white/60"
           >
-            Ver contactos e mapa
+            {content.secondary.label}
           </Link>
         </Reveal>
 

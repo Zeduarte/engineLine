@@ -2,26 +2,20 @@
 
 import { motion } from "framer-motion";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-
-const BRANDS = [
-  "BMW",
-  "Audi",
-  "Porsche",
-  "Mercedes-Benz",
-  "Volkswagen",
-  "Tesla",
-  "Land Rover",
-  "Volvo",
-];
+import { DEFAULT_HOME_CONTENT } from "@/lib/home-content";
 
 /**
  * Faixa de marcas em scroll contínuo (marquee). Duplicamos a lista e animamos
  * −50% em loop infinito para um deslize sem costura. Sob reduced-motion fica
  * estática (sem animação), mas continua legível.
  */
-export function BrandMarquee() {
+export function BrandMarquee({
+  brands = DEFAULT_HOME_CONTENT.brands,
+}: {
+  brands?: string[];
+}) {
   const prefersReduced = usePrefersReducedMotion();
-  const items = [...BRANDS, ...BRANDS];
+  const items = [...brands, ...brands];
 
   return (
     <section
@@ -42,7 +36,7 @@ export function BrandMarquee() {
           {items.map((brand, i) => (
             <li
               key={`${brand}-${i}`}
-              aria-hidden={i >= BRANDS.length}
+              aria-hidden={i >= brands.length}
               className="whitespace-nowrap text-2xl font-semibold text-paper/30 transition-colors hover:text-paper/70 md:text-3xl"
             >
               {brand}

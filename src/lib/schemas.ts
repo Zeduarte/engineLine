@@ -87,3 +87,41 @@ export const leadSchema = z.object({
 });
 
 export type LeadValues = z.infer<typeof leadSchema>;
+
+// ---- Conteúdo da página inicial -------------------------------------------
+const cta = z.object({
+  label: z.string().trim().max(60),
+  href: z.string().trim().max(200),
+});
+
+export const homeContentSchema = z.object({
+  hero: z.object({
+    eyebrow: z.string().trim().max(80),
+    title: z.string().trim().min(1, "Título obrigatório").max(160),
+    subtitle: z.string().trim().max(300),
+    primaryCta: cta,
+    secondaryCta: cta,
+  }),
+  brands: z.array(z.string().trim().min(1)).max(30),
+  trust: z.object({
+    eyebrow: z.string().trim().max(80),
+    title: z.string().trim().max(160),
+    pillars: z
+      .array(
+        z.object({
+          kpi: z.string().trim().max(20),
+          title: z.string().trim().max(80),
+          body: z.string().trim().max(400),
+        }),
+      )
+      .max(8),
+  }),
+  cta: z.object({
+    eyebrow: z.string().trim().max(80),
+    title: z.string().trim().max(160),
+    whatsappLabel: z.string().trim().max(60),
+    secondary: cta,
+  }),
+});
+
+export type HomeContentValues = z.infer<typeof homeContentSchema>;

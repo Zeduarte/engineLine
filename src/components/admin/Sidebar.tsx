@@ -8,6 +8,7 @@ const NAV = [
   { href: "/admin", label: "Dashboard", icon: "▨", exact: true },
   { href: "/admin/carros", label: "Viaturas", icon: "▦", exact: false },
   { href: "/admin/carros/novo", label: "Nova viatura", icon: "＋", exact: true },
+  { href: "/admin/pagina-inicial", label: "Página inicial", icon: "◧", exact: false },
   { href: "/admin/leads", label: "Leads", icon: "✉", exact: false },
 ];
 

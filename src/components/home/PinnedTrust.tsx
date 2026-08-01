@@ -3,29 +3,10 @@
 import { useState } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-
-const PILLARS = [
-  {
-    kpi: "150+",
-    title: "Inspeção em 150 pontos",
-    body: "Cada viatura passa por uma verificação mecânica e estética exaustiva antes de entrar no stand. Sem surpresas depois da compra.",
-  },
-  {
-    kpi: "24 meses",
-    title: "Garantia incluída",
-    body: "Todas as viaturas incluem garantia de 24 meses, extensível. Cobertura clara, por escrito, sem letras pequenas.",
-  },
-  {
-    kpi: "100%",
-    title: "Histórico transparente",
-    body: "Relatório completo de quilometragem, manutenções e proprietários anteriores. Verificável, sempre.",
-  },
-  {
-    kpi: "48h",
-    title: "Financiamento aprovado",
-    body: "Simulação imediata e resposta de crédito em 48 horas, com as principais instituições financeiras do mercado.",
-  },
-] as const;
+import {
+  DEFAULT_HOME_CONTENT,
+  type TrustContent,
+} from "@/lib/home-content";
 
 /**
  * Secção pinned: a coluna esquerda fixa-se enquanto o utilizador desce, e o
@@ -39,7 +20,12 @@ const PILLARS = [
  * Sob reduced-motion, `useScrollAnimation` não corre: mostra-se o primeiro
  * painel e a lista completa fica acessível (ver fallback estático em baixo).
  */
-export function PinnedTrust() {
+export function PinnedTrust({
+  content = DEFAULT_HOME_CONTENT.trust,
+}: {
+  content?: TrustContent;
+}) {
+  const PILLARS = content.pillars;
   const [active, setActive] = useState(0);
 
   const ref = useScrollAnimation<HTMLDivElement>((root) => {
@@ -85,11 +71,9 @@ export function PinnedTrust() {
       >
         {/* Coluna fixa */}
         <div>
-          <p className="eyebrow mb-6">Confiança</p>
-          <h2 className="text-headline font-semibold text-paper">
-            Comprar sem
-            <br />
-            margem para dúvidas.
+          <p className="eyebrow mb-6">{content.eyebrow}</p>
+          <h2 className="whitespace-pre-line text-headline font-semibold text-paper">
+            {content.title}
           </h2>
 
           {/* Progresso por etapas — também navegável/legível. */}

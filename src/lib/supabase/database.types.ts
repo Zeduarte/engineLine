@@ -177,6 +177,18 @@ type LeadsInsert = {
 }
 type LeadsUpdate = Partial<LeadsInsert>;
 
+// ---- site_content ----------------------------------------------------------
+type SiteContentRow = {
+  key: string;
+  content: Record<string, unknown>;
+  updated_at: string;
+};
+type SiteContentInsert = {
+  key: string;
+  content?: Record<string, unknown>;
+};
+type SiteContentUpdate = Partial<SiteContentInsert>;
+
 export type Database = {
   public: {
     Tables: {
@@ -202,6 +214,12 @@ export type Database = {
         Row: LeadsRow;
         Insert: LeadsInsert;
         Update: LeadsUpdate;
+        Relationships: [];
+      };
+      site_content: {
+        Row: SiteContentRow;
+        Insert: SiteContentInsert;
+        Update: SiteContentUpdate;
         Relationships: [];
       };
     };
