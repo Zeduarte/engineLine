@@ -51,6 +51,23 @@ export async function getFeaturedVehicles(limit = 3): Promise<Vehicle[]> {
   return (data as unknown as CarWithMedia[]).map(toVehicle);
 }
 
+/** Viaturas publicadas mais recentes (para o carrossel da homepage). */
+export async function getRecentVehicles(limit = 12): Promise<Vehicle[]> {
+  const { data, error } = await supabasePublic
+    .from("cars")
+    .select(CAR_SELECT)
+    .eq("status", "published")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("getRecentVehicles:", error.message);
+    return [];
+  }
+  return (data as unknown as CarWithMedia[]).map(toVehicle);
+}
+
 export async function getVehicleBySlug(
   slug: string,
 ): Promise<Vehicle | undefined> {
