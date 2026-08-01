@@ -1,41 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { submitLead, type LeadActionState } from "@/lib/actions/leads";
 
 /**
  * Formulário de marcação de test drive.
  *
- * Validação leve no cliente (campos obrigatórios, formato de email/telefone) e
- * estado de sucesso animado. O `onSubmit` está preparado para `POST` a uma API
- * (`/api/test-drive`) — hoje simula a submissão. Acessível: labels associadas,
- * `aria-invalid`, mensagens de erro ligadas por `aria-describedby`.
+ * Persiste o pedido como `lead` no Supabase via Server Action (`submitLead`),
+ * com validação Zod no servidor. Validação leve adicional no cliente e estado
+ * de sucesso animado. Acessível: labels associadas, `aria-invalid`, mensagens
+ * ligadas por `aria-describedby`.
  */
-export function TestDriveForm({ vehicleName }: { vehicleName: string }) {
-  const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
+export function TestDriveForm({
+  vehicleName,
+  vehicleId,
+}: {
+  vehicleName: string;
+  vehicleId?: string;
+}) {
+  const [state, formAction, pending] = useActionState<
+    LeadActionState,
+    FormData
+  >(submitLead, { ok: false });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const formRef = useRef<HTMLFormElement>(null);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
+  useEffect(() => {
+    if (state.ok) formRef.current?.reset();
+  }, [state.ok]);
 
-    const nextErrors: Record<string, string> = {};
-    if (!data.name?.trim()) nextErrors.name = "Indique o seu nome.";
+  function validate(e: React.FormEvent<HTMLFormElement>) {
+    const data = Object.fromEntries(
+      new FormData(e.currentTarget),
+    ) as Record<string, string>;
+    const next: Record<string, string> = {};
+    if (!data.name?.trim()) next.name = "Indique o seu nome.";
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.email ?? ""))
-      nextErrors.email = "Email inválido.";
+      next.email = "Email inválido.";
     if (!/^[\d\s+]{9,}$/.test(data.phone ?? ""))
-      nextErrors.phone = "Telefone inválido.";
-    if (!data.date) nextErrors.date = "Escolha uma data.";
-
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
-
-    setStatus("sending");
-    // TODO(api): await fetch("/api/test-drive", { method: "POST", body: ... })
-    await new Promise((r) => setTimeout(r, 900));
-    setStatus("sent");
-    form.reset();
+      next.phone = "Telefone inválido.";
+    if (!data.preferred_date) next.preferred_date = "Escolha uma data.";
+    setErrors(next);
+    if (Object.keys(next).length > 0) e.preventDefault();
   }
 
   return (
@@ -51,7 +58,7 @@ export function TestDriveForm({ vehicleName }: { vehicleName: string }) {
       </p>
 
       <AnimatePresence mode="wait">
-        {status === "sent" ? (
+        {state.ok ? (
           <motion.div
             key="success"
             initial={{ opacity: 0, y: 10 }}
@@ -62,23 +69,22 @@ export function TestDriveForm({ vehicleName }: { vehicleName: string }) {
             <p className="mt-1 text-sm text-paper/60">
               Entraremos em contacto para confirmar o seu test drive.
             </p>
-            <button
-              type="button"
-              onClick={() => setStatus("idle")}
-              className="mt-4 text-sm font-medium text-accent hover:underline"
-            >
-              Marcar outro
-            </button>
           </motion.div>
         ) : (
           <motion.form
             key="form"
-            onSubmit={handleSubmit}
+            ref={formRef}
+            action={formAction}
+            onSubmit={validate}
             noValidate
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="mt-6 grid gap-4"
           >
+            <input type="hidden" name="kind" value="test_drive" />
+            {vehicleId && <input type="hidden" name="car_id" value={vehicleId} />}
+            <input type="hidden" name="car_label" value={vehicleName} />
+
             <FormField id="name" label="Nome" error={errors.name}>
               <input
                 id="name"
@@ -116,13 +122,19 @@ export function TestDriveForm({ vehicleName }: { vehicleName: string }) {
               </FormField>
             </div>
 
-            <FormField id="date" label="Data preferencial" error={errors.date}>
+            <FormField
+              id="preferred_date"
+              label="Data preferencial"
+              error={errors.preferred_date}
+            >
               <input
-                id="date"
-                name="date"
+                id="preferred_date"
+                name="preferred_date"
                 type="date"
-                aria-invalid={!!errors.date}
-                aria-describedby={errors.date ? "date-error" : undefined}
+                aria-invalid={!!errors.preferred_date}
+                aria-describedby={
+                  errors.preferred_date ? "preferred_date-error" : undefined
+                }
                 className="input"
               />
             </FormField>
@@ -131,12 +143,18 @@ export function TestDriveForm({ vehicleName }: { vehicleName: string }) {
               <textarea id="message" name="message" rows={3} className="input" />
             </FormField>
 
+            {state.error && (
+              <p className="text-sm text-red-400" role="alert">
+                {state.error}
+              </p>
+            )}
+
             <button
               type="submit"
-              disabled={status === "sending"}
+              disabled={pending}
               className="mt-2 rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-ink transition-transform duration-300 ease-premium hover:scale-[1.02] disabled:opacity-60"
             >
-              {status === "sending" ? "A enviar…" : "Pedir test drive"}
+              {pending ? "A enviar…" : "Pedir test drive"}
             </button>
           </motion.form>
         )}

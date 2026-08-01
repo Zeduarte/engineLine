@@ -1,65 +1,49 @@
-name: Deploy to GitHub Pages
+name: Deploy (Vercel)
 
-# Publica o site (exportação estática do Next.js) no GitHub Pages a cada push
-# para main. O link fica em https://<owner>.github.io/<repo>/.
+# Deploy para a Vercel via CLI. ALTERNATIVA à integração Git nativa da Vercel
+# (que é o caminho recomendado — ver README). Use este workflow se preferir
+# controlar o deploy a partir do GitHub Actions.
+#
+# Requer os seguintes secrets no repositório
+# (Settings → Secrets and variables → Actions):
+#   VERCEL_TOKEN        — token pessoal da Vercel
+#   VERCEL_ORG_ID       — id da organização/equipa (ficheiro .vercel/project.json)
+#   VERCEL_PROJECT_ID   — id do projeto na Vercel
+#
+# As variáveis de ambiente da app (NEXT_PUBLIC_SUPABASE_URL, etc.) devem ser
+# configuradas no painel da Vercel (Project → Settings → Environment Variables).
+
 on:
   push:
-    branches: [main]
+    branches: ["main"]
   workflow_dispatch:
 
-# Permissões necessárias para o deploy-pages autenticar via OIDC.
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Um deploy de cada vez; não cancela um deploy a meio.
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: vercel-production
+  cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      # Regista a config de Pages e (se possível) ativa o Pages automaticamente.
-      - name: Configure Pages
-        id: pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Build (static export)
-        env:
-          EXPORT: "true"
-          # basePath = /<nome-do-repo>, exatamente o subcaminho do Pages.
-          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
-        run: npm run build
+      - name: Build
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./out
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

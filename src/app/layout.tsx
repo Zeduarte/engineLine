@@ -1,12 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 import { site } from "@/lib/site";
-import { LenisProvider } from "@/components/providers/LenisProvider";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { ScrollProgress } from "@/components/ui/ScrollProgress";
-import { GrainOverlay } from "@/components/ui/GrainOverlay";
 
 // next/font: auto-host, sem pedido a terceiros, sem layout shift. Exposto
 // como CSS var e consumido pelo Tailwind (font-sans).
@@ -40,26 +36,29 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
+/**
+ * Root layout mínimo: apenas `<html>/<body>`, fontes e o Toaster global.
+ * A "chrome" do site público (Header/Footer/Lenis) vive em `(public)/layout`;
+ * o backoffice tem a sua própria em `admin/layout`.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-PT" className={inter.variable}>
       <body className="min-h-dvh bg-ink font-sans antialiased">
-        {/* Salto para conteúdo — acessibilidade por teclado. */}
-        <a
-          href="#conteudo"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink"
-        >
-          Saltar para o conteúdo
-        </a>
-        <LenisProvider>
-          <ScrollProgress />
-          <Header />
-          <main id="conteudo">{children}</main>
-          <Footer />
-          <GrainOverlay />
-        </LenisProvider>
+        {children}
+        <Toaster
+          theme="dark"
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: "#111112",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: "#F5F5F4",
+            },
+          }}
+        />
       </body>
     </html>
   );

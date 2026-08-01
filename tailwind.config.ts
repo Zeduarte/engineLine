@@ -3,7 +3,6 @@ import type { Config } from "tailwindcss";
 const config: Config = {
   content: [
     "./src/**/*.{ts,tsx}",
-    "./data/**/*.{ts,tsx}",
   ],
   theme: {
     // Container central com respiração generosa (design premium = espaço negativo).
