@@ -11,7 +11,6 @@ import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
 const NAV = [
   { href: "/", label: "Início" },
   { href: "/inventario", label: "Inventário" },
-  { href: "/vender", label: "Vender" },
   { href: "/sobre", label: "Sobre" },
   { href: "/contactos", label: "Contactos" },
 ];
