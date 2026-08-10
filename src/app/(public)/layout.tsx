@@ -1,14 +1,20 @@
 import { LenisProvider } from "@/components/providers/LenisProvider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { ScrollProgress } from "@/components/ui/ScrollProgress";
+import { GrainOverlay } from "@/components/ui/GrainOverlay";
+import { getBranding } from "@/lib/queries";
 
 /**
- * Chrome do site PÚBLICO: smooth scroll (Lenis), header e footer de marketing.
- * O backoffice (`/admin`) não passa por aqui — tem a sua própria layout.
+ * Chrome do site PÚBLICO: smooth scroll (Lenis), barra de progresso, grão,
+ * header e footer de marketing. A marca (nome/logo) vem da BD (editável pelo
+ * admin). O backoffice (`/admin`) não passa por aqui — tem a sua própria layout.
  */
-export default function PublicLayout({
+export default async function PublicLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const branding = await getBranding();
+
   return (
     <LenisProvider>
       {/* Salto para conteúdo — acessibilidade por teclado. */}
@@ -18,9 +24,11 @@ export default function PublicLayout({
       >
         Saltar para o conteúdo
       </a>
-      <Header />
+      <ScrollProgress />
+      <Header branding={branding} />
       <main id="conteudo">{children}</main>
-      <Footer />
+      <Footer branding={branding} />
+      <GrainOverlay />
     </LenisProvider>
   );
 }

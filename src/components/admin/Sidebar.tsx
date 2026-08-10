@@ -5,21 +5,27 @@ import { usePathname } from "next/navigation";
 import { logout } from "@/lib/actions/auth";
 
 const NAV = [
-  { href: "/admin", label: "Dashboard", icon: "▨", exact: true },
-  { href: "/admin/carros", label: "Viaturas", icon: "▦", exact: false },
-  { href: "/admin/carros/novo", label: "Nova viatura", icon: "＋", exact: true },
-  { href: "/admin/pagina-inicial", label: "Página inicial", icon: "◧", exact: false },
-  { href: "/admin/leads", label: "Leads", icon: "✉", exact: false },
+  { href: "/admin", label: "Dashboard", icon: "▨", exact: true, adminOnly: false },
+  { href: "/admin/carros", label: "Viaturas", icon: "▦", exact: false, adminOnly: false },
+  { href: "/admin/carros/novo", label: "Nova viatura", icon: "＋", exact: true, adminOnly: false },
+  { href: "/admin/pagina-inicial", label: "Página inicial", icon: "◧", exact: false, adminOnly: false },
+  { href: "/admin/leads", label: "Leads", icon: "✉", exact: false, adminOnly: false },
+  { href: "/admin/utilizadores", label: "Utilizadores", icon: "◑", exact: false, adminOnly: true },
+  { href: "/admin/definicoes", label: "Definições", icon: "⚙", exact: false, adminOnly: true },
 ];
 
 export function Sidebar({
   user,
+  companyName = "engineLine",
   newLeads = 0,
 }: {
   user: { name: string; role: string };
+  companyName?: string;
   newLeads?: number;
 }) {
   const pathname = usePathname();
+  const isAdmin = user.role === "admin";
+  const items = NAV.filter((i) => !i.adminOnly || isAdmin);
 
   const isActive = (href: string, exact: boolean) =>
     exact ? pathname === href : pathname.startsWith(href);
@@ -27,8 +33,8 @@ export function Sidebar({
   return (
     <aside className="flex h-full flex-col gap-6 border-r border-white/10 bg-ink-soft p-5">
       <Link href="/admin" className="flex items-center gap-2 px-2">
-        <span className="text-lg font-bold tracking-tight text-paper">
-          engine<span className="text-accent">Line</span>
+        <span className="truncate text-lg font-bold tracking-tight text-paper">
+          {companyName}
         </span>
         <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-paper/60">
           Admin
@@ -36,7 +42,7 @@ export function Sidebar({
       </Link>
 
       <nav className="flex flex-1 flex-col gap-1">
-        {NAV.map((item) => {
+        {items.map((item) => {
           const active = isActive(item.href, item.exact);
           return (
             <Link

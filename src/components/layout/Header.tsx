@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { site } from "@/lib/site";
+import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
 
 const NAV = [
   { href: "/", label: "Início" },
@@ -13,7 +15,11 @@ const NAV = [
   { href: "/contactos", label: "Contactos" },
 ];
 
-export function Header() {
+export function Header({
+  branding = DEFAULT_BRANDING,
+}: {
+  branding?: Branding;
+}) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -39,10 +45,21 @@ export function Header() {
       <nav className="container-px flex h-16 items-center justify-between md:h-20">
         <Link
           href="/"
-          className="text-lg font-bold tracking-tight text-paper"
-          aria-label={`${site.name} — página inicial`}
+          className="flex items-center gap-2 text-lg font-bold tracking-tight text-paper"
+          aria-label={`${branding.companyName} — página inicial`}
         >
-          engine<span className="text-accent">Line</span>
+          {branding.logoUrl ? (
+            <Image
+              src={branding.logoUrl}
+              alt={branding.companyName}
+              width={160}
+              height={40}
+              className="h-8 w-auto object-contain"
+              priority
+            />
+          ) : (
+            <span>{branding.companyName}</span>
+          )}
         </Link>
 
         <ul className="hidden items-center gap-8 md:flex">

@@ -189,6 +189,22 @@ type SiteContentInsert = {
 };
 type SiteContentUpdate = Partial<SiteContentInsert>;
 
+// ---- site_settings ---------------------------------------------------------
+type SiteSettingsRow = {
+  id: number;
+  company_name: string;
+  logo_url: string | null;
+  tagline: string | null;
+  updated_at: string;
+};
+type SiteSettingsInsert = {
+  id?: number;
+  company_name?: string;
+  logo_url?: string | null;
+  tagline?: string | null;
+};
+type SiteSettingsUpdate = Partial<SiteSettingsInsert>;
+
 export type Database = {
   public: {
     Tables: {
@@ -220,6 +236,12 @@ export type Database = {
         Row: SiteContentRow;
         Insert: SiteContentInsert;
         Update: SiteContentUpdate;
+        Relationships: [];
+      };
+      site_settings: {
+        Row: SiteSettingsRow;
+        Insert: SiteSettingsInsert;
+        Update: SiteSettingsUpdate;
         Relationships: [];
       };
     };

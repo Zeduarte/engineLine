@@ -7,6 +7,8 @@ import {
   mergeHomeContent,
   type HomeContent,
 } from "@/lib/home-content";
+import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
+import { publicMediaUrl } from "@/lib/storage";
 
 /**
  * Leituras PÚBLICAS do inventário (Supabase).
@@ -104,6 +106,24 @@ export async function getHomeContent(): Promise<HomeContent> {
   return mergeHomeContent(
     (data?.content as Partial<HomeContent> | undefined) ?? null,
   );
+}
+
+/** Marca do site (nome + logótipo). Cai nos defaults se ainda não definida. */
+export async function getBranding(): Promise<Branding> {
+  const { data, error } = await supabasePublic
+    .from("site_settings")
+    .select("company_name, logo_url, tagline")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (error || !data) {
+    return DEFAULT_BRANDING;
+  }
+  return {
+    companyName: data.company_name || DEFAULT_BRANDING.companyName,
+    logoUrl: data.logo_url ? publicMediaUrl(data.logo_url) : null,
+    tagline: data.tagline,
+  };
 }
 
 export async function getAllSlugs(): Promise<string[]> {

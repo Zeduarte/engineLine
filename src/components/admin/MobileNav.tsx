@@ -6,28 +6,33 @@ import { usePathname } from "next/navigation";
 import { logout } from "@/lib/actions/auth";
 
 const NAV = [
-  { href: "/admin", label: "Dashboard", exact: true },
-  { href: "/admin/carros", label: "Viaturas", exact: false },
-  { href: "/admin/carros/novo", label: "Nova viatura", exact: true },
-  { href: "/admin/pagina-inicial", label: "Página inicial", exact: false },
-  { href: "/admin/leads", label: "Leads", exact: false },
+  { href: "/admin", label: "Dashboard", exact: true, adminOnly: false },
+  { href: "/admin/carros", label: "Viaturas", exact: false, adminOnly: false },
+  { href: "/admin/carros/novo", label: "Nova viatura", exact: true, adminOnly: false },
+  { href: "/admin/pagina-inicial", label: "Página inicial", exact: false, adminOnly: false },
+  { href: "/admin/leads", label: "Leads", exact: false, adminOnly: false },
+  { href: "/admin/utilizadores", label: "Utilizadores", exact: false, adminOnly: true },
+  { href: "/admin/definicoes", label: "Definições", exact: false, adminOnly: true },
 ];
 
 export function MobileNav({
   user,
+  companyName = "engineLine",
   newLeads = 0,
 }: {
   user: { name: string; role: string };
+  companyName?: string;
   newLeads?: number;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const items = NAV.filter((i) => !i.adminOnly || user.role === "admin");
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-ink-soft/95 backdrop-blur">
       <div className="flex items-center justify-between px-4 py-3">
         <Link href="/admin" className="text-base font-bold tracking-tight">
-          engine<span className="text-accent">Line</span>
+          <span className="text-paper">{companyName}</span>
           <span className="ml-1 text-xs text-paper/50">Admin</span>
         </Link>
         <button
@@ -43,7 +48,7 @@ export function MobileNav({
 
       {open && (
         <nav className="border-t border-white/10 px-2 py-2">
-          {NAV.map((item) => {
+          {items.map((item) => {
             const active = item.exact
               ? pathname === item.href
               : pathname.startsWith(item.href);

@@ -125,3 +125,20 @@ export const homeContentSchema = z.object({
 });
 
 export type HomeContentValues = z.infer<typeof homeContentSchema>;
+
+// ---- Marca do site (admin) -------------------------------------------------
+export const siteSettingsSchema = z.object({
+  company_name: z.string().trim().min(1, "Indique o nome da empresa").max(60),
+  tagline: z.string().trim().max(160).optional().or(z.literal("")),
+  logo_url: z.string().trim().max(400).nullable().optional(),
+});
+export type SiteSettingsValues = z.infer<typeof siteSettingsSchema>;
+
+// ---- Novo utilizador (admin) ----------------------------------------------
+export const newUserSchema = z.object({
+  full_name: z.string().trim().min(2, "Indique o nome").max(80),
+  email: z.string().trim().email("Email inválido"),
+  password: z.string().min(8, "Mínimo 8 caracteres").max(72),
+  role: z.enum(["admin", "vendedor"]).default("vendedor"),
+});
+export type NewUserValues = z.infer<typeof newUserSchema>;

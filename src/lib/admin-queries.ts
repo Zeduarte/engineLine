@@ -168,6 +168,39 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   };
 }
 
+/** Marca do site para edição no backoffice. */
+export async function getSiteSettings(): Promise<{
+  company_name: string;
+  logo_url: string | null;
+  tagline: string | null;
+}> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("site_settings")
+    .select("company_name, logo_url, tagline")
+    .eq("id", 1)
+    .maybeSingle();
+  return {
+    company_name: data?.company_name ?? "engineLine",
+    logo_url: data?.logo_url ?? null,
+    tagline: data?.tagline ?? null,
+  };
+}
+
+/** Todos os perfis (só admin, via RLS). */
+export async function getProfiles(): Promise<ProfileRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) {
+    console.error("getProfiles:", error.message);
+    return [];
+  }
+  return data as ProfileRow[];
+}
+
 /** Leads mais recentes para gestão. */
 export async function getLeads(): Promise<LeadRow[]> {
   const supabase = await createClient();
