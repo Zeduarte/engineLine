@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/admin-queries";
 import { siteSettingsSchema } from "@/lib/schemas";
@@ -45,7 +45,8 @@ export async function saveSiteSettings(input: unknown): Promise<SettingsResult> 
     return { ok: false, error: error.message };
   }
 
-  // A marca aparece em todo o site → revalida tudo.
+  // A marca aparece em todo o site → invalida a cache e revalida as páginas.
+  revalidateTag("branding");
   revalidatePath("/", "layout");
   revalidatePath("/admin", "layout");
   return { ok: true };

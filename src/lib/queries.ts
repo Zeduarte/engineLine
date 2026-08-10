@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { supabasePublic } from "@/lib/supabase/public";
 import { toVehicle } from "@/lib/mappers";
 import type { CarWithMedia } from "@/lib/supabase/database.types";
@@ -108,23 +109,32 @@ export async function getHomeContent(): Promise<HomeContent> {
   );
 }
 
-/** Marca do site (nome + logótipo). Cai nos defaults se ainda não definida. */
-export async function getBranding(): Promise<Branding> {
-  const { data, error } = await supabasePublic
-    .from("site_settings")
-    .select("company_name, logo_url, tagline")
-    .eq("id", 1)
-    .maybeSingle();
+/**
+ * Marca do site (nome + logótipo). Como aparece em todas as páginas, é mantida
+ * em cache (tag "branding") para não bater na BD a cada request — a ação de
+ * gravar invalida essa cache. Cai nos defaults se ainda não definida (ou se a
+ * tabela ainda não existir).
+ */
+export const getBranding = unstable_cache(
+  async (): Promise<Branding> => {
+    const { data, error } = await supabasePublic
+      .from("site_settings")
+      .select("company_name, logo_url, tagline")
+      .eq("id", 1)
+      .maybeSingle();
 
-  if (error || !data) {
-    return DEFAULT_BRANDING;
-  }
-  return {
-    companyName: data.company_name || DEFAULT_BRANDING.companyName,
-    logoUrl: data.logo_url ? publicMediaUrl(data.logo_url) : null,
-    tagline: data.tagline,
-  };
-}
+    if (error || !data) {
+      return DEFAULT_BRANDING;
+    }
+    return {
+      companyName: data.company_name || DEFAULT_BRANDING.companyName,
+      logoUrl: data.logo_url ? publicMediaUrl(data.logo_url) : null,
+      tagline: data.tagline,
+    };
+  },
+  ["site-branding"],
+  { tags: ["branding"], revalidate: 300 },
+);
 
 export async function getAllSlugs(): Promise<string[]> {
   const supabase = supabasePublic;
