@@ -6,6 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import type { Vehicle } from "@/types/vehicle";
 import { formatKm, priceLabel } from "@/lib/format";
+import { CompareButton } from "@/components/inventory/CompareButton";
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -131,6 +132,11 @@ export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {
               </div>
             </>
           )}
+
+          {/* Comparar */}
+          <div className="absolute bottom-3 right-3 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            <CompareButton slug={vehicle.slug} />
+          </div>
         </motion.div>
 
         <div className="mt-5 flex items-start justify-between gap-4">

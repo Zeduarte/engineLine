@@ -98,10 +98,13 @@ export interface Vehicle {
 
 /** Payload dos filtros do inventário. */
 export interface VehicleFilters {
+  /** Pesquisa livre (marca, modelo, versão). */
+  query: string | null;
   make: string | null;
   model: string | null;
   fuel: FuelType | null;
   transmission: Transmission | null;
+  body: BodyType | null;
   minPrice: number | null;
   maxPrice: number | null;
   minYear: number | null;
