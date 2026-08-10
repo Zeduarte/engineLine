@@ -40,9 +40,15 @@ create table if not exists public.site_settings (
   company_name text not null default 'engineLine',
   logo_url     text,
   tagline      text,
+  accent       text not null default '#E8B15A',
+  accent_soft  text not null default '#C8934A',
   updated_at   timestamptz not null default now(),
   constraint site_settings_single_row check (id = 1)
 );
+
+-- Se a tabela já existia sem as colunas de cor, acrescenta-as.
+alter table public.site_settings add column if not exists accent text not null default '#E8B15A';
+alter table public.site_settings add column if not exists accent_soft text not null default '#C8934A';
 
 insert into public.site_settings (id, company_name)
 values (1, 'engineLine')

@@ -5,8 +5,8 @@ import { getVehicleBySlug, getAllSlugs } from "@/lib/queries";
 import { formatKm, priceLabel } from "@/lib/format";
 import { Gallery } from "@/components/vehicle/Gallery";
 import { Specs } from "@/components/vehicle/Specs";
-import { FinanceSimulator } from "@/components/vehicle/FinanceSimulator";
 import { TestDriveForm } from "@/components/vehicle/TestDriveForm";
+import { SellCTA } from "@/components/home/SellCTA";
 import { ContactBar } from "@/components/vehicle/ContactBar";
 import { VehicleJsonLd } from "@/components/seo/VehicleJsonLd";
 import { AnimatedText } from "@/components/ui/AnimatedText";
@@ -123,12 +123,16 @@ export default async function VehiclePage({ params }: { params: Params }) {
             </div>
 
             <div className="space-y-8 lg:sticky lg:top-28 lg:self-start">
-              <FinanceSimulator price={vehicle.price} />
               <TestDriveForm
                 vehicleName={`${vehicle.make} ${vehicle.model}`}
                 vehicleId={vehicle.id}
               />
             </div>
+          </div>
+
+          {/* Retoma / encomenda no fim da ficha */}
+          <div className="mt-20">
+            <SellCTA />
           </div>
         </div>
 

@@ -17,6 +17,8 @@ interface AnimatedTextProps {
   stagger?: number;
   /** Atraso inicial global (segundos). */
   delay?: number;
+  /** Palavras a realçar na cor de acento (ex.: ["premium", "costume"]). */
+  highlight?: string[];
 }
 
 /**
@@ -40,8 +42,12 @@ export function AnimatedText({
   className,
   stagger = 0.08,
   delay = 0,
+  highlight,
 }: AnimatedTextProps) {
   const units = splitUnits(children, splitBy);
+  const highlightSet = new Set((highlight ?? []).map((w) => w.toLowerCase()));
+  const isHighlighted = (unit: string) =>
+    highlightSet.has(unit.toLowerCase().replace(/[^\p{L}\p{N}]/gu, ""));
 
   const ref = useScrollAnimation<HTMLElement>((root) => {
     const targets = root.querySelectorAll<HTMLElement>("[data-unit]");
@@ -73,7 +79,10 @@ export function AnimatedText({
         aria-hidden="true"
         className="inline-block overflow-hidden align-bottom"
       >
-        <span data-unit className="inline-block will-change-transform">
+        <span
+          data-unit
+          className={`inline-block will-change-transform ${isHighlighted(unit) ? "text-accent" : ""}`}
+        >
           {unit}
           {splitBy !== "char" && i < units.length - 1 ? " " : ""}
         </span>

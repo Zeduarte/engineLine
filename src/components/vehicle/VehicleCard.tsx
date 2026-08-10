@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -37,8 +38,18 @@ function vehicleBadges(vehicle: Vehicle): { label: string; tone: string }[] {
 }
 
 export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {
-  const cover = vehicle.images[0]!;
+  const images = vehicle.images.length ? vehicle.images : [];
   const badges = vehicleBadges(vehicle);
+  const [index, setIndex] = useState(0);
+  const current = images[index] ?? images[0]!;
+  const hasMultiple = images.length > 1;
+
+  // As setas mudam a foto sem navegar para a ficha (o card é um Link).
+  function step(e: React.MouseEvent, dir: 1 | -1) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIndex((i) => (i + dir + images.length) % images.length);
+  }
 
   return (
     <motion.article
@@ -62,8 +73,9 @@ export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {
             className="absolute inset-0"
           >
             <Image
-              src={cover.src}
-              alt={cover.alt}
+              key={current.src}
+              src={current.src}
+              alt={current.alt}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               priority={priority}
@@ -86,6 +98,38 @@ export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {
                 </span>
               ))}
             </div>
+          )}
+
+          {/* Setas de navegação entre fotos */}
+          {hasMultiple && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => step(e, -1)}
+                aria-label="Foto anterior"
+                className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-ink/60 text-paper opacity-0 backdrop-blur transition-opacity hover:bg-ink/80 group-hover:opacity-100 focus:opacity-100"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={(e) => step(e, 1)}
+                aria-label="Foto seguinte"
+                className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-ink/60 text-paper opacity-0 backdrop-blur transition-opacity hover:bg-ink/80 group-hover:opacity-100 focus:opacity-100"
+              >
+                ›
+              </button>
+              <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+                {images.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all ${
+                      i === index ? "w-4 bg-paper" : "w-1.5 bg-paper/40"
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </motion.div>
 

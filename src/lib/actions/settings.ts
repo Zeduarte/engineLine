@@ -36,6 +36,8 @@ export async function saveSiteSettings(input: unknown): Promise<SettingsResult> 
       company_name: parsed.data.company_name,
       tagline: parsed.data.tagline || null,
       logo_url: parsed.data.logo_url ?? null,
+      accent: parsed.data.accent,
+      accent_soft: parsed.data.accent_soft,
     },
     { onConflict: "id" },
   );

@@ -210,6 +210,8 @@ type SiteSettingsRow = {
   company_name: string;
   logo_url: string | null;
   tagline: string | null;
+  accent: string;
+  accent_soft: string;
   updated_at: string;
 };
 type SiteSettingsInsert = {
@@ -217,6 +219,8 @@ type SiteSettingsInsert = {
   company_name?: string;
   logo_url?: string | null;
   tagline?: string | null;
+  accent?: string;
+  accent_soft?: string;
 };
 type SiteSettingsUpdate = Partial<SiteSettingsInsert>;
 

@@ -131,10 +131,17 @@ export const homeContentSchema = z.object({
 export type HomeContentValues = z.infer<typeof homeContentSchema>;
 
 // ---- Marca do site (admin) -------------------------------------------------
+const hexColor = z
+  .string()
+  .trim()
+  .regex(/^#([0-9a-fA-F]{6})$/, "Cor inválida (use #RRGGBB)");
+
 export const siteSettingsSchema = z.object({
   company_name: z.string().trim().min(1, "Indique o nome da empresa").max(60),
   tagline: z.string().trim().max(160).optional().or(z.literal("")),
   logo_url: z.string().trim().max(400).nullable().optional(),
+  accent: hexColor.default("#E8B15A"),
+  accent_soft: hexColor.default("#C8934A"),
 });
 export type SiteSettingsValues = z.infer<typeof siteSettingsSchema>;
 

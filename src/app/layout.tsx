@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { site } from "@/lib/site";
+import { getBranding } from "@/lib/queries";
 
 // next/font: auto-host, sem pedido a terceiros, sem layout shift. Exposto
 // como CSS var e consumido pelo Tailwind (font-sans).
@@ -41,12 +42,20 @@ export const viewport: Viewport = {
  * A "chrome" do site público (Header/Footer/Lenis) vive em `(public)/layout`;
  * o backoffice tem a sua própria em `admin/layout`.
  */
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const branding = await getBranding();
+
   return (
     <html lang="pt-PT" className={inter.variable}>
       <body className="min-h-dvh bg-ink font-sans antialiased">
+        {/* Cores da marca escolhidas no backoffice — sobrepõem os defaults. */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `:root{--accent:${branding.accent};--accent-soft:${branding.accentSoft};}`,
+          }}
+        />
         {children}
         <Toaster
           theme="dark"

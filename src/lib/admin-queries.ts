@@ -173,17 +173,21 @@ export async function getSiteSettings(): Promise<{
   company_name: string;
   logo_url: string | null;
   tagline: string | null;
+  accent: string;
+  accent_soft: string;
 }> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("site_settings")
-    .select("company_name, logo_url, tagline")
+    .select("company_name, logo_url, tagline, accent, accent_soft")
     .eq("id", 1)
     .maybeSingle();
   return {
     company_name: data?.company_name ?? "engineLine",
     logo_url: data?.logo_url ?? null,
     tagline: data?.tagline ?? null,
+    accent: data?.accent ?? "#E8B15A",
+    accent_soft: data?.accent_soft ?? "#C8934A",
   };
 }
 

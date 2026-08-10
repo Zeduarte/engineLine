@@ -119,7 +119,7 @@ export const getBranding = unstable_cache(
   async (): Promise<Branding> => {
     const { data, error } = await supabasePublic
       .from("site_settings")
-      .select("company_name, logo_url, tagline")
+      .select("company_name, logo_url, tagline, accent, accent_soft")
       .eq("id", 1)
       .maybeSingle();
 
@@ -130,6 +130,8 @@ export const getBranding = unstable_cache(
       companyName: data.company_name || DEFAULT_BRANDING.companyName,
       logoUrl: data.logo_url ? publicMediaUrl(data.logo_url) : null,
       tagline: data.tagline,
+      accent: data.accent || DEFAULT_BRANDING.accent,
+      accentSoft: data.accent_soft || DEFAULT_BRANDING.accentSoft,
     };
   },
   ["site-branding"],

@@ -3,6 +3,7 @@ import { BrandMarquee } from "@/components/home/BrandMarquee";
 import { FeaturedVehicles } from "@/components/home/FeaturedVehicles";
 import { PinnedTrust } from "@/components/home/PinnedTrust";
 import { ContactCTA } from "@/components/home/ContactCTA";
+import { SellCTA } from "@/components/home/SellCTA";
 import { getRecentVehicles, getHomeContent } from "@/lib/queries";
 
 // ISR: revalida a cada 60s — novos destaques e edições de conteúdo aparecem
@@ -23,6 +24,7 @@ export default async function HomePage() {
       <BrandMarquee brands={content.brands} />
       <FeaturedVehicles vehicles={recent} />
       <PinnedTrust content={content.trust} />
+      <SellCTA />
       <ContactCTA content={content.cta} />
     </>
   );
