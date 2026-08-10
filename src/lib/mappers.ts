@@ -105,5 +105,6 @@ export function toVehicle(car: CarWithMedia): Vehicle {
     video,
     highlights: deriveHighlights(car),
     updatedAt: car.updated_at,
+    createdAt: car.created_at,
   };
 }

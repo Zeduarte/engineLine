@@ -29,8 +29,19 @@ export type BodyType =
   | "Monovolume";
 export type CarStatus = "draft" | "published" | "reserved" | "sold";
 export type MediaKind = "image" | "video";
-export type LeadKind = "contact" | "test_drive" | "finance";
-export type LeadStatus = "new" | "contacted" | "closed";
+export type LeadKind =
+  | "contact"
+  | "test_drive"
+  | "finance"
+  | "trade_in"
+  | "order";
+export type LeadStatus =
+  | "new"
+  | "contacted"
+  | "proposal"
+  | "won"
+  | "lost"
+  | "closed";
 
 export type HighlightJson = {
   label: string;
@@ -160,6 +171,8 @@ type LeadsRow = {
   phone: string | null;
   message: string | null;
   preferred_date: string | null;
+  notes: string | null;
+  car_details: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -174,6 +187,8 @@ type LeadsInsert = {
   phone?: string | null;
   message?: string | null;
   preferred_date?: string | null;
+  notes?: string | null;
+  car_details?: Record<string, unknown>;
 }
 type LeadsUpdate = Partial<LeadsInsert>;
 

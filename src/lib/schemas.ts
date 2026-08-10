@@ -69,9 +69,11 @@ export const carFormSchema = z
 
 export type CarFormValues = z.infer<typeof carFormSchema>;
 
-/** Formulário público de lead (contacto / test drive). */
+/** Formulário público de lead (contacto / test drive / retoma / encomenda). */
 export const leadSchema = z.object({
-  kind: z.enum(["contact", "test_drive", "finance"]).default("contact"),
+  kind: z
+    .enum(["contact", "test_drive", "finance", "trade_in", "order"])
+    .default("contact"),
   car_id: z.string().uuid().nullable().optional(),
   car_label: z.string().max(160).optional().or(z.literal("")),
   name: z.string().trim().min(2, "Indique o seu nome"),
@@ -84,6 +86,8 @@ export const leadSchema = z.object({
     .or(z.literal("")),
   message: z.string().trim().max(2000).optional().or(z.literal("")),
   preferred_date: z.string().optional().or(z.literal("")),
+  /** JSON com detalhes extra (ex.: carro de retoma). */
+  details: z.string().max(4000).optional().or(z.literal("")),
 });
 
 export type LeadValues = z.infer<typeof leadSchema>;

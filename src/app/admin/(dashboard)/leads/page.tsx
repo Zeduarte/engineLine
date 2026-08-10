@@ -25,6 +25,8 @@ export default async function LeadsPage() {
           message: l.message,
           car_label: l.car_label,
           preferred_date: l.preferred_date,
+          notes: l.notes,
+          car_details: l.car_details,
           created_at: l.created_at,
         }))}
       />

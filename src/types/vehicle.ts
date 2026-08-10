@@ -92,6 +92,8 @@ export interface Vehicle {
   highlights: VehicleSpec[];
   /** ISO da última atualização (para sitemap / ordenação). */
   updatedAt?: string;
+  /** ISO da criação (usado para o badge "Novidade"). */
+  createdAt?: string;
 }
 
 /** Payload dos filtros do inventário. */

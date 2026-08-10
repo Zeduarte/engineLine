@@ -22,8 +22,23 @@ interface VehicleCardProps {
  * de fazer um corte seco. As micro-interações (elevação, zoom da imagem) vivem
  * em variantes `whileHover`, respeitando o teclado via `whileFocus`.
  */
+/** Badges derivados dos dados da viatura (sem configuração manual). */
+function vehicleBadges(vehicle: Vehicle): { label: string; tone: string }[] {
+  const badges: { label: string; tone: string }[] = [];
+  if (vehicle.createdAt) {
+    const days =
+      (Date.now() - new Date(vehicle.createdAt).getTime()) / 86_400_000;
+    if (days <= 14) badges.push({ label: "Novidade", tone: "bg-accent text-ink" });
+  }
+  if (vehicle.mileage > 0 && vehicle.mileage < 30_000) {
+    badges.push({ label: "Poucos km", tone: "bg-emerald-500 text-ink" });
+  }
+  return badges.slice(0, 2);
+}
+
 export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {
   const cover = vehicle.images[0]!;
+  const badges = vehicleBadges(vehicle);
 
   return (
     <motion.article
@@ -59,6 +74,19 @@ export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {
           <div className="absolute right-4 top-4 rounded-full bg-ink/70 px-3 py-1 text-xs font-medium text-paper backdrop-blur">
             {vehicle.year}
           </div>
+
+          {badges.length > 0 && (
+            <div className="absolute left-4 top-4 flex flex-col items-start gap-1.5">
+              {badges.map((b) => (
+                <span
+                  key={b.label}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${b.tone}`}
+                >
+                  {b.label}
+                </span>
+              ))}
+            </div>
+          )}
         </motion.div>
 
         <div className="mt-5 flex items-start justify-between gap-4">
