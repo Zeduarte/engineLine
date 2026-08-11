@@ -1,0 +1,9 @@
+# Configuração do Netlify para uma app Next.js (App Router / SSR).
+# O plugin oficial trata das rotas dinâmicas, Server Actions e middleware —
+# sem ele, o Netlify serve como estático e devolve 404 nas rotas.
+
+[build]
+  command = "npm run build"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
