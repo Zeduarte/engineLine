@@ -4,6 +4,8 @@
 
 [build]
   command = "npm run build"
+  # O runtime do Next.js publica a partir de `.next` (não da raiz do projeto).
+  publish = ".next"
 
   # Variáveis PÚBLICAS do build. A chave "publishable/anon" é segura em código:
   # é a mesma que já é enviada para o browser (a segurança vive na RLS).
