@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getVehicleBySlug, getAllSlugs } from "@/lib/queries";
+import { getVehicleBySlug, getAllSlugs, getBranding } from "@/lib/queries";
 import { formatKm, priceLabel } from "@/lib/format";
 import { Gallery } from "@/components/vehicle/Gallery";
 import { Specs } from "@/components/vehicle/Specs";
 import { TransparencySection } from "@/components/vehicle/TransparencySection";
 import { TestDriveForm } from "@/components/vehicle/TestDriveForm";
+import { ReserveForm } from "@/components/vehicle/ReserveForm";
+import { ViewTracker } from "@/components/vehicle/ViewTracker";
 import { SellCTA } from "@/components/home/SellCTA";
 import { ContactBar } from "@/components/vehicle/ContactBar";
 import { VehicleJsonLd } from "@/components/seo/VehicleJsonLd";
@@ -58,9 +60,14 @@ export default async function VehiclePage({ params }: { params: Params }) {
   const vehicle = await getVehicleBySlug(slug);
   if (!vehicle) notFound();
 
+  const branding = await getBranding();
+  const canReserve =
+    branding.reservationEnabled && vehicle.status === "published";
+
   return (
     <>
       <VehicleJsonLd vehicle={vehicle} />
+      <ViewTracker carId={vehicle.id} slug={vehicle.slug} />
 
       <article className="pt-24 md:pt-28">
         <div className="container-px">
@@ -148,6 +155,13 @@ export default async function VehiclePage({ params }: { params: Params }) {
             </div>
 
             <div className="space-y-8 lg:sticky lg:top-28 lg:self-start">
+              {canReserve && (
+                <ReserveForm
+                  vehicleName={`${vehicle.make} ${vehicle.model}`}
+                  vehicleId={vehicle.id}
+                  depositAmount={branding.depositAmount}
+                />
+              )}
               <TestDriveForm
                 vehicleName={`${vehicle.make} ${vehicle.model}`}
                 vehicleId={vehicle.id}

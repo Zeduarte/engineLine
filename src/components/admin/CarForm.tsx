@@ -12,6 +12,7 @@ import {
   TRANSMISSIONS,
   BODY_TYPES,
   CAR_STATUSES,
+  CHANNELS,
 } from "@/lib/schemas";
 import { CAR_STATUS_LABEL } from "./StatusBadge";
 import { createCar, updateCar } from "@/lib/actions/cars";
@@ -26,6 +27,13 @@ export function CarForm({
   const router = useRouter();
   const [extras, setExtras] = useState<string[]>(defaults?.extras ?? []);
   const [extraInput, setExtraInput] = useState("");
+  const [channels, setChannels] = useState<string[]>(defaults?.channels ?? []);
+
+  function toggleChannel(id: string) {
+    setChannels((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
+    );
+  }
 
   const {
     register,
@@ -65,6 +73,7 @@ export function CarForm({
       service_book: false,
       warranty_months: undefined,
       last_inspection: "",
+      channels: [],
       ...defaults,
     },
   });
@@ -86,7 +95,7 @@ export function CarForm({
   }
 
   async function onSubmit(values: CarFormValues) {
-    const payload = { ...values, extras };
+    const payload = { ...values, extras, channels };
     const res = carId
       ? await updateCar(carId, payload)
       : await createCar(payload);
@@ -329,6 +338,31 @@ export function CarForm({
               </ul>
             )}
           </div>
+        </div>
+      </Section>
+
+      {/* Exportação multi-canal */}
+      <Section title="Publicar noutras plataformas">
+        <p className="mb-4 text-xs text-paper/50">
+          Selecione os portais onde quer anunciar esta viatura. As viaturas
+          escolhidas ficam disponíveis no feed de exportação de cada plataforma
+          (ver Definições → Integrações).
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {CHANNELS.map((c) => (
+            <label
+              key={c.id}
+              className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-3 py-2.5 text-sm text-paper/80 transition-colors hover:border-white/20"
+            >
+              <input
+                type="checkbox"
+                className="accent-[color:var(--accent)]"
+                checked={channels.includes(c.id)}
+                onChange={() => toggleChannel(c.id)}
+              />
+              {c.label}
+            </label>
+          ))}
         </div>
       </Section>
 

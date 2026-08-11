@@ -1,0 +1,134 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+/**
+ * Runtime do site público (cliente):
+ *   1. Regista o Service Worker (PWA).
+ *   2. Gere o consentimento de cookies (RGPD).
+ *   3. Só carrega Google Analytics / Meta Pixel DEPOIS de o visitante aceitar.
+ *
+ * Sem consentimento explícito, nenhum script de rastreio é carregado.
+ */
+
+const CONSENT_KEY = "el-consent";
+
+declare global {
+  interface Window {
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
+    fbq?: ((...args: unknown[]) => void) & { queue?: unknown[]; loaded?: boolean };
+    _fbq?: unknown;
+  }
+}
+
+function loadGA4(id: string) {
+  if (document.getElementById("ga4-src")) return;
+  const s = document.createElement("script");
+  s.id = "ga4-src";
+  s.async = true;
+  s.src = `https://www.googletagmanager.com/gtag/js?id=${id}`;
+  document.head.appendChild(s);
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function gtag(...args: unknown[]) {
+    window.dataLayer!.push(args);
+  };
+  window.gtag("js", new Date());
+  window.gtag("config", id);
+}
+
+function loadPixel(id: string) {
+  if (window.fbq) return;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const n: any = (window.fbq = function (...args: unknown[]) {
+    if (n.callMethod) {
+      n.callMethod(...args);
+    } else {
+      n.queue.push(args);
+    }
+  });
+  if (!window._fbq) window._fbq = n;
+  n.push = n;
+  n.loaded = true;
+  n.version = "2.0";
+  n.queue = [];
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  const s = document.createElement("script");
+  s.async = true;
+  s.src = "https://connect.facebook.net/en_US/fbevents.js";
+  document.head.appendChild(s);
+  window.fbq!("init", id);
+  window.fbq!("track", "PageView");
+}
+
+export function SiteRuntime({
+  ga4Id,
+  pixelId,
+}: {
+  ga4Id: string | null;
+  pixelId: string | null;
+}) {
+  const [decision, setDecision] = useState<string | null>("pending");
+
+  // Regista o Service Worker (independente do consentimento).
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
+
+  // Lê a decisão guardada.
+  useEffect(() => {
+    try {
+      setDecision(localStorage.getItem(CONSENT_KEY));
+    } catch {
+      setDecision(null);
+    }
+  }, []);
+
+  // Carrega os scripts quando há consentimento.
+  useEffect(() => {
+    if (decision !== "yes") return;
+    if (ga4Id) loadGA4(ga4Id);
+    if (pixelId) loadPixel(pixelId);
+  }, [decision, ga4Id, pixelId]);
+
+  function decide(value: "yes" | "no") {
+    try {
+      localStorage.setItem(CONSENT_KEY, value);
+    } catch {
+      /* ignora */
+    }
+    setDecision(value);
+  }
+
+  const hasTrackers = Boolean(ga4Id || pixelId);
+  const showBanner = hasTrackers && decision === null;
+
+  if (!showBanner) return null;
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-[60] px-4 pb-4">
+      <div className="mx-auto flex max-w-3xl flex-col gap-4 rounded-2xl border border-white/10 bg-ink-soft/95 p-5 shadow-2xl backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-paper/70">
+          Usamos cookies para analisar o tráfego e melhorar a sua experiência.
+          Pode aceitar ou recusar os cookies de análise.
+        </p>
+        <div className="flex shrink-0 gap-2">
+          <button
+            onClick={() => decide("no")}
+            className="rounded-full border border-white/15 px-5 py-2 text-sm text-paper/80 transition-colors hover:border-white/40"
+          >
+            Recusar
+          </button>
+          <button
+            onClick={() => decide("yes")}
+            className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-ink transition-transform hover:scale-[1.02]"
+          >
+            Aceitar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -69,10 +69,15 @@ export interface DashboardStats {
   createdThisMonth: number;
   soldThisMonth: number;
   newLeads: number;
+  totalViews: number;
+  viewsThisMonth: number;
+  totalLeads: number;
+  contactRate: number;
   byFuel: { name: string; value: number }[];
   byMake: { name: string; value: number }[];
   byPriceBand: { name: string; value: number }[];
   salesByMonth: { name: string; vendidos: number }[];
+  topViewed: { name: string; slug: string; views: number }[];
 }
 
 const PRICE_BANDS: [string, number, number][] = [
@@ -91,22 +96,67 @@ const MONTHS_PT = [
 /** Agrega KPIs e séries para os gráficos da dashboard. */
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = await createClient();
-  const [{ data: cars }, { count: leadCount }] = await Promise.all([
+  const monthStartIso = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    1,
+  ).toISOString();
+  const [
+    { data: cars },
+    { count: leadCount },
+    { count: totalLeads },
+    { data: views },
+    { count: viewsThisMonth },
+  ] = await Promise.all([
     supabase
       .from("cars")
       .select(
-        "id, make, fuel, price, price_on_request, status, created_at, sold_at",
+        "id, slug, make, model, fuel, price, price_on_request, status, created_at, sold_at",
       ),
     supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
       .eq("status", "new"),
+    supabase.from("leads").select("id", { count: "exact", head: true }),
+    supabase.from("car_views").select("car_id, slug"),
+    supabase
+      .from("car_views")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", monthStartIso),
   ]);
 
   const list = (cars ?? []) as Pick<
     CarRow,
-    "make" | "fuel" | "price" | "price_on_request" | "status" | "created_at" | "sold_at"
+    | "id"
+    | "slug"
+    | "make"
+    | "model"
+    | "fuel"
+    | "price"
+    | "price_on_request"
+    | "status"
+    | "created_at"
+    | "sold_at"
   >[];
+
+  // Visitas por viatura → top 5 mais vistas.
+  const viewRows = (views ?? []) as { car_id: string | null; slug: string | null }[];
+  const totalViews = viewRows.length;
+  const viewsByCar = new Map<string, number>();
+  for (const v of viewRows) {
+    if (v.car_id) viewsByCar.set(v.car_id, (viewsByCar.get(v.car_id) ?? 0) + 1);
+  }
+  const topViewed = [...viewsByCar.entries()]
+    .map(([id, count]) => {
+      const car = list.find((c) => c.id === id);
+      return {
+        name: car ? `${car.make} ${car.model}` : "—",
+        slug: car?.slug ?? "",
+        views: count,
+      };
+    })
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 5);
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -161,10 +211,17 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       (c) => c.sold_at && new Date(c.sold_at) >= monthStart,
     ).length,
     newLeads: leadCount ?? 0,
+    totalViews,
+    viewsThisMonth: viewsThisMonth ?? 0,
+    totalLeads: totalLeads ?? 0,
+    contactRate: totalViews
+      ? Math.round(((totalLeads ?? 0) / totalViews) * 1000) / 10
+      : 0,
     byFuel: tally((c) => c.fuel),
     byMake: tally((c) => c.make).slice(0, 6),
     byPriceBand,
     salesByMonth,
+    topViewed,
   };
 }
 
@@ -189,11 +246,17 @@ export async function getSiteSettings(): Promise<{
   tagline: string | null;
   accent: string;
   accent_soft: string;
+  ga4_id: string | null;
+  pixel_id: string | null;
+  reservation_enabled: boolean;
+  deposit_amount: number;
 }> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("site_settings")
-    .select("company_name, logo_url, tagline, accent, accent_soft")
+    .select(
+      "company_name, logo_url, tagline, accent, accent_soft, ga4_id, pixel_id, reservation_enabled, deposit_amount",
+    )
     .eq("id", 1)
     .maybeSingle();
   return {
@@ -202,7 +265,25 @@ export async function getSiteSettings(): Promise<{
     tagline: data?.tagline ?? null,
     accent: data?.accent ?? "#E8B15A",
     accent_soft: data?.accent_soft ?? "#C8934A",
+    ga4_id: data?.ga4_id ?? null,
+    pixel_id: data?.pixel_id ?? null,
+    reservation_enabled: data?.reservation_enabled ?? false,
+    deposit_amount: data?.deposit_amount ?? 500,
   };
+}
+
+/**
+ * Credenciais das plataformas externas (admin). Devolve o JSON guardado em
+ * `integration_secrets`, ou `{}` se ainda não existir / sem permissão.
+ */
+export async function getIntegrations(): Promise<Record<string, unknown>> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("integration_secrets")
+    .select("data")
+    .eq("id", 1)
+    .maybeSingle();
+  return (data?.data as Record<string, unknown>) ?? {};
 }
 
 /** Todos os perfis (só admin, via RLS). */

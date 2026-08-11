@@ -45,6 +45,7 @@ export default async function EditCarPage({ params }: { params: Params }) {
     service_book: car.service_book,
     warranty_months: car.warranty_months ?? undefined,
     last_inspection: car.last_inspection ?? "",
+    channels: car.channels ?? [],
   };
 
   const media: MediaItem[] = (car.car_media ?? []).map((m) => ({

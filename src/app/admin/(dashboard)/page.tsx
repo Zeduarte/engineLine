@@ -85,11 +85,46 @@ export default async function DashboardPage() {
           value={String(stats.soldThisMonth)}
           accent={stats.soldThisMonth > 0}
         />
+        <Kpi
+          label="Visitas às fichas"
+          value={String(stats.totalViews)}
+          hint={`${stats.viewsThisMonth} este mês`}
+        />
+        <Kpi
+          label="Taxa de contacto"
+          value={`${stats.contactRate}%`}
+          hint={`${stats.totalLeads} leads / ${stats.totalViews} visitas`}
+          accent={stats.contactRate > 0}
+        />
       </section>
 
       <section className="mt-8">
         <InventoryCharts stats={stats} />
       </section>
+
+      {stats.topViewed.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-4 text-lg font-semibold text-paper">
+            Viaturas mais vistas
+          </h2>
+          <div className="card divide-y divide-white/5">
+            {stats.topViewed.map((v, i) => (
+              <div
+                key={v.slug || i}
+                className="flex items-center gap-4 p-3 text-sm"
+              >
+                <span className="w-6 text-center font-bold text-paper/30">
+                  {i + 1}
+                </span>
+                <span className="flex-1 truncate text-paper">{v.name}</span>
+                <span className="font-semibold text-accent">
+                  {v.views} {v.views === 1 ? "visita" : "visitas"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-8">
         <div className="mb-4 flex items-center justify-between">

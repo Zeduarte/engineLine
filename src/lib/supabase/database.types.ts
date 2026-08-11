@@ -34,7 +34,8 @@ export type LeadKind =
   | "test_drive"
   | "finance"
   | "trade_in"
-  | "order";
+  | "order"
+  | "reservation";
 export type LeadStatus =
   | "new"
   | "contacted"
@@ -104,6 +105,7 @@ type CarsRow = {
   service_book: boolean;
   warranty_months: number | null;
   last_inspection: string | null;
+  channels: string[];
   created_by: string | null;
   published_at: string | null;
   sold_at: string | null;
@@ -143,6 +145,7 @@ type CarsInsert = {
   service_book?: boolean;
   warranty_months?: number | null;
   last_inspection?: string | null;
+  channels?: string[];
   created_by?: string | null;
 }
 type CarsUpdate = Partial<CarsInsert>;
@@ -226,6 +229,10 @@ type SiteSettingsRow = {
   tagline: string | null;
   accent: string;
   accent_soft: string;
+  ga4_id: string | null;
+  pixel_id: string | null;
+  reservation_enabled: boolean;
+  deposit_amount: number;
   updated_at: string;
 };
 type SiteSettingsInsert = {
@@ -235,6 +242,10 @@ type SiteSettingsInsert = {
   tagline?: string | null;
   accent?: string;
   accent_soft?: string;
+  ga4_id?: string | null;
+  pixel_id?: string | null;
+  reservation_enabled?: boolean;
+  deposit_amount?: number;
 };
 type SiteSettingsUpdate = Partial<SiteSettingsInsert>;
 
@@ -260,6 +271,33 @@ type TestimonialsInsert = {
   position?: number;
 };
 type TestimonialsUpdate = Partial<TestimonialsInsert>;
+
+// ---- car_views -------------------------------------------------------------
+type CarViewsRow = {
+  id: number;
+  car_id: string | null;
+  slug: string | null;
+  session: string | null;
+  created_at: string;
+};
+type CarViewsInsert = {
+  car_id?: string | null;
+  slug?: string | null;
+  session?: string | null;
+};
+type CarViewsUpdate = Partial<CarViewsInsert>;
+
+// ---- integration_secrets ---------------------------------------------------
+type IntegrationSecretsRow = {
+  id: number;
+  data: Record<string, unknown>;
+  updated_at: string;
+};
+type IntegrationSecretsInsert = {
+  id?: number;
+  data?: Record<string, unknown>;
+};
+type IntegrationSecretsUpdate = Partial<IntegrationSecretsInsert>;
 
 export type Database = {
   public: {
@@ -306,10 +344,23 @@ export type Database = {
         Update: TestimonialsUpdate;
         Relationships: [];
       };
+      car_views: {
+        Row: CarViewsRow;
+        Insert: CarViewsInsert;
+        Update: CarViewsUpdate;
+        Relationships: [];
+      };
+      integration_secrets: {
+        Row: IntegrationSecretsRow;
+        Insert: IntegrationSecretsInsert;
+        Update: IntegrationSecretsUpdate;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
       is_staff: { Args: Record<string, never>; Returns: boolean };
+      is_admin: { Args: Record<string, never>; Returns: boolean };
     };
     Enums: {
       user_role: UserRole;

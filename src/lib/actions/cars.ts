@@ -78,6 +78,7 @@ function toRow(values: ReturnType<typeof carFormSchema.parse>): Omit<
     service_book: values.service_book,
     warranty_months: values.warranty_months ?? null,
     last_inspection: values.last_inspection || null,
+    channels: values.channels ?? [],
   };
 }
 

@@ -3,7 +3,11 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/admin-queries";
-import { siteSettingsSchema } from "@/lib/schemas";
+import {
+  siteSettingsSchema,
+  marketingSchema,
+  integrationsSchema,
+} from "@/lib/schemas";
 
 export interface SettingsResult {
   ok: boolean;
@@ -51,5 +55,70 @@ export async function saveSiteSettings(input: unknown): Promise<SettingsResult> 
   revalidateTag("branding");
   revalidatePath("/", "layout");
   revalidatePath("/admin", "layout");
+  return { ok: true };
+}
+
+/** Guarda definições de marketing/reservas (GA4, Pixel, sinal). Apenas admin. */
+export async function saveMarketing(input: unknown): Promise<SettingsResult> {
+  if (!(await requireAdmin())) {
+    return { ok: false, error: "Sem permissão. Apenas administradores." };
+  }
+
+  const parsed = marketingSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_settings").upsert(
+    {
+      id: 1,
+      ga4_id: parsed.data.ga4_id || null,
+      pixel_id: parsed.data.pixel_id || null,
+      reservation_enabled: parsed.data.reservation_enabled,
+      deposit_amount: parsed.data.deposit_amount,
+    },
+    { onConflict: "id" },
+  );
+
+  if (error) {
+    console.error("saveMarketing:", error.message);
+    return { ok: false, error: error.message };
+  }
+
+  revalidateTag("branding");
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/** Guarda credenciais das plataformas de exportação e do pagamento. Apenas admin. */
+export async function saveIntegrations(input: unknown): Promise<SettingsResult> {
+  if (!(await requireAdmin())) {
+    return { ok: false, error: "Sem permissão. Apenas administradores." };
+  }
+
+  const parsed = integrationsSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("integration_secrets").upsert(
+    { id: 1, data: parsed.data as Record<string, unknown> },
+    { onConflict: "id" },
+  );
+
+  if (error) {
+    console.error("saveIntegrations:", error.message);
+    return { ok: false, error: error.message };
+  }
+
+  revalidatePath("/admin/integracoes");
   return { ok: true };
 }

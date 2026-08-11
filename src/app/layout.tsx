@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { site } from "@/lib/site";
 import { getBranding } from "@/lib/queries";
+import { SiteRuntime } from "@/components/site/SiteRuntime";
 
 // next/font: auto-host, sem pedido a terceiros, sem layout shift. Exposto
 // como CSS var e consumido pelo Tailwind (font-sans).
@@ -57,6 +58,7 @@ export default async function RootLayout({
           }}
         />
         {children}
+        <SiteRuntime ga4Id={branding.ga4Id} pixelId={branding.pixelId} />
         <Toaster
           theme="dark"
           position="top-right"

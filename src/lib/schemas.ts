@@ -30,6 +30,21 @@ export const BODY_TYPES = [
 
 export const CAR_STATUSES = ["draft", "published", "reserved", "sold"] as const;
 
+/**
+ * Plataformas/portais externos para onde o inventário pode ser exportado.
+ * O `id` é usado no URL do feed (`/api/feeds/<id>.xml`) e nas credenciais.
+ */
+export const CHANNELS = [
+  { id: "standvirtual", label: "StandVirtual" },
+  { id: "olx", label: "OLX" },
+  { id: "autosapo", label: "auto SAPO" },
+  { id: "custojusto", label: "CustoJusto" },
+  { id: "piscapisca", label: "Piscapisca" },
+] as const;
+
+export const CHANNEL_IDS = CHANNELS.map((c) => c.id);
+export type ChannelId = (typeof CHANNELS)[number]["id"];
+
 export const carFormSchema = z
   .object({
     make: z.string().trim().min(1, "Indique a marca"),
@@ -70,6 +85,9 @@ export const carFormSchema = z
     service_book: z.boolean().default(false),
     warranty_months: z.coerce.number().int().min(0).max(120).nullable().optional(),
     last_inspection: z.string().optional().or(z.literal("")),
+
+    // Exportação multi-canal (portais externos onde publicar)
+    channels: z.array(z.string().trim().min(1)).default([]),
   })
   .refine((v) => v.price_on_request || (v.price != null && v.price > 0), {
     message: "Indique um preço ou marque 'sob consulta'",
@@ -81,7 +99,7 @@ export type CarFormValues = z.infer<typeof carFormSchema>;
 /** Formulário público de lead (contacto / test drive / retoma / encomenda). */
 export const leadSchema = z.object({
   kind: z
-    .enum(["contact", "test_drive", "finance", "trade_in", "order"])
+    .enum(["contact", "test_drive", "finance", "trade_in", "order", "reservation"])
     .default("contact"),
   car_id: z.string().uuid().nullable().optional(),
   car_label: z.string().max(160).optional().or(z.literal("")),
@@ -153,6 +171,48 @@ export const siteSettingsSchema = z.object({
   accent_soft: hexColor.default("#C8934A"),
 });
 export type SiteSettingsValues = z.infer<typeof siteSettingsSchema>;
+
+// ---- Marketing, reservas e consentimento (admin) --------------------------
+export const marketingSchema = z.object({
+  ga4_id: z
+    .string()
+    .trim()
+    .max(40)
+    .regex(/^(G-[A-Z0-9]+)?$/i, "ID GA4 inválido (ex.: G-XXXXXXX)")
+    .optional()
+    .or(z.literal("")),
+  pixel_id: z
+    .string()
+    .trim()
+    .max(40)
+    .regex(/^\d*$/, "ID do Pixel inválido (só dígitos)")
+    .optional()
+    .or(z.literal("")),
+  reservation_enabled: z.boolean().default(false),
+  deposit_amount: z.coerce.number().int().min(0).max(100000).default(500),
+});
+export type MarketingValues = z.infer<typeof marketingSchema>;
+
+// ---- Integrações / credenciais das plataformas (admin) --------------------
+const channelCred = z
+  .object({
+    username: z.string().trim().max(120).optional().or(z.literal("")),
+    token: z.string().trim().max(400).optional().or(z.literal("")),
+    enabled: z.boolean().default(false),
+  })
+  .partial()
+  .default({});
+
+export const integrationsSchema = z.object({
+  standvirtual: channelCred,
+  olx: channelCred,
+  autosapo: channelCred,
+  custojusto: channelCred,
+  piscapisca: channelCred,
+  stripe_secret: z.string().trim().max(200).optional().or(z.literal("")),
+  feed_token: z.string().trim().max(80).optional().or(z.literal("")),
+});
+export type IntegrationsValues = z.infer<typeof integrationsSchema>;
 
 // ---- Novo utilizador (admin) ----------------------------------------------
 export const newUserSchema = z.object({

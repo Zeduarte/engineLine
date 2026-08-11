@@ -31,6 +31,7 @@ const KIND_LABEL: Record<LeadKind, string> = {
   finance: "Financiamento",
   trade_in: "Retoma",
   order: "Encomenda",
+  reservation: "Reserva",
 };
 
 // Pipeline de estados (ordem visual do funil).

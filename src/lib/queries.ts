@@ -119,7 +119,9 @@ export const getBranding = unstable_cache(
   async (): Promise<Branding> => {
     const { data, error } = await supabasePublic
       .from("site_settings")
-      .select("company_name, logo_url, tagline, accent, accent_soft")
+      .select(
+        "company_name, logo_url, tagline, accent, accent_soft, ga4_id, pixel_id, reservation_enabled, deposit_amount",
+      )
       .eq("id", 1)
       .maybeSingle();
 
@@ -132,6 +134,10 @@ export const getBranding = unstable_cache(
       tagline: data.tagline,
       accent: data.accent || DEFAULT_BRANDING.accent,
       accentSoft: data.accent_soft || DEFAULT_BRANDING.accentSoft,
+      ga4Id: data.ga4_id || null,
+      pixelId: data.pixel_id || null,
+      reservationEnabled: data.reservation_enabled ?? false,
+      depositAmount: data.deposit_amount ?? DEFAULT_BRANDING.depositAmount,
     };
   },
   ["site-branding"],
@@ -160,6 +166,25 @@ export async function getTestimonials(): Promise<Testimonial[]> {
     return [];
   }
   return data as Testimonial[];
+}
+
+/**
+ * Viaturas publicadas marcadas para um determinado canal/portal externo.
+ * Usado nos feeds de exportação (`/api/feeds/<canal>.xml`).
+ */
+export async function getChannelVehicles(channel: string): Promise<Vehicle[]> {
+  const { data, error } = await supabasePublic
+    .from("cars")
+    .select(CAR_SELECT)
+    .eq("status", "published")
+    .contains("channels", [channel])
+    .order("published_at", { ascending: false, nullsFirst: false });
+
+  if (error) {
+    console.error("getChannelVehicles:", error.message);
+    return [];
+  }
+  return (data as unknown as CarWithMedia[]).map(toVehicle);
 }
 
 export async function getAllSlugs(): Promise<string[]> {
