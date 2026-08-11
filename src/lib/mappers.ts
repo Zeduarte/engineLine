@@ -106,5 +106,12 @@ export function toVehicle(car: CarWithMedia): Vehicle {
     highlights: deriveHighlights(car),
     updatedAt: car.updated_at,
     createdAt: car.created_at,
+    previousPrice: car.previous_price,
+    national: car.national,
+    owners: car.owners,
+    firstOwner: car.first_owner,
+    serviceBook: car.service_book,
+    warrantyMonths: car.warranty_months,
+    lastInspection: car.last_inspection,
   };
 }

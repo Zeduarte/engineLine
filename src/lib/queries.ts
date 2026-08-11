@@ -26,7 +26,7 @@ export async function getVehicles(): Promise<Vehicle[]> {
   const { data, error } = await supabase
     .from("cars")
     .select(CAR_SELECT)
-    .eq("status", "published")
+    .in("status", ["published","reserved"])
     .order("featured", { ascending: false })
     .order("published_at", { ascending: false, nullsFirst: false });
 
@@ -42,7 +42,7 @@ export async function getFeaturedVehicles(limit = 3): Promise<Vehicle[]> {
   const { data, error } = await supabase
     .from("cars")
     .select(CAR_SELECT)
-    .eq("status", "published")
+    .in("status", ["published","reserved"])
     .eq("featured", true)
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(limit);
@@ -59,7 +59,7 @@ export async function getRecentVehicles(limit = 12): Promise<Vehicle[]> {
   const { data, error } = await supabasePublic
     .from("cars")
     .select(CAR_SELECT)
-    .eq("status", "published")
+    .in("status", ["published","reserved"])
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -79,7 +79,7 @@ export async function getVehicleBySlug(
     .from("cars")
     .select(CAR_SELECT)
     .eq("slug", slug)
-    .eq("status", "published")
+    .in("status", ["published", "reserved", "sold"])
     .maybeSingle();
 
   if (error) {
@@ -138,12 +138,36 @@ export const getBranding = unstable_cache(
   { tags: ["branding"], revalidate: 300 },
 );
 
+export interface Testimonial {
+  id: string;
+  name: string;
+  rating: number;
+  body: string;
+  role: string | null;
+}
+
+/** Testemunhos publicados (para a secção de confiança). */
+export async function getTestimonials(): Promise<Testimonial[]> {
+  const { data, error } = await supabasePublic
+    .from("testimonials")
+    .select("id, name, rating, body, role")
+    .eq("published", true)
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getTestimonials:", error.message);
+    return [];
+  }
+  return data as Testimonial[];
+}
+
 export async function getAllSlugs(): Promise<string[]> {
   const supabase = supabasePublic;
   const { data, error } = await supabase
     .from("cars")
     .select("slug")
-    .eq("status", "published");
+    .in("status", ["published","reserved"]);
 
   if (error) {
     console.error("getAllSlugs:", error.message);

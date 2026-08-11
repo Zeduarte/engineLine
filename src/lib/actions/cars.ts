@@ -71,6 +71,13 @@ function toRow(values: ReturnType<typeof carFormSchema.parse>): Omit<
     description: values.description || null,
     extras: values.extras,
     location: values.location || null,
+    previous_price: values.previous_price ?? null,
+    national: values.national,
+    owners: values.owners ?? null,
+    first_owner: values.first_owner,
+    service_book: values.service_book,
+    warranty_months: values.warranty_months ?? null,
+    last_inspection: values.last_inspection || null,
   };
 }
 

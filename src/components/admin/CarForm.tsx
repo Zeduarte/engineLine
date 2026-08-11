@@ -58,6 +58,13 @@ export function CarForm({
       description: "",
       extras: [],
       location: "",
+      previous_price: undefined,
+      national: false,
+      owners: undefined,
+      first_owner: false,
+      service_book: false,
+      warranty_months: undefined,
+      last_inspection: "",
       ...defaults,
     },
   });
@@ -225,6 +232,42 @@ export function CarForm({
           <Field label="Localização / stand" error={errors.location?.message}>
             <input className="field" {...register("location")} />
           </Field>
+        </Grid>
+      </Section>
+
+      {/* Transparência & badges */}
+      <Section title="Transparência & destaques">
+        <Grid>
+          <Field label="Preço anterior (€) — mostra «Baixa de preço»">
+            <input type="number" className="field" {...register("previous_price")} />
+          </Field>
+          <Field label="Nº de donos">
+            <input type="number" className="field" {...register("owners")} />
+          </Field>
+          <Field label="Garantia (meses)">
+            <input type="number" className="field" {...register("warranty_months")} />
+          </Field>
+          <Field label="Última inspeção">
+            <input type="date" className="field" {...register("last_inspection")} />
+          </Field>
+          <div className="flex items-end pb-2.5">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-paper/80">
+              <input type="checkbox" className="accent-[color:var(--accent)]" {...register("national")} />
+              Viatura nacional (badge «Nacional»)
+            </label>
+          </div>
+          <div className="flex items-end pb-2.5">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-paper/80">
+              <input type="checkbox" className="accent-[color:var(--accent)]" {...register("first_owner")} />
+              Primeiro dono
+            </label>
+          </div>
+          <div className="flex items-end pb-2.5">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-paper/80">
+              <input type="checkbox" className="accent-[color:var(--accent)]" {...register("service_book")} />
+              Livro de revisões completo
+            </label>
+          </div>
         </Grid>
       </Section>
 

@@ -5,6 +5,7 @@ import { getVehicleBySlug, getAllSlugs } from "@/lib/queries";
 import { formatKm, priceLabel } from "@/lib/format";
 import { Gallery } from "@/components/vehicle/Gallery";
 import { Specs } from "@/components/vehicle/Specs";
+import { TransparencySection } from "@/components/vehicle/TransparencySection";
 import { TestDriveForm } from "@/components/vehicle/TestDriveForm";
 import { SellCTA } from "@/components/home/SellCTA";
 import { ContactBar } from "@/components/vehicle/ContactBar";
@@ -86,10 +87,32 @@ export default async function VehiclePage({ params }: { params: Params }) {
                 </p>
               )}
             </div>
-            <p className="text-4xl font-bold text-accent">
-              {priceLabel(vehicle.price, vehicle.priceOnRequest)}
-            </p>
+            <div className="flex flex-col items-start gap-3 md:items-end">
+              <p className="text-4xl font-bold text-accent">
+                {priceLabel(vehicle.price, vehicle.priceOnRequest)}
+              </p>
+              <Link
+                href={`/viaturas/${vehicle.slug}/ficha`}
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-medium text-paper/80 transition-colors hover:border-accent hover:text-accent"
+              >
+                ⤓ Ficha PDF + QR
+              </Link>
+            </div>
           </header>
+
+          {(vehicle.status === "reserved" || vehicle.status === "sold") && (
+            <div
+              className={`mb-6 rounded-xl px-4 py-3 text-sm font-medium ${
+                vehicle.status === "sold"
+                  ? "bg-red-500/15 text-red-300"
+                  : "bg-amber-500/15 text-amber-300"
+              }`}
+            >
+              {vehicle.status === "sold"
+                ? "Esta viatura já foi vendida. Contacte-nos para viaturas semelhantes."
+                : "Esta viatura está reservada. Fale connosco para entrar na lista de espera."}
+            </div>
+          )}
 
           <Gallery slug={vehicle.slug} images={vehicle.images} />
 
@@ -118,6 +141,8 @@ export default async function VehiclePage({ params }: { params: Params }) {
                   {vehicle.description}
                 </p>
               </section>
+
+              <TransparencySection vehicle={vehicle} />
 
               <Specs vehicle={vehicle} />
             </div>

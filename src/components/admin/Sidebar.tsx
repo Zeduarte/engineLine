@@ -10,6 +10,7 @@ const NAV = [
   { href: "/admin/carros/novo", label: "Nova viatura", icon: "＋", exact: true, adminOnly: false },
   { href: "/admin/pagina-inicial", label: "Página inicial", icon: "◧", exact: false, adminOnly: false },
   { href: "/admin/leads", label: "Leads", icon: "✉", exact: false, adminOnly: false },
+  { href: "/admin/testemunhos", label: "Testemunhos", icon: "★", exact: false, adminOnly: false },
   { href: "/admin/utilizadores", label: "Utilizadores", icon: "◑", exact: false, adminOnly: true },
   { href: "/admin/definicoes", label: "Definições", icon: "⚙", exact: false, adminOnly: true },
 ];

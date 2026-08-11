@@ -97,6 +97,13 @@ type CarsRow = {
   extras: string[];
   location: string | null;
   highlights: HighlightJson[];
+  previous_price: number | null;
+  national: boolean;
+  owners: number | null;
+  first_owner: boolean;
+  service_book: boolean;
+  warranty_months: number | null;
+  last_inspection: string | null;
   created_by: string | null;
   published_at: string | null;
   sold_at: string | null;
@@ -129,6 +136,13 @@ type CarsInsert = {
   extras?: string[];
   location?: string | null;
   highlights?: HighlightJson[];
+  previous_price?: number | null;
+  national?: boolean;
+  owners?: number | null;
+  first_owner?: boolean;
+  service_book?: boolean;
+  warranty_months?: number | null;
+  last_inspection?: string | null;
   created_by?: string | null;
 }
 type CarsUpdate = Partial<CarsInsert>;
@@ -224,6 +238,29 @@ type SiteSettingsInsert = {
 };
 type SiteSettingsUpdate = Partial<SiteSettingsInsert>;
 
+// ---- testimonials ----------------------------------------------------------
+type TestimonialsRow = {
+  id: string;
+  name: string;
+  rating: number;
+  body: string;
+  role: string | null;
+  published: boolean;
+  position: number;
+  created_at: string;
+  updated_at: string;
+};
+type TestimonialsInsert = {
+  id?: string;
+  name: string;
+  rating?: number;
+  body: string;
+  role?: string | null;
+  published?: boolean;
+  position?: number;
+};
+type TestimonialsUpdate = Partial<TestimonialsInsert>;
+
 export type Database = {
   public: {
     Tables: {
@@ -261,6 +298,12 @@ export type Database = {
         Row: SiteSettingsRow;
         Insert: SiteSettingsInsert;
         Update: SiteSettingsUpdate;
+        Relationships: [];
+      };
+      testimonials: {
+        Row: TestimonialsRow;
+        Insert: TestimonialsInsert;
+        Update: TestimonialsUpdate;
         Relationships: [];
       };
     };

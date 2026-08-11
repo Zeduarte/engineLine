@@ -61,6 +61,15 @@ export const carFormSchema = z
     description: z.string().trim().max(5000).optional().or(z.literal("")),
     extras: z.array(z.string().trim().min(1)).default([]),
     location: z.string().trim().max(120).optional().or(z.literal("")),
+
+    // Transparência / badges
+    previous_price: z.coerce.number().int().min(0).nullable().optional(),
+    national: z.boolean().default(false),
+    owners: z.coerce.number().int().min(0).max(20).nullable().optional(),
+    first_owner: z.boolean().default(false),
+    service_book: z.boolean().default(false),
+    warranty_months: z.coerce.number().int().min(0).max(120).nullable().optional(),
+    last_inspection: z.string().optional().or(z.literal("")),
   })
   .refine((v) => v.price_on_request || (v.price != null && v.price > 0), {
     message: "Indique um preço ou marque 'sob consulta'",

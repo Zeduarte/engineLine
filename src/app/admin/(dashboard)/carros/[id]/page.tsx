@@ -38,6 +38,13 @@ export default async function EditCarPage({ params }: { params: Params }) {
     description: car.description ?? "",
     extras: car.extras ?? [],
     location: car.location ?? "",
+    previous_price: car.previous_price ?? undefined,
+    national: car.national,
+    owners: car.owners ?? undefined,
+    first_owner: car.first_owner,
+    service_book: car.service_book,
+    warranty_months: car.warranty_months ?? undefined,
+    last_inspection: car.last_inspection ?? "",
   };
 
   const media: MediaItem[] = (car.car_media ?? []).map((m) => ({

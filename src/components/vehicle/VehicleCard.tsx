@@ -24,9 +24,25 @@ interface VehicleCardProps {
  * de fazer um corte seco. As micro-interações (elevação, zoom da imagem) vivem
  * em variantes `whileHover`, respeitando o teclado via `whileFocus`.
  */
-/** Badges derivados dos dados da viatura (sem configuração manual). */
+/** Badges derivados dos dados da viatura (estado + heurísticas). */
 function vehicleBadges(vehicle: Vehicle): { label: string; tone: string }[] {
   const badges: { label: string; tone: string }[] = [];
+
+  if (vehicle.status === "reserved")
+    badges.push({ label: "Reservado", tone: "bg-amber-500 text-ink" });
+  if (vehicle.status === "sold")
+    badges.push({ label: "Vendido", tone: "bg-red-500 text-white" });
+
+  if (
+    vehicle.previousPrice != null &&
+    vehicle.price > 0 &&
+    vehicle.previousPrice > vehicle.price
+  ) {
+    badges.push({ label: "Baixa de preço", tone: "bg-rose-500 text-white" });
+  }
+  if (vehicle.national) {
+    badges.push({ label: "Nacional", tone: "bg-sky-500 text-ink" });
+  }
   if (vehicle.createdAt) {
     const days =
       (Date.now() - new Date(vehicle.createdAt).getTime()) / 86_400_000;
@@ -35,7 +51,7 @@ function vehicleBadges(vehicle: Vehicle): { label: string; tone: string }[] {
   if (vehicle.mileage > 0 && vehicle.mileage < 30_000) {
     badges.push({ label: "Poucos km", tone: "bg-emerald-500 text-ink" });
   }
-  return badges.slice(0, 2);
+  return badges.slice(0, 3);
 }
 
 export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {

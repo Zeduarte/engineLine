@@ -168,6 +168,20 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   };
 }
 
+/** Todos os testemunhos (staff) para gestão. */
+export async function getAllTestimonials() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("testimonials")
+    .select("id, name, rating, body, role, published, created_at")
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("getAllTestimonials:", error.message);
+    return [];
+  }
+  return data;
+}
+
 /** Marca do site para edição no backoffice. */
 export async function getSiteSettings(): Promise<{
   company_name: string;
