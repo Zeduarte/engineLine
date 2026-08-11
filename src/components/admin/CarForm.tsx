@@ -16,6 +16,8 @@ import {
 } from "@/lib/schemas";
 import { CAR_STATUS_LABEL } from "./StatusBadge";
 import { createCar, updateCar } from "@/lib/actions/cars";
+import { Combobox } from "@/components/ui/Combobox";
+import { CAR_BRANDS } from "@/lib/car-brands";
 
 export function CarForm({
   carId,
@@ -123,7 +125,14 @@ export function CarForm({
       <Section title="Identificação">
         <Grid>
           <Field label="Marca" error={errors.make?.message} required>
-            <input className="field" {...register("make")} />
+            <Combobox
+              value={watch("make") ?? ""}
+              onChange={(v) =>
+                setValue("make", v, { shouldValidate: true, shouldDirty: true })
+              }
+              options={CAR_BRANDS}
+              placeholder="Ex.: Mercedes-Benz"
+            />
           </Field>
           <Field label="Modelo" error={errors.model?.message} required>
             <input className="field" {...register("model")} />

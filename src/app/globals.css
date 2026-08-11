@@ -42,6 +42,26 @@
   }
 }
 
+/* CSS obrigatório do Lenis. Sem estas regras, quando o Lenis marca o <html>
+   com `.lenis`, a altura do documento fica presa e o scroll parte-se
+   (página não faz scroll / conteúdo cortado, sobretudo em mobile). */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
 @layer utilities {
   .container-px {
     @apply mx-auto w-full max-w-content px-6 md:px-10 lg:px-16;
