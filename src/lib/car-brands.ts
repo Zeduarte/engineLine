@@ -57,3 +57,70 @@ export const CAR_BRANDS = [
   "Volkswagen",
   "Volvo",
 ] as const;
+
+/** Cores mais comuns. Texto livre continua a ser aceite. */
+export const CAR_COLORS = [
+  "Preto",
+  "Branco",
+  "Cinzento",
+  "Prateado",
+  "Azul",
+  "Azul-escuro",
+  "Vermelho",
+  "Verde",
+  "Castanho",
+  "Bege",
+  "Dourado",
+  "Amarelo",
+  "Laranja",
+  "Bordô",
+  "Roxo",
+] as const;
+
+/** Sugestões de equipamento/extras para o autocomplete (texto livre à mesma). */
+export const COMMON_EXTRAS = [
+  "Ar condicionado",
+  "Climatização automática",
+  "Climatização bi-zona",
+  "GPS / Navegação",
+  "Apple CarPlay",
+  "Android Auto",
+  "Bluetooth",
+  "Sensores de estacionamento traseiros",
+  "Sensores de estacionamento dianteiros",
+  "Câmara de marcha-atrás",
+  "Câmara 360º",
+  "Jantes de liga leve",
+  "Teto de abrir / panorâmico",
+  "Bancos em pele",
+  "Bancos aquecidos",
+  "Bancos elétricos",
+  "Cruise control",
+  "Cruise control adaptativo",
+  "Faróis LED",
+  "Faróis Xénon",
+  "Faróis Matrix",
+  "Start/Stop",
+  "Sensor de luz e chuva",
+  "Vidros elétricos",
+  "Espelhos elétricos",
+  "Volante em pele",
+  "Volante aquecido",
+  "Assistente de faixa de rodagem",
+  "Alerta de ângulo morto",
+  "Travagem automática de emergência",
+  "Sistema de som premium",
+  "Isofix",
+  "Head-up display",
+  "Porta-bagagens elétrico",
+  "Chave inteligente / Keyless",
+  "Piloto automático",
+] as const;
+
+/** Anos disponíveis para o combobox — do próximo ano até 1980, descendente. */
+export function yearOptions(min = 1980): string[] {
+  const max = new Date().getFullYear() + 1;
+  const out: string[] = [];
+  for (let y = max; y >= min; y--) out.push(String(y));
+  return out;
+}
