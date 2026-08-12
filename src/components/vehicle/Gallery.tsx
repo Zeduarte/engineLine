@@ -41,31 +41,37 @@ export function Gallery({
       </motion.div>
 
       {images.length > 1 && (
-        <ul className="mt-4 flex gap-3" role="list">
-          {images.map((img, i) => (
-            <li key={img.src}>
-              <button
-                type="button"
-                onClick={() => setActive(i)}
-                aria-label={`Ver imagem ${i + 1}: ${img.alt}`}
-                aria-pressed={i === active}
-                className={`relative aspect-[4/3] w-20 overflow-hidden rounded-xl transition-all duration-300 md:w-28 ${
-                  i === active
-                    ? "ring-2 ring-accent ring-offset-2 ring-offset-ink"
-                    : "opacity-60 hover:opacity-100"
-                }`}
-              >
-                <Image
-                  src={img.src}
-                  alt=""
-                  fill
-                  sizes="112px"
-                  className="object-cover"
-                />
-              </button>
-            </li>
-          ))}
-        </ul>
+        // Contentor com scroll horizontal PRÓPRIO: as miniaturas nunca
+        // transbordam para a página (evita o scroll lateral em mobile).
+        // `-mx-1 px-1` dá folga para o anel (ring) do item ativo não ser
+        // cortado nas pontas; `snap-x` dá um encaixe suave ao arrastar.
+        <div className="mt-4 -mx-1 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-1 [scrollbar-width:thin]">
+          <ul className="flex snap-x gap-3" role="list">
+            {images.map((img, i) => (
+              <li key={img.src} className="shrink-0 snap-start">
+                <button
+                  type="button"
+                  onClick={() => setActive(i)}
+                  aria-label={`Ver imagem ${i + 1}: ${img.alt}`}
+                  aria-pressed={i === active}
+                  className={`relative aspect-[4/3] w-20 overflow-hidden rounded-xl transition-all duration-300 md:w-28 ${
+                    i === active
+                      ? "ring-2 ring-accent ring-offset-2 ring-offset-ink"
+                      : "opacity-60 hover:opacity-100"
+                  }`}
+                >
+                  <Image
+                    src={img.src}
+                    alt=""
+                    fill
+                    sizes="112px"
+                    className="object-cover"
+                  />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );
