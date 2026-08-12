@@ -1,9 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { saveCompany } from "@/lib/actions/settings";
+import { DEFAULT_COMPANY } from "@/lib/branding";
+
+// O mapa (Leaflet) depende de `window` — carrega só no cliente.
+const AddressMapPicker = dynamic(
+  () => import("@/components/admin/AddressMapPicker"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid h-72 place-items-center rounded-xl border border-white/10 text-sm text-paper/40">
+        A carregar mapa…
+      </div>
+    ),
+  },
+);
 
 interface CompanyInitial {
   phone: string;
@@ -41,6 +56,16 @@ export function CompanyForm({ initial }: { initial: CompanyInitial }) {
   function set<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
   }
+
+  // Coordenadas seguras para o mapa (vazio → default; evita NaN enquanto se
+  // escreve "-", "38.").
+  const safeCoord = (raw: string, fallback: number) => {
+    if (raw.trim() === "") return fallback;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : fallback;
+  };
+  const mapLat = safeCoord(form.geo_lat, DEFAULT_COMPANY.geo.lat);
+  const mapLng = safeCoord(form.geo_lng, DEFAULT_COMPANY.geo.lng);
 
   async function save() {
     setSaving(true);
@@ -149,33 +174,58 @@ export function CompanyForm({ initial }: { initial: CompanyInitial }) {
 
       <section className="card p-5">
         <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-paper/50">
-          Localização no mapa (avançado)
+          Localização no mapa
         </h2>
         <p className="mb-4 text-xs text-paper/40">
-          Coordenadas usadas no mapa da página de Contactos. Podes copiá-las do
-          Google Maps (clica com o botão direito no local → primeiras duas
-          números). Deixa em branco para manter a localização por defeito.
+          Preenche a morada acima e clica em «Localizar morada no mapa» — o pin
+          salta para lá. Podes sempre arrastar o pin (ou clicar no mapa) para
+          afinar a posição exata do stand. É esta a localização mostrada na
+          página de Contactos.
         </p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Latitude">
-            <input
-              className="field"
-              value={form.geo_lat}
-              onChange={(e) => set("geo_lat", e.target.value)}
-              placeholder="38.7223"
-              inputMode="decimal"
-            />
-          </Field>
-          <Field label="Longitude">
-            <input
-              className="field"
-              value={form.geo_lng}
-              onChange={(e) => set("geo_lng", e.target.value)}
-              placeholder="-9.1447"
-              inputMode="decimal"
-            />
-          </Field>
-        </div>
+
+        <AddressMapPicker
+          lat={mapLat}
+          lng={mapLng}
+          address={[
+            form.address_street,
+            form.address_postal,
+            form.address_city,
+            form.address_country,
+          ]
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .join(", ")}
+          onChange={(lat, lng) => {
+            set("geo_lat", String(lat));
+            set("geo_lng", String(lng));
+          }}
+        />
+
+        <details className="mt-4">
+          <summary className="cursor-pointer text-xs text-paper/40 hover:text-paper/70">
+            Introduzir coordenadas manualmente
+          </summary>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <Field label="Latitude">
+              <input
+                className="field"
+                value={form.geo_lat}
+                onChange={(e) => set("geo_lat", e.target.value)}
+                placeholder="38.7223"
+                inputMode="decimal"
+              />
+            </Field>
+            <Field label="Longitude">
+              <input
+                className="field"
+                value={form.geo_lng}
+                onChange={(e) => set("geo_lng", e.target.value)}
+                placeholder="-9.1447"
+                inputMode="decimal"
+              />
+            </Field>
+          </div>
+        </details>
       </section>
 
       <div className="sticky bottom-0 -mx-2 flex items-center justify-end gap-3 border-t border-white/10 bg-ink/90 px-2 py-4 backdrop-blur">
