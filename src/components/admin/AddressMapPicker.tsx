@@ -52,13 +52,42 @@ export default function AddressMapPicker({
 
     const map = L.map(containerRef.current, {
       center: [lat, lng],
-      zoom: 15,
+      zoom: 17,
       scrollWheelZoom: false,
     });
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap",
-      maxZoom: 19,
-    }).addTo(map);
+
+    // Base 1: Satélite (Esri World Imagery, sem chave de API) + camadas de
+    // referência (ruas e nomes) por cima, para posicionar o pin com precisão.
+    const esriAttr = "Imagens © Esri";
+    const satellite = L.layerGroup([
+      L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        { attribution: esriAttr, maxZoom: 19 },
+      ),
+      L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",
+        { maxZoom: 19 },
+      ),
+      L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+        { maxZoom: 19 },
+      ),
+    ]);
+
+    // Base 2: Mapa de ruas clássico (OpenStreetMap).
+    const streets = L.tileLayer(
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      { attribution: "© OpenStreetMap", maxZoom: 19 },
+    );
+
+    satellite.addTo(map); // satélite por defeito
+    L.control
+      .layers(
+        { Satélite: satellite, Mapa: streets },
+        {},
+        { position: "topright" },
+      )
+      .addTo(map);
 
     const marker = L.marker([lat, lng], {
       draggable: true,
