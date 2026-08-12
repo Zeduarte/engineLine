@@ -149,8 +149,10 @@ export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {
             </>
           )}
 
-          {/* Comparar */}
-          <div className="absolute bottom-3 right-3 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+          {/* Comparar — sempre visível no mobile (sem hover); no desktop
+              aparece ao passar o rato. Tocar aqui alterna a comparação;
+              tocar na foto (o Link) abre o anúncio. */}
+          <div className="absolute bottom-3 right-3 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100">
             <CompareButton slug={vehicle.slug} />
           </div>
         </motion.div>

@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -64,89 +65,99 @@ export default async function ComparePage({ searchParams }: Params) {
             Ir ao stock
           </Link>
           <p className="mt-4 text-sm text-paper/40">
-            Nos cartões, passe o rato e clique em «⇄ Comparar».
+            Nos cartões, toque em «⇄ Comparar».
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] border-separate border-spacing-0">
-            <thead>
-              <tr>
-                <th className="w-40 p-3" />
+        // Grelha responsiva: coluna de rótulos + uma coluna por viatura. Cabe
+        // numa só página no telemóvel (só scroll vertical, sem arrastar para
+        // o lado). As linhas (gap-px sobre fundo claro) fazem de separadores.
+        <div className="overflow-hidden rounded-2xl border border-white/10">
+          <div
+            className="grid gap-px bg-white/10"
+            style={{
+              gridTemplateColumns: `minmax(4.5rem, 0.55fr) repeat(${found.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {/* Cabeçalho: foto + nome de cada viatura */}
+            <div className="bg-ink" />
+            {found.map((v) => (
+              <Link
+                key={v.slug}
+                href={`/viaturas/${v.slug}`}
+                className="group bg-ink p-2 sm:p-3"
+              >
+                <div className="relative mb-2 aspect-[4/3] overflow-hidden rounded-lg bg-ink-muted sm:mb-3 sm:rounded-xl">
+                  <Image
+                    src={v.images[0]!.src}
+                    alt={v.images[0]!.alt}
+                    fill
+                    sizes="(max-width:768px) 45vw, 300px"
+                    className="object-cover"
+                  />
+                </div>
+                <p className="text-sm font-semibold leading-tight text-paper group-hover:text-accent">
+                  {v.make} {v.model}
+                </p>
+                {v.variant && (
+                  <p className="text-xs font-normal text-paper/50">
+                    {v.variant}
+                  </p>
+                )}
+              </Link>
+            ))}
+
+            {/* Especificações */}
+            {ROWS.map((row) => (
+              <Fragment key={row.label}>
+                <div className="flex items-center bg-ink p-2 text-[10px] font-semibold uppercase tracking-wider text-paper/40 sm:p-3 sm:text-xs">
+                  {row.label}
+                </div>
                 {found.map((v) => (
-                  <th key={v.slug} className="p-3 align-top">
-                    <Link href={`/viaturas/${v.slug}`} className="group block">
-                      <div className="relative mb-3 aspect-[4/3] overflow-hidden rounded-xl bg-ink-muted">
-                        <Image
-                          src={v.images[0]!.src}
-                          alt={v.images[0]!.alt}
-                          fill
-                          sizes="(max-width:768px) 50vw, 300px"
-                          className="object-cover"
-                        />
-                      </div>
-                      <p className="text-left font-semibold text-paper group-hover:text-accent">
-                        {v.make} {v.model}
-                      </p>
-                      {v.variant && (
-                        <p className="text-left text-xs font-normal text-paper/50">
-                          {v.variant}
-                        </p>
-                      )}
-                    </Link>
-                  </th>
+                  <div
+                    key={v.slug}
+                    className="flex items-center bg-ink p-2 text-xs text-paper/80 sm:p-3 sm:text-sm"
+                  >
+                    {row.get(v)}
+                  </div>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {ROWS.map((row, ri) => (
-                <tr key={row.label} className={ri % 2 ? "bg-white/[0.02]" : ""}>
-                  <td className="p-3 text-xs font-semibold uppercase tracking-wider text-paper/40">
-                    {row.label}
-                  </td>
-                  {found.map((v) => (
-                    <td
-                      key={v.slug}
-                      className="p-3 text-sm text-paper/80"
-                    >
-                      {row.get(v)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-              <tr>
-                <td className="p-3 text-xs font-semibold uppercase tracking-wider text-paper/40">
-                  Extras
-                </td>
-                {found.map((v) => (
-                  <td key={v.slug} className="p-3 text-sm text-paper/70">
-                    {v.extras && v.extras.length ? (
-                      <ul className="space-y-1">
-                        {v.extras.slice(0, 8).map((e) => (
-                          <li key={e}>· {e}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="p-3" />
-                {found.map((v) => (
-                  <td key={v.slug} className="p-3">
-                    <Link
-                      href={`/viaturas/${v.slug}`}
-                      className="inline-block rounded-full bg-accent px-4 py-2 text-xs font-semibold text-ink"
-                    >
-                      Ver ficha
-                    </Link>
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
+              </Fragment>
+            ))}
+
+            {/* Extras */}
+            <div className="bg-ink p-2 text-[10px] font-semibold uppercase tracking-wider text-paper/40 sm:p-3 sm:text-xs">
+              Extras
+            </div>
+            {found.map((v) => (
+              <div
+                key={v.slug}
+                className="bg-ink p-2 text-xs text-paper/70 sm:p-3 sm:text-sm"
+              >
+                {v.extras && v.extras.length ? (
+                  <ul className="space-y-1">
+                    {v.extras.slice(0, 8).map((e) => (
+                      <li key={e}>· {e}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  "—"
+                )}
+              </div>
+            ))}
+
+            {/* Ação */}
+            <div className="bg-ink" />
+            {found.map((v) => (
+              <div key={v.slug} className="bg-ink p-2 sm:p-3">
+                <Link
+                  href={`/viaturas/${v.slug}`}
+                  className="inline-block rounded-full bg-accent px-3 py-2 text-xs font-semibold text-ink"
+                >
+                  Ver ficha
+                </Link>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

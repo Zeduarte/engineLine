@@ -22,12 +22,17 @@ export function Gallery({
 }) {
   const [active, setActive] = useState(0);
   const current = images[active]!;
+  const hasMultiple = images.length > 1;
+
+  function step(dir: 1 | -1) {
+    setActive((i) => (i + dir + images.length) % images.length);
+  }
 
   return (
     <div>
       <motion.div
         layoutId={`card-media-${slug}`}
-        className="relative aspect-[16/10] overflow-hidden rounded-3xl bg-ink-muted"
+        className="group relative aspect-[16/10] overflow-hidden rounded-3xl bg-ink-muted"
       >
         <Image
           key={current.src}
@@ -38,6 +43,31 @@ export function Gallery({
           sizes="(max-width: 1024px) 100vw, 66vw"
           className="object-cover"
         />
+
+        {/* Setas para percorrer as fotos (esquerda/direita). */}
+        {hasMultiple && (
+          <>
+            <button
+              type="button"
+              onClick={() => step(-1)}
+              aria-label="Foto anterior"
+              className="absolute left-3 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-ink/60 text-2xl text-paper backdrop-blur transition-colors hover:bg-ink/80 focus-visible:bg-ink/80 md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:focus-visible:opacity-100"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              onClick={() => step(1)}
+              aria-label="Foto seguinte"
+              className="absolute right-3 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-ink/60 text-2xl text-paper backdrop-blur transition-colors hover:bg-ink/80 focus-visible:bg-ink/80 md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:focus-visible:opacity-100"
+            >
+              ›
+            </button>
+            <div className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-ink/70 px-2.5 py-1 text-xs font-medium text-paper backdrop-blur">
+              {active + 1}/{images.length}
+            </div>
+          </>
+        )}
       </motion.div>
 
       {images.length > 1 && (
