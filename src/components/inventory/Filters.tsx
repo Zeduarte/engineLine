@@ -4,6 +4,7 @@ import type {
   VehicleFilters,
   FuelType,
   Transmission,
+  BodyType,
   SortKey,
 } from "@/types/vehicle";
 
@@ -15,12 +16,23 @@ interface FiltersProps {
     models: string[];
     fuels: FuelType[];
     transmissions: Transmission[];
+    bodies: BodyType[];
   };
   resultCount: number;
   onChange: (patch: Partial<VehicleFilters>) => void;
   onSort: (sort: SortKey) => void;
   onReset: () => void;
 }
+
+/** Atalhos rápidos que aplicam um conjunto de filtros de uma vez. */
+const QUICK_CHIPS: { label: string; patch: Partial<VehicleFilters> }[] = [
+  { label: "Elétrico", patch: { fuel: "Elétrico" } },
+  { label: "Híbrido", patch: { fuel: "Híbrido" } },
+  { label: "Automática", patch: { transmission: "Automática" } },
+  { label: "SUV", patch: { body: "SUV" } },
+  { label: "Até 30.000 km", patch: { maxMileage: 30000 } },
+  { label: "Até 25.000 €", patch: { maxPrice: 25000 } },
+];
 
 const SORT_LABELS: Record<SortKey, string> = {
   relevance: "Relevância",
@@ -42,6 +54,30 @@ export function Filters({
 }: FiltersProps) {
   return (
     <div className="rounded-2xl border border-white/10 bg-ink-soft p-5 md:p-6">
+      {/* Pesquisa livre */}
+      <input
+        type="search"
+        value={filters.query ?? ""}
+        onChange={(e) => onChange({ query: e.target.value || null })}
+        placeholder="Pesquisar marca, modelo ou versão…"
+        aria-label="Pesquisar viaturas"
+        className="mb-4 w-full rounded-lg border border-white/10 bg-ink px-4 py-2.5 text-sm text-paper transition-colors placeholder:text-paper/30 focus:border-accent"
+      />
+
+      {/* Atalhos rápidos */}
+      <div className="mb-5 flex flex-wrap gap-2">
+        {QUICK_CHIPS.map((chip) => (
+          <button
+            key={chip.label}
+            type="button"
+            onClick={() => onChange(chip.patch)}
+            className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-paper/70 transition-colors hover:border-accent hover:text-accent"
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         <Field label="Marca">
           <Select
@@ -96,6 +132,20 @@ export function Filters({
             {options.transmissions.map((t) => (
               <option key={t} value={t}>
                 {t}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        <Field label="Carroçaria">
+          <Select
+            value={filters.body ?? ""}
+            onChange={(v) => onChange({ body: (v || null) as BodyType | null })}
+          >
+            <option value="">Todas</option>
+            {options.bodies.map((b) => (
+              <option key={b} value={b}>
+                {b}
               </option>
             ))}
           </Select>

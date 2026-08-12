@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { supabasePublic } from "@/lib/supabase/public";
 import { toVehicle } from "@/lib/mappers";
 import type { CarWithMedia } from "@/lib/supabase/database.types";
@@ -7,6 +8,8 @@ import {
   mergeHomeContent,
   type HomeContent,
 } from "@/lib/home-content";
+import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
+import { publicMediaUrl } from "@/lib/storage";
 
 /**
  * Leituras PÚBLICAS do inventário (Supabase).
@@ -23,7 +26,7 @@ export async function getVehicles(): Promise<Vehicle[]> {
   const { data, error } = await supabase
     .from("cars")
     .select(CAR_SELECT)
-    .eq("status", "published")
+    .in("status", ["published","reserved"])
     .order("featured", { ascending: false })
     .order("published_at", { ascending: false, nullsFirst: false });
 
@@ -39,7 +42,7 @@ export async function getFeaturedVehicles(limit = 3): Promise<Vehicle[]> {
   const { data, error } = await supabase
     .from("cars")
     .select(CAR_SELECT)
-    .eq("status", "published")
+    .in("status", ["published","reserved"])
     .eq("featured", true)
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(limit);
@@ -56,7 +59,7 @@ export async function getRecentVehicles(limit = 12): Promise<Vehicle[]> {
   const { data, error } = await supabasePublic
     .from("cars")
     .select(CAR_SELECT)
-    .eq("status", "published")
+    .in("status", ["published","reserved"])
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -76,7 +79,7 @@ export async function getVehicleBySlug(
     .from("cars")
     .select(CAR_SELECT)
     .eq("slug", slug)
-    .eq("status", "published")
+    .in("status", ["published", "reserved", "sold"])
     .maybeSingle();
 
   if (error) {
@@ -106,12 +109,90 @@ export async function getHomeContent(): Promise<HomeContent> {
   );
 }
 
+/**
+ * Marca do site (nome + logótipo). Como aparece em todas as páginas, é mantida
+ * em cache (tag "branding") para não bater na BD a cada request — a ação de
+ * gravar invalida essa cache. Cai nos defaults se ainda não definida (ou se a
+ * tabela ainda não existir).
+ */
+export const getBranding = unstable_cache(
+  async (): Promise<Branding> => {
+    const { data, error } = await supabasePublic
+      .from("site_settings")
+      .select(
+        "company_name, logo_url, tagline, accent, accent_soft, ga4_id, pixel_id, reservation_enabled, deposit_amount",
+      )
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (error || !data) {
+      return DEFAULT_BRANDING;
+    }
+    return {
+      companyName: data.company_name || DEFAULT_BRANDING.companyName,
+      logoUrl: data.logo_url ? publicMediaUrl(data.logo_url) : null,
+      tagline: data.tagline,
+      accent: data.accent || DEFAULT_BRANDING.accent,
+      accentSoft: data.accent_soft || DEFAULT_BRANDING.accentSoft,
+      ga4Id: data.ga4_id || null,
+      pixelId: data.pixel_id || null,
+      reservationEnabled: data.reservation_enabled ?? false,
+      depositAmount: data.deposit_amount ?? DEFAULT_BRANDING.depositAmount,
+    };
+  },
+  ["site-branding"],
+  { tags: ["branding"], revalidate: 300 },
+);
+
+export interface Testimonial {
+  id: string;
+  name: string;
+  rating: number;
+  body: string;
+  role: string | null;
+}
+
+/** Testemunhos publicados (para a secção de confiança). */
+export async function getTestimonials(): Promise<Testimonial[]> {
+  const { data, error } = await supabasePublic
+    .from("testimonials")
+    .select("id, name, rating, body, role")
+    .eq("published", true)
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getTestimonials:", error.message);
+    return [];
+  }
+  return data as Testimonial[];
+}
+
+/**
+ * Viaturas publicadas marcadas para um determinado canal/portal externo.
+ * Usado nos feeds de exportação (`/api/feeds/<canal>.xml`).
+ */
+export async function getChannelVehicles(channel: string): Promise<Vehicle[]> {
+  const { data, error } = await supabasePublic
+    .from("cars")
+    .select(CAR_SELECT)
+    .eq("status", "published")
+    .contains("channels", [channel])
+    .order("published_at", { ascending: false, nullsFirst: false });
+
+  if (error) {
+    console.error("getChannelVehicles:", error.message);
+    return [];
+  }
+  return (data as unknown as CarWithMedia[]).map(toVehicle);
+}
+
 export async function getAllSlugs(): Promise<string[]> {
   const supabase = supabasePublic;
   const { data, error } = await supabase
     .from("cars")
     .select("slug")
-    .eq("status", "published");
+    .in("status", ["published","reserved"]);
 
   if (error) {
     console.error("getAllSlugs:", error.message);

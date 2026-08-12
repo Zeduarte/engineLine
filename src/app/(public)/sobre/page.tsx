@@ -43,6 +43,7 @@ export default function AboutPage() {
         <AnimatedText
           as="h1"
           splitBy="word"
+          highlight={["premium", "costume"]}
           className="max-w-4xl text-display font-bold text-paper"
         >
           Automóveis premium, sem o teatro do costume

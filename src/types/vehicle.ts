@@ -92,14 +92,29 @@ export interface Vehicle {
   highlights: VehicleSpec[];
   /** ISO da última atualização (para sitemap / ordenação). */
   updatedAt?: string;
+  /** ISO da criação (usado para o badge "Novidade"). */
+  createdAt?: string;
+  /** Preço anterior — se maior que `price`, mostra badge "Baixa de preço". */
+  previousPrice?: number | null;
+  /** Viatura nacional (badge "Nacional"). */
+  national?: boolean;
+  /** Transparência: nº de donos, 1º dono, livro de revisões, garantia, inspeção. */
+  owners?: number | null;
+  firstOwner?: boolean;
+  serviceBook?: boolean;
+  warrantyMonths?: number | null;
+  lastInspection?: string | null;
 }
 
 /** Payload dos filtros do inventário. */
 export interface VehicleFilters {
+  /** Pesquisa livre (marca, modelo, versão). */
+  query: string | null;
   make: string | null;
   model: string | null;
   fuel: FuelType | null;
   transmission: Transmission | null;
+  body: BodyType | null;
   minPrice: number | null;
   maxPrice: number | null;
   minYear: number | null;

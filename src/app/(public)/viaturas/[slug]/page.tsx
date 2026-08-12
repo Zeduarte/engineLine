@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getVehicleBySlug, getAllSlugs } from "@/lib/queries";
+import { getVehicleBySlug, getAllSlugs, getBranding } from "@/lib/queries";
 import { formatKm, priceLabel } from "@/lib/format";
 import { Gallery } from "@/components/vehicle/Gallery";
 import { Specs } from "@/components/vehicle/Specs";
-import { FinanceSimulator } from "@/components/vehicle/FinanceSimulator";
+import { TransparencySection } from "@/components/vehicle/TransparencySection";
 import { TestDriveForm } from "@/components/vehicle/TestDriveForm";
+import { ReserveForm } from "@/components/vehicle/ReserveForm";
+import { ViewTracker } from "@/components/vehicle/ViewTracker";
+import { SellCTA } from "@/components/home/SellCTA";
 import { ContactBar } from "@/components/vehicle/ContactBar";
 import { VehicleJsonLd } from "@/components/seo/VehicleJsonLd";
 import { AnimatedText } from "@/components/ui/AnimatedText";
@@ -57,9 +60,14 @@ export default async function VehiclePage({ params }: { params: Params }) {
   const vehicle = await getVehicleBySlug(slug);
   if (!vehicle) notFound();
 
+  const branding = await getBranding();
+  const canReserve =
+    branding.reservationEnabled && vehicle.status === "published";
+
   return (
     <>
       <VehicleJsonLd vehicle={vehicle} />
+      <ViewTracker carId={vehicle.id} slug={vehicle.slug} />
 
       <article className="pt-24 md:pt-28">
         <div className="container-px">
@@ -86,10 +94,32 @@ export default async function VehiclePage({ params }: { params: Params }) {
                 </p>
               )}
             </div>
-            <p className="text-4xl font-bold text-accent">
-              {priceLabel(vehicle.price, vehicle.priceOnRequest)}
-            </p>
+            <div className="flex flex-col items-start gap-3 md:items-end">
+              <p className="text-4xl font-bold text-accent">
+                {priceLabel(vehicle.price, vehicle.priceOnRequest)}
+              </p>
+              <Link
+                href={`/viaturas/${vehicle.slug}/ficha`}
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-medium text-paper/80 transition-colors hover:border-accent hover:text-accent"
+              >
+                ⤓ Ficha PDF + QR
+              </Link>
+            </div>
           </header>
+
+          {(vehicle.status === "reserved" || vehicle.status === "sold") && (
+            <div
+              className={`mb-6 rounded-xl px-4 py-3 text-sm font-medium ${
+                vehicle.status === "sold"
+                  ? "bg-red-500/15 text-red-300"
+                  : "bg-amber-500/15 text-amber-300"
+              }`}
+            >
+              {vehicle.status === "sold"
+                ? "Esta viatura já foi vendida. Contacte-nos para viaturas semelhantes."
+                : "Esta viatura está reservada. Fale connosco para entrar na lista de espera."}
+            </div>
+          )}
 
           <Gallery slug={vehicle.slug} images={vehicle.images} />
 
@@ -119,16 +149,29 @@ export default async function VehiclePage({ params }: { params: Params }) {
                 </p>
               </section>
 
+              <TransparencySection vehicle={vehicle} />
+
               <Specs vehicle={vehicle} />
             </div>
 
             <div className="space-y-8 lg:sticky lg:top-28 lg:self-start">
-              <FinanceSimulator price={vehicle.price} />
+              {canReserve && (
+                <ReserveForm
+                  vehicleName={`${vehicle.make} ${vehicle.model}`}
+                  vehicleId={vehicle.id}
+                  depositAmount={branding.depositAmount}
+                />
+              )}
               <TestDriveForm
                 vehicleName={`${vehicle.make} ${vehicle.model}`}
                 vehicleId={vehicle.id}
               />
             </div>
+          </div>
+
+          {/* Retoma / encomenda no fim da ficha */}
+          <div className="mt-20">
+            <SellCTA />
           </div>
         </div>
 

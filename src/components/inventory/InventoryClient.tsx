@@ -38,6 +38,7 @@ export function InventoryClient({ vehicles }: { vehicles: Vehicle[] }) {
       ) as string[],
       fuels: distinctValues(vehicles, "fuel"),
       transmissions: distinctValues(vehicles, "transmission"),
+      bodies: distinctValues(vehicles, "body"),
     }),
     [vehicles, filters.make],
   );

@@ -27,13 +27,19 @@ export function StatusBadge({ status }: { status: CarStatus }) {
 export const CAR_STATUS_LABEL = CAR_LABELS;
 
 const LEAD_LABELS: Record<LeadStatus, string> = {
-  new: "Novo",
-  contacted: "Contactado",
-  closed: "Fechado",
+  new: "Nova",
+  contacted: "Em contacto",
+  proposal: "Proposta",
+  won: "Ganha",
+  lost: "Perdida",
+  closed: "Fechada",
 };
 const LEAD_STYLES: Record<LeadStatus, string> = {
   new: "bg-accent/15 text-accent",
   contacted: "bg-sky-500/15 text-sky-300",
+  proposal: "bg-violet-500/15 text-violet-300",
+  won: "bg-emerald-500/15 text-emerald-300",
+  lost: "bg-red-500/15 text-red-300",
   closed: "bg-white/10 text-paper/50",
 };
 

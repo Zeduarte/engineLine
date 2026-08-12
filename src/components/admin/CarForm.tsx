@@ -12,9 +12,16 @@ import {
   TRANSMISSIONS,
   BODY_TYPES,
   CAR_STATUSES,
+  CHANNELS,
 } from "@/lib/schemas";
 import { CAR_STATUS_LABEL } from "./StatusBadge";
 import { createCar, updateCar } from "@/lib/actions/cars";
+import { Combobox } from "@/components/ui/Combobox";
+import { CAR_BRANDS, CAR_COLORS, COMMON_EXTRAS, yearOptions } from "@/lib/car-brands";
+import { CAR_MODELS } from "@/lib/car-models";
+
+// Lista de anos calculada uma vez (o ano corrente é estável na sessão).
+const YEARS = yearOptions();
 
 export function CarForm({
   carId,
@@ -26,6 +33,13 @@ export function CarForm({
   const router = useRouter();
   const [extras, setExtras] = useState<string[]>(defaults?.extras ?? []);
   const [extraInput, setExtraInput] = useState("");
+  const [channels, setChannels] = useState<string[]>(defaults?.channels ?? []);
+
+  function toggleChannel(id: string) {
+    setChannels((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
+    );
+  }
 
   const {
     register,
@@ -58,19 +72,34 @@ export function CarForm({
       description: "",
       extras: [],
       location: "",
+      previous_price: undefined,
+      national: false,
+      owners: undefined,
+      first_owner: false,
+      service_book: false,
+      warranty_months: undefined,
+      last_inspection: "",
+      channels: [],
       ...defaults,
     },
   });
 
   const onRequest = watch("price_on_request");
+  const make = watch("make") ?? "";
+  const modelOptions = CAR_MODELS[make] ?? [];
+  // Sugestões de extras que ainda não foram adicionadas.
+  const extraSuggestions = COMMON_EXTRAS.filter((e) => !extras.includes(e));
 
-  function addExtra() {
-    const v = extraInput.trim();
+  function addExtraValue(raw: string) {
+    const v = raw.trim();
     if (!v) return;
     const next = [...new Set([...extras, v])];
     setExtras(next);
     setValue("extras", next);
     setExtraInput("");
+  }
+  function addExtra() {
+    addExtraValue(extraInput);
   }
   function removeExtra(v: string) {
     const next = extras.filter((e) => e !== v);
@@ -79,7 +108,7 @@ export function CarForm({
   }
 
   async function onSubmit(values: CarFormValues) {
-    const payload = { ...values, extras };
+    const payload = { ...values, extras, channels };
     const res = carId
       ? await updateCar(carId, payload)
       : await createCar(payload);
@@ -107,16 +136,51 @@ export function CarForm({
       <Section title="Identificação">
         <Grid>
           <Field label="Marca" error={errors.make?.message} required>
-            <input className="field" {...register("make")} />
+            <Combobox
+              value={make}
+              onChange={(v) => {
+                setValue("make", v, { shouldValidate: true, shouldDirty: true });
+                // Mudar de marca invalida o modelo anterior.
+                if (v !== make) {
+                  setValue("model", "", { shouldDirty: true });
+                }
+              }}
+              options={CAR_BRANDS}
+              placeholder="Ex.: Mercedes-Benz"
+            />
           </Field>
           <Field label="Modelo" error={errors.model?.message} required>
-            <input className="field" {...register("model")} />
+            <Combobox
+              value={watch("model") ?? ""}
+              onChange={(v) =>
+                setValue("model", v, { shouldValidate: true, shouldDirty: true })
+              }
+              options={modelOptions}
+              disabled={!make}
+              placeholder={
+                !make
+                  ? "Escolha a marca primeiro"
+                  : modelOptions.length
+                    ? "Ex.: Classe C"
+                    : "Escreva o modelo"
+              }
+            />
           </Field>
           <Field label="Versão" error={errors.variant?.message}>
             <input className="field" {...register("variant")} placeholder="Competition, AMG Line…" />
           </Field>
           <Field label="Ano" error={errors.year?.message} required>
-            <input type="number" className="field" {...register("year")} />
+            <Combobox
+              value={String(watch("year") ?? "")}
+              onChange={(v) =>
+                setValue("year", v as unknown as number, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
+              }
+              options={YEARS}
+              placeholder="Ex.: 2020"
+            />
           </Field>
           <Field
             label="Matrícula (privado)"
@@ -125,7 +189,14 @@ export function CarForm({
             <input className="field" {...register("license_plate")} />
           </Field>
           <Field label="Cor" error={errors.color?.message}>
-            <input className="field" {...register("color")} />
+            <Combobox
+              value={watch("color") ?? ""}
+              onChange={(v) =>
+                setValue("color", v, { shouldValidate: true, shouldDirty: true })
+              }
+              options={CAR_COLORS}
+              placeholder="Ex.: Preto"
+            />
           </Field>
         </Grid>
       </Section>
@@ -228,6 +299,42 @@ export function CarForm({
         </Grid>
       </Section>
 
+      {/* Transparência & badges */}
+      <Section title="Transparência & destaques">
+        <Grid>
+          <Field label="Preço anterior (€) — mostra «Baixa de preço»">
+            <input type="number" className="field" {...register("previous_price")} />
+          </Field>
+          <Field label="Nº de donos">
+            <input type="number" className="field" {...register("owners")} />
+          </Field>
+          <Field label="Garantia (meses)">
+            <input type="number" className="field" {...register("warranty_months")} />
+          </Field>
+          <Field label="Última inspeção">
+            <input type="date" className="field" {...register("last_inspection")} />
+          </Field>
+          <div className="flex items-end pb-2.5">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-paper/80">
+              <input type="checkbox" className="accent-[color:var(--accent)]" {...register("national")} />
+              Viatura nacional (badge «Nacional»)
+            </label>
+          </div>
+          <div className="flex items-end pb-2.5">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-paper/80">
+              <input type="checkbox" className="accent-[color:var(--accent)]" {...register("first_owner")} />
+              Primeiro dono
+            </label>
+          </div>
+          <div className="flex items-end pb-2.5">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-paper/80">
+              <input type="checkbox" className="accent-[color:var(--accent)]" {...register("service_book")} />
+              Livro de revisões completo
+            </label>
+          </div>
+        </Grid>
+      </Section>
+
       {/* Conteúdo */}
       <Section title="Conteúdo">
         <div className="space-y-4">
@@ -245,18 +352,15 @@ export function CarForm({
           <div>
             <span className="field-label">Extras / equipamento</span>
             <div className="flex gap-2">
-              <input
-                value={extraInput}
-                onChange={(e) => setExtraInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addExtra();
-                  }
-                }}
-                placeholder="Ex.: Teto de abrir. Enter para adicionar"
-                className="field flex-1"
-              />
+              <div className="flex-1">
+                <Combobox
+                  value={extraInput}
+                  onChange={setExtraInput}
+                  onSelect={addExtraValue}
+                  options={extraSuggestions}
+                  placeholder="Escreva ou escolha. Enter para adicionar"
+                />
+              </div>
               <button
                 type="button"
                 onClick={addExtra}
@@ -286,6 +390,31 @@ export function CarForm({
               </ul>
             )}
           </div>
+        </div>
+      </Section>
+
+      {/* Exportação multi-canal */}
+      <Section title="Publicar noutras plataformas">
+        <p className="mb-4 text-xs text-paper/50">
+          Selecione os portais onde quer anunciar esta viatura. As viaturas
+          escolhidas ficam disponíveis no feed de exportação de cada plataforma
+          (ver Definições → Integrações).
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {CHANNELS.map((c) => (
+            <label
+              key={c.id}
+              className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-3 py-2.5 text-sm text-paper/80 transition-colors hover:border-white/20"
+            >
+              <input
+                type="checkbox"
+                className="accent-[color:var(--accent)]"
+                checked={channels.includes(c.id)}
+                onChange={() => toggleChannel(c.id)}
+              />
+              {c.label}
+            </label>
+          ))}
         </div>
       </Section>
 
@@ -336,11 +465,13 @@ function Field({
   label,
   error,
   required,
+  hint,
   children,
 }: {
   label: string;
   error?: string;
   required?: boolean;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -350,7 +481,11 @@ function Field({
         {required && <span className="text-accent"> *</span>}
       </span>
       {children}
-      {error && <p className="field-error">{error}</p>}
+      {error ? (
+        <p className="field-error">{error}</p>
+      ) : hint ? (
+        <p className="mt-1 text-xs text-paper/40">{hint}</p>
+      ) : null}
     </div>
   );
 }

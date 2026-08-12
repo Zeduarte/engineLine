@@ -34,7 +34,7 @@ export function Hero({
   return (
     <section
       ref={sectionRef}
-      className="relative h-[224vh]"
+      className="relative h-[140vh]"
       aria-label="Viatura em destaque"
     >
       <div className="sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden">

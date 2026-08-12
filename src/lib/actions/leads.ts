@@ -29,6 +29,7 @@ export async function submitLead(
     phone: formData.get("phone") ?? "",
     message: formData.get("message") ?? "",
     preferred_date: formData.get("preferred_date") ?? "",
+    details: formData.get("details") ?? "",
   });
 
   if (!parsed.success) {
@@ -39,6 +40,20 @@ export async function submitLead(
   }
 
   const v = parsed.data;
+
+  // Detalhes estruturados (retoma/encomenda) chegam como JSON.
+  let carDetails: Record<string, unknown> = {};
+  if (v.details) {
+    try {
+      const parsedDetails = JSON.parse(v.details);
+      if (parsedDetails && typeof parsedDetails === "object") {
+        carDetails = parsedDetails as Record<string, unknown>;
+      }
+    } catch {
+      // ignora JSON inválido — a lead entra na mesma sem detalhes.
+    }
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.from("leads").insert({
     kind: v.kind,
@@ -49,6 +64,7 @@ export async function submitLead(
     phone: v.phone || null,
     message: v.message || null,
     preferred_date: v.preferred_date || null,
+    car_details: carDetails,
   });
 
   if (error) {
@@ -75,6 +91,17 @@ export async function setLeadStatus(id: string, status: LeadStatus) {
 export async function deleteLead(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("leads").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/admin/leads");
+  return { ok: true };
+}
+
+export async function saveLeadNotes(id: string, notes: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({ notes: notes || null })
+    .eq("id", id);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/admin/leads");
   return { ok: true };
