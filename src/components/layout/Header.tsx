@@ -5,12 +5,11 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { site } from "@/lib/site";
 import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
 
 const NAV = [
   { href: "/", label: "Início" },
-  { href: "/inventario", label: "Inventário" },
+  { href: "/inventario", label: "Stock" },
   { href: "/quiz", label: "Carro ideal" },
   { href: "/sobre", label: "Sobre" },
   { href: "/contactos", label: "Contactos" },
@@ -92,10 +91,10 @@ export function Header({
         </ul>
 
         <a
-          href={site.phoneHref}
+          href={branding.company.phoneHref}
           className="hidden rounded-full border border-white/15 px-5 py-2 text-sm font-medium text-paper transition-colors duration-300 hover:border-accent hover:text-accent md:inline-block"
         >
-          {site.phone}
+          {branding.company.phone}
         </a>
 
         {/* Botão mobile */}
@@ -150,10 +149,10 @@ export function Header({
               ))}
               <li>
                 <a
-                  href={site.phoneHref}
+                  href={branding.company.phoneHref}
                   className="mt-2 block rounded-full bg-accent px-5 py-3 text-center text-sm font-semibold text-ink"
                 >
-                  Ligar · {site.phone}
+                  Ligar · {branding.company.phone}
                 </a>
               </li>
             </ul>

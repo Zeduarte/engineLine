@@ -1,17 +1,24 @@
-import { site, whatsappHref } from "@/lib/site";
+import { waHref } from "@/lib/branding";
 
 /**
  * Botão flutuante de WhatsApp, presente em todo o site público. Abre uma
  * conversa com uma mensagem pré-preenchida — captação de contacto de baixa
  * fricção. (Este canal não cria lead na BD; para isso usam-se os formulários.)
+ * O número e o nome vêm das definições da empresa (backoffice).
  */
-export function WhatsAppButton() {
+export function WhatsAppButton({
+  whatsapp,
+  name,
+}: {
+  whatsapp: string;
+  name: string;
+}) {
   return (
     <a
-      href={whatsappHref("Olá! Vi o vosso site e gostava de mais informações.")}
+      href={waHref(whatsapp, "Olá! Vi o vosso site e gostava de mais informações.")}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`Falar com o ${site.name} no WhatsApp`}
+      aria-label={`Falar com o ${name} no WhatsApp`}
       className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-ink shadow-lg shadow-black/30 transition-transform hover:scale-110 focus-visible:scale-110"
     >
       <svg

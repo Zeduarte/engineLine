@@ -4,13 +4,15 @@ import Link from "next/link";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { Reveal } from "@/components/ui/Reveal";
 import { Parallax } from "@/components/ui/Parallax";
-import { site } from "@/lib/site";
+import { getBranding } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "Sobre",
   description:
-    "Conheça o engineLine — um stand de automóveis premium com curadoria rigorosa, histórico transparente e uma experiência de compra sem fricção.",
+    "Conheça o nosso stand de automóveis premium — curadoria rigorosa, histórico transparente e uma experiência de compra sem fricção.",
 };
+
+export const revalidate = 300;
 
 const VALUES = [
   {
@@ -34,11 +36,12 @@ const STATS = [
   { kpi: "150", label: "pontos de inspeção" },
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const { companyName, company } = await getBranding();
   return (
     <div className="pb-24 pt-32 md:pt-40">
       <section className="container-px">
-        <p className="eyebrow mb-6">Sobre o {site.name}</p>
+        <p className="eyebrow mb-6">Sobre o {companyName}</p>
         <AnimatedText
           as="h1"
           splitBy="word"
@@ -117,7 +120,7 @@ export default function AboutPage() {
             Venha conhecer-nos
           </h2>
           <p className="mx-auto mt-3 max-w-md font-light text-paper/60">
-            O showroom está aberto {site.hours.toLowerCase()}. Sem marcação,
+            O showroom está aberto {company.hours.toLowerCase()}. Sem marcação,
             sem pressão.
           </p>
           <Link

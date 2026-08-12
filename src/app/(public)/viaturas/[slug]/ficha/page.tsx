@@ -144,8 +144,8 @@ export default async function FichaPage({ params }: { params: Params }) {
         )}
 
         <div className="mt-8 border-t border-white/10 pt-4 text-xs text-paper/50 print:border-black/10 print:text-black/60">
-          {branding.companyName} · {site.phone} · {site.email} ·{" "}
-          {site.address.street}, {site.address.city}
+          {branding.companyName} · {branding.company.phone} · {branding.company.email} ·{" "}
+          {branding.company.address.street}, {branding.company.address.city}
         </div>
       </div>
     </div>

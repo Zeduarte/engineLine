@@ -5,9 +5,9 @@ import { InventoryClient } from "@/components/inventory/InventoryClient";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Inventário",
+  title: "Stock",
   description:
-    "Explore o inventário completo de viaturas premium do engineLine. Filtre por marca, modelo, preço, ano, combustível e quilómetros.",
+    "Explore o stock completo de viaturas premium do engineLine. Filtre por marca, modelo, preço, ano, combustível e quilómetros.",
 };
 
 export default async function InventoryPage() {
@@ -16,7 +16,7 @@ export default async function InventoryPage() {
   return (
     <div className="container-px pb-24 pt-32 md:pt-40">
       <header className="mb-12 max-w-2xl">
-        <p className="eyebrow mb-4">Inventário</p>
+        <p className="eyebrow mb-4">Stock</p>
         <h1 className="text-headline font-semibold text-paper">
           Todas as viaturas disponíveis
         </h1>

@@ -7,6 +7,7 @@ import {
   siteSettingsSchema,
   marketingSchema,
   integrationsSchema,
+  companySchema,
 } from "@/lib/schemas";
 
 export interface SettingsResult {
@@ -55,6 +56,50 @@ export async function saveSiteSettings(input: unknown): Promise<SettingsResult> 
   revalidateTag("branding");
   revalidatePath("/", "layout");
   revalidatePath("/admin", "layout");
+  return { ok: true };
+}
+
+/** Guarda os dados de contacto/empresa (telefone, email, morada…). Apenas admin. */
+export async function saveCompany(input: unknown): Promise<SettingsResult> {
+  if (!(await requireAdmin())) {
+    return { ok: false, error: "Sem permissão. Apenas administradores." };
+  }
+
+  const parsed = companySchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  const d = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_settings").upsert(
+    {
+      id: 1,
+      phone: d.phone || null,
+      email: d.email || null,
+      whatsapp: d.whatsapp || null,
+      address_street: d.address_street || null,
+      address_city: d.address_city || null,
+      address_postal: d.address_postal || null,
+      address_country: d.address_country || null,
+      hours: d.hours || null,
+      geo_lat: d.geo_lat ?? null,
+      geo_lng: d.geo_lng ?? null,
+    },
+    { onConflict: "id" },
+  );
+
+  if (error) {
+    console.error("saveCompany:", error.message);
+    return { ok: false, error: error.message };
+  }
+
+  // Os contactos aparecem em todo o site → invalida a cache e revalida.
+  revalidateTag("branding");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 

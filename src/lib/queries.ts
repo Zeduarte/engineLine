@@ -8,7 +8,12 @@ import {
   mergeHomeContent,
   type HomeContent,
 } from "@/lib/home-content";
-import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
+import {
+  DEFAULT_BRANDING,
+  DEFAULT_COMPANY,
+  telHref,
+  type Branding,
+} from "@/lib/branding";
 import { publicMediaUrl } from "@/lib/storage";
 
 /**
@@ -120,7 +125,7 @@ export const getBranding = unstable_cache(
     const { data, error } = await supabasePublic
       .from("site_settings")
       .select(
-        "company_name, logo_url, tagline, accent, accent_soft, ga4_id, pixel_id, reservation_enabled, deposit_amount",
+        "company_name, logo_url, tagline, accent, accent_soft, ga4_id, pixel_id, reservation_enabled, deposit_amount, phone, email, whatsapp, address_street, address_city, address_postal, address_country, hours, geo_lat, geo_lng",
       )
       .eq("id", 1)
       .maybeSingle();
@@ -128,6 +133,9 @@ export const getBranding = unstable_cache(
     if (error || !data) {
       return DEFAULT_BRANDING;
     }
+
+    const d = DEFAULT_COMPANY;
+    const phone = data.phone || d.phone;
     return {
       companyName: data.company_name || DEFAULT_BRANDING.companyName,
       logoUrl: data.logo_url ? publicMediaUrl(data.logo_url) : null,
@@ -138,6 +146,23 @@ export const getBranding = unstable_cache(
       pixelId: data.pixel_id || null,
       reservationEnabled: data.reservation_enabled ?? false,
       depositAmount: data.deposit_amount ?? DEFAULT_BRANDING.depositAmount,
+      company: {
+        phone,
+        phoneHref: telHref(phone),
+        email: data.email || d.email,
+        whatsapp: (data.whatsapp || d.whatsapp).replace(/\D/g, ""),
+        address: {
+          street: data.address_street || d.address.street,
+          city: data.address_city || d.address.city,
+          postalCode: data.address_postal || d.address.postalCode,
+          country: data.address_country || d.address.country,
+        },
+        hours: data.hours || d.hours,
+        geo: {
+          lat: data.geo_lat ?? d.geo.lat,
+          lng: data.geo_lng ?? d.geo.lng,
+        },
+      },
     };
   },
   ["site-branding"],

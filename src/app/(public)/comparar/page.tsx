@@ -61,7 +61,7 @@ export default async function ComparePage({ searchParams }: Params) {
             href="/inventario"
             className="mt-6 inline-block rounded-full bg-accent px-6 py-3 text-sm font-semibold text-ink"
           >
-            Ir ao inventário
+            Ir ao stock
           </Link>
           <p className="mt-4 text-sm text-paper/40">
             Nos cartões, passe o rato e clique em «⇄ Comparar».

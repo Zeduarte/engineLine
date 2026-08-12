@@ -68,7 +68,7 @@ export function FeaturedVehicles({
             href="/inventario"
             className="group inline-flex items-center gap-2 text-sm font-medium text-paper/70 transition-colors hover:text-paper"
           >
-            Ver todo o inventário
+            Ver todo o stock
             <span className="transition-transform duration-300 group-hover:translate-x-1">
               →
             </span>
