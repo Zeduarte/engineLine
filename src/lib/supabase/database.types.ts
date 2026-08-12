@@ -233,6 +233,16 @@ type SiteSettingsRow = {
   pixel_id: string | null;
   reservation_enabled: boolean;
   deposit_amount: number;
+  phone: string | null;
+  email: string | null;
+  whatsapp: string | null;
+  address_street: string | null;
+  address_city: string | null;
+  address_postal: string | null;
+  address_country: string | null;
+  hours: string | null;
+  geo_lat: number | null;
+  geo_lng: number | null;
   updated_at: string;
 };
 type SiteSettingsInsert = {
@@ -246,6 +256,16 @@ type SiteSettingsInsert = {
   pixel_id?: string | null;
   reservation_enabled?: boolean;
   deposit_amount?: number;
+  phone?: string | null;
+  email?: string | null;
+  whatsapp?: string | null;
+  address_street?: string | null;
+  address_city?: string | null;
+  address_postal?: string | null;
+  address_country?: string | null;
+  hours?: string | null;
+  geo_lat?: number | null;
+  geo_lng?: number | null;
 };
 type SiteSettingsUpdate = Partial<SiteSettingsInsert>;
 

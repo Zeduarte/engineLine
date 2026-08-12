@@ -37,7 +37,7 @@ export function Footer({
           <ul className="mt-4 space-y-3 text-sm">
             <li>
               <Link href="/inventario" className="text-paper/70 hover:text-paper">
-                Inventário
+                Stock
               </Link>
             </li>
             <li>
@@ -59,20 +59,24 @@ export function Footer({
           </h2>
           <ul className="mt-4 space-y-3 text-sm text-paper/70">
             <li>
-              <a href={site.phoneHref} className="hover:text-paper">
-                {site.phone}
+              <a href={branding.company.phoneHref} className="hover:text-paper">
+                {branding.company.phone}
               </a>
             </li>
             <li>
-              <a href={`mailto:${site.email}`} className="hover:text-paper">
-                {site.email}
+              <a
+                href={`mailto:${branding.company.email}`}
+                className="hover:text-paper"
+              >
+                {branding.company.email}
               </a>
             </li>
             <li>
-              {site.address.street}, {site.address.postalCode}{" "}
-              {site.address.city}
+              {branding.company.address.street},{" "}
+              {branding.company.address.postalCode}{" "}
+              {branding.company.address.city}
             </li>
-            <li className="text-paper/50">{site.hours}</li>
+            <li className="text-paper/50">{branding.company.hours}</li>
           </ul>
         </div>
       </div>

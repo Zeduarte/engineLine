@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { Reveal } from "@/components/ui/Reveal";
-import { site, whatsappHref } from "@/lib/site";
+import { waHref, DEFAULT_COMPANY, type Company } from "@/lib/branding";
 import {
   DEFAULT_HOME_CONTENT,
   type CtaSectionContent,
@@ -9,8 +9,10 @@ import {
 
 export function ContactCTA({
   content = DEFAULT_HOME_CONTENT.cta,
+  company = DEFAULT_COMPANY,
 }: {
   content?: CtaSectionContent;
+  company?: Company;
 }) {
   return (
     <section className="container-px py-24 md:py-40">
@@ -25,7 +27,7 @@ export function ContactCTA({
 
         <Reveal className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <a
-            href={whatsappHref("Olá! Tenho interesse numa viatura do stand.")}
+            href={waHref(company.whatsapp, "Olá! Tenho interesse numa viatura do stand.")}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-ink transition-transform duration-300 ease-premium hover:scale-[1.03]"
@@ -42,8 +44,8 @@ export function ContactCTA({
 
         <p className="mt-8 text-sm text-paper/50">
           Ou ligue já:{" "}
-          <a href={site.phoneHref} className="text-paper hover:text-accent">
-            {site.phone}
+          <a href={company.phoneHref} className="text-paper hover:text-accent">
+            {company.phone}
           </a>
         </p>
       </div>

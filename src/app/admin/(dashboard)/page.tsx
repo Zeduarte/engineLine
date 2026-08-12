@@ -74,7 +74,7 @@ export default async function DashboardPage() {
           accent={stats.newLeads > 0}
         />
         <Kpi
-          label="Valor do inventário"
+          label="Valor do stock"
           value={formatPrice(stats.inventoryValue)}
           hint="Publicadas + reservadas"
         />
@@ -184,7 +184,7 @@ function Header() {
       <div>
         <h1 className="text-2xl font-bold text-paper">Dashboard</h1>
         <p className="mt-1 text-sm text-paper/50">
-          Visão geral do inventário e da atividade recente.
+          Visão geral do stock e da atividade recente.
         </p>
       </div>
       <div className="flex gap-3">

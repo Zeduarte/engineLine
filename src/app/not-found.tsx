@@ -8,14 +8,14 @@ export default function NotFound() {
         Esta viatura já saiu do stand
       </h1>
       <p className="mt-4 max-w-md font-light text-paper/60">
-        A página que procura não existe ou foi movida. Volte ao inventário para
+        A página que procura não existe ou foi movida. Volte ao stock para
         ver o que temos disponível.
       </p>
       <Link
         href="/inventario"
         className="mt-8 rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-ink transition-transform duration-300 ease-premium hover:scale-[1.03]"
       >
-        Ver inventário
+        Ver stock
       </Link>
     </div>
   );

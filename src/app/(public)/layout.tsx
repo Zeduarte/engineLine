@@ -32,7 +32,10 @@ export default async function PublicLayout({
         <Header branding={branding} />
         <main id="conteudo">{children}</main>
         <Footer branding={branding} />
-        <WhatsAppButton />
+        <WhatsAppButton
+          whatsapp={branding.company.whatsapp}
+          name={branding.companyName}
+        />
         <CompareBar />
         <GrainOverlay />
       </CompareProvider>

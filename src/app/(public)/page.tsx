@@ -9,6 +9,7 @@ import {
   getRecentVehicles,
   getHomeContent,
   getTestimonials,
+  getBranding,
 } from "@/lib/queries";
 
 // ISR: revalida a cada 60s — novos destaques e edições de conteúdo aparecem
@@ -18,10 +19,11 @@ export const revalidate = 60;
 // Server Component: os dados (destaques + conteúdo editável) são obtidos no
 // servidor e passados às ilhas cliente. Zero JS de dados enviado para o browser.
 export default async function HomePage() {
-  const [recent, content, testimonials] = await Promise.all([
+  const [recent, content, testimonials, branding] = await Promise.all([
     getRecentVehicles(),
     getHomeContent(),
     getTestimonials(),
+    getBranding(),
   ]);
 
   return (
@@ -32,7 +34,7 @@ export default async function HomePage() {
       <PinnedTrust content={content.trust} />
       <Testimonials items={testimonials} />
       <SellCTA />
-      <ContactCTA content={content.cta} />
+      <ContactCTA content={content.cta} company={branding.company} />
     </>
   );
 }

@@ -66,7 +66,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
 
   return (
     <>
-      <VehicleJsonLd vehicle={vehicle} />
+      <VehicleJsonLd vehicle={vehicle} sellerName={branding.companyName} />
       <ViewTracker carId={vehicle.id} slug={vehicle.slug} />
 
       <article className="pt-24 md:pt-28">
@@ -75,7 +75,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
             href="/inventario"
             className="mb-8 inline-flex items-center gap-2 text-sm text-paper/60 transition-colors hover:text-paper"
           >
-            <span aria-hidden>←</span> Voltar ao inventário
+            <span aria-hidden>←</span> Voltar ao stock
           </Link>
 
           {/* Cabeçalho */}
@@ -176,7 +176,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
         </div>
 
         <div className="mt-20">
-          <ContactBar vehicle={vehicle} />
+          <ContactBar vehicle={vehicle} company={branding.company} />
         </div>
       </article>
     </>

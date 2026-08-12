@@ -6,6 +6,7 @@ import type {
   LeadRow,
   ProfileRow,
 } from "@/lib/supabase/database.types";
+import { DEFAULT_COMPANY } from "@/lib/branding";
 
 /** Perfil (role) do utilizador autenticado. */
 export async function getCurrentProfile(): Promise<ProfileRow | null> {
@@ -269,6 +270,45 @@ export async function getSiteSettings(): Promise<{
     pixel_id: data?.pixel_id ?? null,
     reservation_enabled: data?.reservation_enabled ?? false,
     deposit_amount: data?.deposit_amount ?? 500,
+  };
+}
+
+/**
+ * Dados de contacto/empresa (admin) para o formulário. Cai nos defaults de
+ * `site.ts` quando ainda não foram definidos.
+ */
+export async function getCompanySettings(): Promise<{
+  phone: string;
+  email: string;
+  whatsapp: string;
+  address_street: string;
+  address_city: string;
+  address_postal: string;
+  address_country: string;
+  hours: string;
+  geo_lat: number | null;
+  geo_lng: number | null;
+}> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("site_settings")
+    .select(
+      "phone, email, whatsapp, address_street, address_city, address_postal, address_country, hours, geo_lat, geo_lng",
+    )
+    .eq("id", 1)
+    .maybeSingle();
+  const d = DEFAULT_COMPANY;
+  return {
+    phone: data?.phone ?? d.phone,
+    email: data?.email ?? d.email,
+    whatsapp: data?.whatsapp ?? d.whatsapp,
+    address_street: data?.address_street ?? d.address.street,
+    address_city: data?.address_city ?? d.address.city,
+    address_postal: data?.address_postal ?? d.address.postalCode,
+    address_country: data?.address_country ?? d.address.country,
+    hours: data?.hours ?? d.hours,
+    geo_lat: data?.geo_lat ?? d.geo.lat,
+    geo_lng: data?.geo_lng ?? d.geo.lng,
   };
 }
 

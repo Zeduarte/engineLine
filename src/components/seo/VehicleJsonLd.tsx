@@ -8,7 +8,13 @@ import { site } from "@/lib/site";
  * busca recebem-no no HTML inicial. Mapeamos os campos do domínio para as
  * propriedades canónicas do schema (fuelType, mileageFromOdometer, offers…).
  */
-export function VehicleJsonLd({ vehicle }: { vehicle: Vehicle }) {
+export function VehicleJsonLd({
+  vehicle,
+  sellerName = site.name,
+}: {
+  vehicle: Vehicle;
+  sellerName?: string;
+}) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Vehicle",
@@ -51,7 +57,7 @@ export function VehicleJsonLd({ vehicle }: { vehicle: Vehicle }) {
       price: vehicle.price,
       availability: "https://schema.org/InStock",
       itemCondition: "https://schema.org/UsedCondition",
-      seller: { "@type": "AutoDealer", name: site.name, url: site.url },
+      seller: { "@type": "AutoDealer", name: sellerName, url: site.url },
     },
   };
 

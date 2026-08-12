@@ -172,6 +172,33 @@ export const siteSettingsSchema = z.object({
 });
 export type SiteSettingsValues = z.infer<typeof siteSettingsSchema>;
 
+// ---- Dados de contacto / empresa (admin) ----------------------------------
+export const companySchema = z.object({
+  phone: z.string().trim().max(40).optional().or(z.literal("")),
+  email: z
+    .string()
+    .trim()
+    .max(120)
+    .email("Email inválido")
+    .optional()
+    .or(z.literal("")),
+  whatsapp: z
+    .string()
+    .trim()
+    .max(20)
+    .regex(/^\d*$/, "Só dígitos, com indicativo (ex.: 351910000000)")
+    .optional()
+    .or(z.literal("")),
+  address_street: z.string().trim().max(160).optional().or(z.literal("")),
+  address_city: z.string().trim().max(80).optional().or(z.literal("")),
+  address_postal: z.string().trim().max(20).optional().or(z.literal("")),
+  address_country: z.string().trim().max(60).optional().or(z.literal("")),
+  hours: z.string().trim().max(120).optional().or(z.literal("")),
+  geo_lat: z.coerce.number().min(-90).max(90).nullable().optional(),
+  geo_lng: z.coerce.number().min(-180).max(180).nullable().optional(),
+});
+export type CompanyValues = z.infer<typeof companySchema>;
+
 // ---- Marketing, reservas e consentimento (admin) --------------------------
 export const marketingSchema = z.object({
   ga4_id: z
