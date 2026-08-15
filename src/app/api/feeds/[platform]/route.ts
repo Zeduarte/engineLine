@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { getChannelVehicles } from "@/lib/queries";
+import { getChannelVehicles, getBranding } from "@/lib/queries";
 import { CHANNEL_IDS, CHANNELS } from "@/lib/schemas";
 import { site } from "@/lib/site";
+import type { Company } from "@/lib/branding";
 import type { Vehicle } from "@/types/vehicle";
 
 export const runtime = "nodejs";
@@ -63,6 +64,88 @@ ${images}
 <listings generator="engineLine" channel="${esc(channelLabel)}" generated="${new Date().toISOString()}">
 ${items}
 </listings>`;
+}
+
+/** Envolve texto em CDATA de forma segura (fecha/reabre em "]]>"). */
+function cdata(s: string): string {
+  return `<![CDATA[${(s ?? "").replace(/]]>/g, "]]]]><![CDATA[>")}]]>`;
+}
+
+/**
+ * Feed no formato do OLX (grupo OLX / Standvirtual).
+ *
+ * NOTA IMPORTANTE: a especificação oficial do OLX só é fornecida a contas
+ * profissionais de stand. Esta estrutura segue as convenções habituais do OLX
+ * (elemento <offers>/<offer> com <attributes> por código), mas os NOMES das
+ * categorias e dos códigos de atributo (make, model, fuel, gearbox…) e os
+ * VALORES esperados (ex.: "Diesel" vs "diesel") podem precisar de ajuste
+ * quando tiveres a documentação real. Todos esses pontos estão assinalados
+ * com «AJUSTAR:» para seres fácil de encontrar.
+ */
+function toOlxXml(vehicles: Vehicle[], company: Company): string {
+  const attr = (code: string, value: string | number, unit?: string) =>
+    value === "" || value == null
+      ? ""
+      : `        <attribute code="${code}"${unit ? ` unit="${unit}"` : ""}>${cdata(String(value))}</attribute>`;
+
+  const offers = vehicles
+    .map((v) => {
+      const title = `${v.make} ${v.model}${v.variant ? " " + v.variant : ""} ${v.year}`;
+      const images = v.images
+        .map((img) => `        <image url="${esc(img.src)}"/>`)
+        .join("\n");
+      const price = v.priceOnRequest
+        ? `    <price on_request="true"/>`
+        : `    <price currency="EUR">${v.price}</price>`;
+      const attributes = [
+        // AJUSTAR: códigos de atributo conforme a spec do OLX.
+        attr("make", v.make),
+        attr("model", v.model),
+        attr("version", v.variant ?? ""),
+        attr("year", v.year),
+        attr("mileage", v.mileage, "km"),
+        attr("fuel", v.fuel), // AJUSTAR: valores (ex.: "Diesel"/"Gasolina")
+        attr("gearbox", v.transmission), // AJUSTAR: "Manual"/"Automática"
+        attr("body", v.body),
+        attr("power", v.power, "cv"),
+        attr("engine_capacity", v.displacement, "cc"),
+        attr("doors", v.doors),
+        attr("seats", v.seats),
+        attr("color", v.color ?? ""),
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      return `  <offer>
+    <id>${esc(v.id ?? v.slug)}</id>
+    <url>${esc(vehicleUrl(v))}</url>
+    <title>${cdata(title)}</title>
+    <description>${cdata(v.description ?? "")}</description>
+    <category>Carros</category> <!-- AJUSTAR: categoria/ID do OLX -->
+    <condition>usado</condition>
+${price}
+    <contact>
+      <phone>${esc(company.phone)}</phone>
+      <email>${esc(company.email)}</email>
+    </contact>
+    <location>
+      <city>${esc(company.address.city)}</city>
+      <postcode>${esc(company.address.postalCode)}</postcode>
+    </location>
+    <attributes>
+${attributes}
+    </attributes>
+    <images>
+${images}
+    </images>
+  </offer>`;
+    })
+    .join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<offers generator="engineLine" generated="${new Date().toISOString()}">
+${offers}
+</offers>`;
 }
 
 function toCsv(vehicles: Vehicle[]): string {
@@ -153,6 +236,15 @@ export async function GET(
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `inline; filename="${platform}.csv"`,
       },
+    });
+  }
+
+  // O OLX tem um formato próprio (<offers>/<offer>); os restantes canais usam
+  // o feed genérico. Ambos só contêm dados já públicos das viaturas.
+  if (platform === "olx") {
+    const { company } = await getBranding();
+    return new NextResponse(toOlxXml(vehicles, company), {
+      headers: { "Content-Type": "application/xml; charset=utf-8" },
     });
   }
 
