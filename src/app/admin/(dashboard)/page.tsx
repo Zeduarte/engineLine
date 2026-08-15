@@ -98,10 +98,6 @@ export default async function DashboardPage() {
         />
       </section>
 
-      <section className="mt-8">
-        <InventoryCharts stats={stats} />
-      </section>
-
       {stats.topViewed.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-4 text-lg font-semibold text-paper">
@@ -125,6 +121,10 @@ export default async function DashboardPage() {
           </div>
         </section>
       )}
+
+      <section className="mt-8">
+        <InventoryCharts stats={stats} />
+      </section>
 
       <section className="mt-8">
         <div className="mb-4 flex items-center justify-between">

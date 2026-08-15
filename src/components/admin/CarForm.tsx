@@ -23,6 +23,27 @@ import { CAR_MODELS } from "@/lib/car-models";
 // Lista de anos calculada uma vez (o ano corrente é estável na sessão).
 const YEARS = yearOptions();
 
+// Opções fixas para portas e lugares.
+const DOOR_OPTIONS = [2, 3, 4, 5];
+const SEAT_OPTIONS = [2, 4, 5, 6, 7, 8, 9];
+
+/**
+ * Formata a matrícula em grupos de 2 separados por hífen (ex.: "44vs23" →
+ * "44-VS-23"). Aceita letras e dígitos, em maiúsculas.
+ */
+function formatPlate(raw: string): string {
+  const clean = raw
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 6);
+  return clean.match(/.{1,2}/g)?.join("-") ?? "";
+}
+
+// Ao focar um campo numérico, seleciona o conteúdo — assim escrever substitui
+// logo o "0" em vez de obrigar a apagá-lo primeiro.
+const selectOnFocus = (e: React.FocusEvent<HTMLInputElement>) =>
+  e.currentTarget.select();
+
 export function CarForm({
   carId,
   defaults,
@@ -186,7 +207,16 @@ export function CarForm({
             label="Matrícula (privado)"
             error={errors.license_plate?.message}
           >
-            <input className="field" {...register("license_plate")} />
+            <input
+              className="field uppercase"
+              placeholder="AA-00-AA"
+              {...register("license_plate")}
+              onChange={(e) =>
+                setValue("license_plate", formatPlate(e.target.value), {
+                  shouldDirty: true,
+                })
+              }
+            />
           </Field>
           <Field label="Cor" error={errors.color?.message}>
             <Combobox
@@ -205,7 +235,12 @@ export function CarForm({
       <Section title="Mecânica">
         <Grid>
           <Field label="Quilómetros" error={errors.mileage?.message} required>
-            <input type="number" className="field" {...register("mileage")} />
+            <input
+              type="number"
+              className="field"
+              onFocus={selectOnFocus}
+              {...register("mileage")}
+            />
           </Field>
           <Field label="Combustível" error={errors.fuel?.message} required>
             <select className="field" {...register("fuel")}>
@@ -235,20 +270,38 @@ export function CarForm({
             </select>
           </Field>
           <Field label="Potência (cv)" error={errors.power?.message}>
-            <input type="number" className="field" {...register("power")} />
+            <input
+              type="number"
+              className="field"
+              onFocus={selectOnFocus}
+              {...register("power")}
+            />
           </Field>
           <Field label="Cilindrada (cm³)" error={errors.displacement?.message}>
             <input
               type="number"
               className="field"
+              onFocus={selectOnFocus}
               {...register("displacement")}
             />
           </Field>
           <Field label="Portas" error={errors.doors?.message}>
-            <input type="number" className="field" {...register("doors")} />
+            <select className="field" {...register("doors")}>
+              {DOOR_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="Lugares" error={errors.seats?.message}>
-            <input type="number" className="field" {...register("seats")} />
+            <select className="field" {...register("seats")}>
+              {SEAT_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
           </Field>
         </Grid>
       </Section>
@@ -261,6 +314,7 @@ export function CarForm({
               type="number"
               className="field disabled:opacity-40"
               disabled={onRequest}
+              onFocus={selectOnFocus}
               {...register("price")}
             />
           </Field>
@@ -303,13 +357,13 @@ export function CarForm({
       <Section title="Transparência & destaques">
         <Grid>
           <Field label="Preço anterior (€) — mostra «Baixa de preço»">
-            <input type="number" className="field" {...register("previous_price")} />
+            <input type="number" className="field" onFocus={selectOnFocus} {...register("previous_price")} />
           </Field>
           <Field label="Nº de donos">
-            <input type="number" className="field" {...register("owners")} />
+            <input type="number" className="field" onFocus={selectOnFocus} {...register("owners")} />
           </Field>
           <Field label="Garantia (meses)">
-            <input type="number" className="field" {...register("warranty_months")} />
+            <input type="number" className="field" onFocus={selectOnFocus} {...register("warranty_months")} />
           </Field>
           <Field label="Última inspeção">
             <input type="date" className="field" {...register("last_inspection")} />

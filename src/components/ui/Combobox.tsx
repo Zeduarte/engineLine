@@ -99,6 +99,9 @@ export function Combobox({
   }
 
   const hasList = options.length > 0;
+  const showClear = !disabled && value.trim() !== "";
+  // Espaço à direita conforme os botões visíveis (limpar × e/ou seta).
+  const padRight = hasList && showClear ? "pr-16" : hasList || showClear ? "pr-9" : "";
 
   return (
     <div ref={wrapRef} className="relative">
@@ -111,7 +114,7 @@ export function Combobox({
         aria-autocomplete="list"
         autoComplete="off"
         disabled={disabled}
-        className={`${className} ${hasList ? "pr-9" : ""} disabled:cursor-not-allowed disabled:opacity-50`}
+        className={`${className} ${padRight} disabled:cursor-not-allowed disabled:opacity-50`}
         placeholder={placeholder}
         value={value}
         onChange={(e) => {
@@ -121,6 +124,22 @@ export function Combobox({
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
       />
+      {showClear && (
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label="Limpar"
+          onClick={() => {
+            onChange("");
+            setOpen(false);
+          }}
+          className={`absolute inset-y-0 flex w-9 items-center justify-center text-lg text-paper/40 hover:text-paper/80 ${
+            hasList ? "right-8" : "right-0"
+          }`}
+        >
+          ×
+        </button>
+      )}
       {hasList && !disabled && (
         <button
           type="button"
