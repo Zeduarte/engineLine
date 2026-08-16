@@ -16,10 +16,13 @@ export function ReserveForm({
   vehicleName,
   vehicleId,
   depositAmount,
+  bare = false,
 }: {
   vehicleName: string;
   vehicleId?: string;
   depositAmount: number;
+  /** Quando true, não desenha o cartão/título próprios (usado no seletor). */
+  bare?: boolean;
 }) {
   const [state, formAction, pending] = useActionState<
     LeadActionState,
@@ -46,18 +49,9 @@ export function ReserveForm({
     if (Object.keys(next).length > 0) e.preventDefault();
   }
 
-  return (
-    <section
-      aria-labelledby="reserve-title"
-      className="rounded-3xl border border-accent/40 bg-accent/5 p-6 md:p-8"
-    >
-      <span className="inline-block rounded-full bg-accent/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent">
-        Reservar online
-      </span>
-      <h2 id="reserve-title" className="mt-3 text-2xl font-semibold text-paper">
-        Reserve já esta viatura
-      </h2>
-      <p className="mt-2 text-sm text-paper/60">
+  const content = (
+    <>
+      <p className="mb-2 text-sm text-paper/60">
         Garanta o {vehicleName} com um sinal de{" "}
         <strong className="text-accent">{formatPrice(depositAmount)}</strong>. A
         reserva retira a viatura do mercado enquanto tratamos de tudo consigo. O
@@ -145,6 +139,23 @@ export function ReserveForm({
         }
         .rinput:focus { outline: none; border-color: var(--accent); }
       `}</style>
+    </>
+  );
+
+  if (bare) return content;
+
+  return (
+    <section
+      aria-labelledby="reserve-title"
+      className="rounded-3xl border border-accent/40 bg-accent/5 p-6 md:p-8"
+    >
+      <span className="inline-block rounded-full bg-accent/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent">
+        Reservar online
+      </span>
+      <h2 id="reserve-title" className="mt-3 text-2xl font-semibold text-paper">
+        Reserve já esta viatura
+      </h2>
+      {content}
     </section>
   );
 }

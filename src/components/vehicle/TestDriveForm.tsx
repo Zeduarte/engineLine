@@ -15,9 +15,12 @@ import { submitLead, type LeadActionState } from "@/lib/actions/leads";
 export function TestDriveForm({
   vehicleName,
   vehicleId,
+  bare = false,
 }: {
   vehicleName: string;
   vehicleId?: string;
+  /** Quando true, não desenha o cartão/título próprios (usado no seletor). */
+  bare?: boolean;
 }) {
   const [state, formAction, pending] = useActionState<
     LeadActionState,
@@ -45,18 +48,8 @@ export function TestDriveForm({
     if (Object.keys(next).length > 0) e.preventDefault();
   }
 
-  return (
-    <section
-      aria-labelledby="testdrive-title"
-      className="rounded-3xl border border-white/10 bg-ink-soft p-6 md:p-8"
-    >
-      <h2 id="testdrive-title" className="text-2xl font-semibold text-paper">
-        Marcar test drive
-      </h2>
-      <p className="mt-2 text-sm text-paper/50">
-        Experimente o {vehicleName} sem compromisso.
-      </p>
-
+  const content = (
+    <>
       <AnimatePresence mode="wait">
         {state.ok ? (
           <motion.div
@@ -174,6 +167,23 @@ export function TestDriveForm({
         .input:focus { outline: none; border-color: var(--accent); }
         .input::-webkit-calendar-picker-indicator { filter: invert(0.8); }
       `}</style>
+    </>
+  );
+
+  if (bare) return content;
+
+  return (
+    <section
+      aria-labelledby="testdrive-title"
+      className="rounded-3xl border border-white/10 bg-ink-soft p-6 md:p-8"
+    >
+      <h2 id="testdrive-title" className="text-2xl font-semibold text-paper">
+        Marcar test drive
+      </h2>
+      <p className="mt-2 text-sm text-paper/50">
+        Experimente o {vehicleName} sem compromisso.
+      </p>
+      {content}
     </section>
   );
 }

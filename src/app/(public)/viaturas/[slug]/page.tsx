@@ -6,8 +6,7 @@ import { formatKm, priceLabel } from "@/lib/format";
 import { Gallery } from "@/components/vehicle/Gallery";
 import { Specs } from "@/components/vehicle/Specs";
 import { TransparencySection } from "@/components/vehicle/TransparencySection";
-import { TestDriveForm } from "@/components/vehicle/TestDriveForm";
-import { ReserveForm } from "@/components/vehicle/ReserveForm";
+import { VehicleActions } from "@/components/vehicle/VehicleActions";
 import { ViewTracker } from "@/components/vehicle/ViewTracker";
 import { SellCTA } from "@/components/home/SellCTA";
 import { ContactBar } from "@/components/vehicle/ContactBar";
@@ -155,16 +154,12 @@ export default async function VehiclePage({ params }: { params: Params }) {
             </div>
 
             <div className="space-y-8 lg:sticky lg:top-28 lg:self-start">
-              {canReserve && (
-                <ReserveForm
-                  vehicleName={`${vehicle.make} ${vehicle.model}`}
-                  vehicleId={vehicle.id}
-                  depositAmount={branding.depositAmount}
-                />
-              )}
-              <TestDriveForm
+              <VehicleActions
                 vehicleName={`${vehicle.make} ${vehicle.model}`}
                 vehicleId={vehicle.id}
+                price={vehicle.priceOnRequest ? null : vehicle.price}
+                canReserve={canReserve}
+                depositAmount={branding.depositAmount}
               />
             </div>
           </div>

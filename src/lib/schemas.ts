@@ -99,7 +99,15 @@ export type CarFormValues = z.infer<typeof carFormSchema>;
 /** Formulário público de lead (contacto / test drive / retoma / encomenda). */
 export const leadSchema = z.object({
   kind: z
-    .enum(["contact", "test_drive", "finance", "trade_in", "order", "reservation"])
+    .enum([
+      "contact",
+      "test_drive",
+      "finance",
+      "trade_in",
+      "order",
+      "reservation",
+      "offer",
+    ])
     .default("contact"),
   car_id: z.string().uuid().nullable().optional(),
   car_label: z.string().max(160).optional().or(z.literal("")),
@@ -118,6 +126,19 @@ export const leadSchema = z.object({
 });
 
 export type LeadValues = z.infer<typeof leadSchema>;
+
+/** Testemunho submetido publicamente por um visitante (entra por aprovar). */
+export const publicTestimonialSchema = z.object({
+  name: z.string().trim().min(2, "Indique o seu nome").max(80),
+  rating: z.coerce.number().int().min(1).max(5).default(5),
+  role: z.string().trim().max(80).optional().or(z.literal("")),
+  body: z
+    .string()
+    .trim()
+    .min(10, "Escreva pelo menos algumas palavras")
+    .max(1000),
+});
+export type PublicTestimonialValues = z.infer<typeof publicTestimonialSchema>;
 
 // ---- Conteúdo da página inicial -------------------------------------------
 const cta = z.object({

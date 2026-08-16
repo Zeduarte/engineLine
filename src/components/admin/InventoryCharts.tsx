@@ -3,25 +3,12 @@
 import {
   Bar,
   BarChart,
-  Cell,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import type { DashboardStats } from "@/lib/admin-queries";
-
-// Paleta coerente com o acento da marca (tons quentes + neutros).
-const PALETTE = [
-  "#E8B15A",
-  "#C8934A",
-  "#6C8EBF",
-  "#7FB285",
-  "#B07BAC",
-  "#D98E73",
-];
 
 const AXIS = { fill: "#a1a1aa", fontSize: 12 };
 
@@ -82,27 +69,6 @@ export function InventoryCharts({ stats }: { stats: DashboardStats }) {
             />
             <Bar dataKey="vendidos" radius={[6, 6, 0, 0]} fill="#E8B15A" />
           </BarChart>
-        </ResponsiveContainer>
-      </ChartCard>
-
-      <ChartCard title="Distribuição por combustível">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={stats.byFuel}
-              dataKey="value"
-              nameKey="name"
-              innerRadius={45}
-              outerRadius={80}
-              paddingAngle={2}
-              stroke="none"
-            >
-              {stats.byFuel.map((_, i) => (
-                <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
-              ))}
-            </Pie>
-            <Tooltip content={<TooltipBox />} />
-          </PieChart>
         </ResponsiveContainer>
       </ChartCard>
 
