@@ -35,7 +35,8 @@ export type LeadKind =
   | "finance"
   | "trade_in"
   | "order"
-  | "reservation";
+  | "reservation"
+  | "offer";
 export type LeadStatus =
   | "new"
   | "contacted"

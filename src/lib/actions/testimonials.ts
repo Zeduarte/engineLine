@@ -2,10 +2,42 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { publicTestimonialSchema } from "@/lib/schemas";
 
 export interface TResult {
   ok: boolean;
   error?: string;
+}
+
+/**
+ * Submissão PÚBLICA de testemunho por um visitante. Entra sempre por aprovar
+ * (`published = false`) — só aparece no site depois de o staff o aprovar no
+ * backoffice. A RLS (0008) só permite inserção anónima com published = false.
+ */
+export async function submitPublicTestimonial(input: unknown): Promise<TResult> {
+  const parsed = publicTestimonialSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+  const { name, rating, role, body } = parsed.data;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("testimonials").insert({
+    name,
+    rating,
+    body,
+    role: role || null,
+    published: false, // sempre pendente de aprovação
+  });
+  if (error) {
+    console.error("submitPublicTestimonial:", error.message);
+    return { ok: false, error: "Não foi possível enviar. Tente novamente." };
+  }
+  revalidatePath("/admin/testemunhos");
+  return { ok: true };
 }
 
 function refresh() {
