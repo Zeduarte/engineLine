@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { Reveal } from "@/components/ui/Reveal";
 import { ContactForm } from "@/components/forms/ContactForm";
@@ -32,6 +33,20 @@ export default async function ContactsPage() {
         >
           Estamos aqui para ajudar
         </AnimatedText>
+      </section>
+
+      {/* Banner (imagem guardada em public/images/). */}
+      <section className="container-px mt-12">
+        <div className="relative aspect-[21/9] overflow-hidden rounded-3xl border border-white/10 bg-ink-muted">
+          <Image
+            src="/images/contactos.jpg"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+        </div>
       </section>
 
       <section className="container-px mt-16 grid gap-12 lg:grid-cols-2">

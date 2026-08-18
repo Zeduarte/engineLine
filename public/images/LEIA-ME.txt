@@ -1,0 +1,20 @@
+COLOCAR AQUI AS IMAGENS DO SITE
+================================
+
+Guarda os 4 ficheiros nesta pasta (public/images/) com EXATAMENTE estes nomes:
+
+  pilar-1.jpg     -> 1ª imagem enviada  (motor / tampa GB Racing, close-up)
+  pilar-2.jpg     -> 3ª imagem enviada  (painel de instrumentos / velocímetro)
+  sobre.jpg       -> 2ª imagem enviada  (piloto sentado na mota, vista lateral)
+  contactos.jpg   -> 4ª imagem enviada  (piloto a colocar o capacete)
+
+Onde aparecem:
+  - pilar-1.jpg + pilar-2.jpg  -> secção "Porquê comprar" da página inicial
+  - sobre.jpg                  -> página "Sobre"
+  - contactos.jpg              -> banner da página "Contactos"
+
+Notas:
+  - Os nomes têm de ser exatamente estes (minúsculas, extensão .jpg).
+  - Se as tuas imagens forem .png ou .webp, ou muda a extensão do ficheiro
+    para .jpg, ou avisa que eu ajusto o código.
+  - Podes apagar este ficheiro depois de colocares as imagens.

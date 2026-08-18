@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import {
@@ -87,6 +88,28 @@ export function PinnedTrust({
               />
             ))}
           </ol>
+
+          {/* Par de imagens decorativas (guardadas em public/images/). */}
+          <div className="mt-10 hidden grid-cols-2 gap-4 md:grid" aria-hidden>
+            <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-white/10">
+              <Image
+                src="/images/pilar-1.jpg"
+                alt=""
+                fill
+                sizes="25vw"
+                className="object-cover"
+              />
+            </div>
+            <div className="relative mt-8 aspect-[4/5] overflow-hidden rounded-2xl border border-white/10">
+              <Image
+                src="/images/pilar-2.jpg"
+                alt=""
+                fill
+                sizes="25vw"
+                className="object-cover"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Painéis que trocam (visual, animado por GSAP) */}
