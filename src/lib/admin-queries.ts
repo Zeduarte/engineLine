@@ -304,6 +304,7 @@ export async function getCompanySettings(): Promise<{
   phone: string;
   email: string;
   whatsapp: string;
+  messenger: string;
   address_street: string;
   address_city: string;
   address_postal: string;
@@ -316,7 +317,7 @@ export async function getCompanySettings(): Promise<{
   const { data } = await supabase
     .from("site_settings")
     .select(
-      "phone, email, whatsapp, address_street, address_city, address_postal, address_country, hours, geo_lat, geo_lng",
+      "phone, email, whatsapp, messenger, address_street, address_city, address_postal, address_country, hours, geo_lat, geo_lng",
     )
     .eq("id", 1)
     .maybeSingle();
@@ -325,6 +326,7 @@ export async function getCompanySettings(): Promise<{
     phone: data?.phone ?? d.phone,
     email: data?.email ?? d.email,
     whatsapp: data?.whatsapp ?? d.whatsapp,
+    messenger: data?.messenger ?? d.messenger,
     address_street: data?.address_street ?? d.address.street,
     address_city: data?.address_city ?? d.address.city,
     address_postal: data?.address_postal ?? d.address.postalCode,

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { Reveal } from "@/components/ui/Reveal";
+import { Parallax } from "@/components/ui/Parallax";
 import { ContactForm } from "@/components/forms/ContactForm";
 import { waHref } from "@/lib/branding";
 import { getBranding } from "@/lib/queries";
@@ -35,17 +36,19 @@ export default async function ContactsPage() {
         </AnimatedText>
       </section>
 
-      {/* Banner (imagem guardada em public/images/). */}
+      {/* Banner com parallax subtil (imagem guardada em public/images/). */}
       <section className="container-px mt-12">
         <div className="relative aspect-[21/9] overflow-hidden rounded-3xl border border-white/10 bg-ink-muted">
-          <Image
-            src="/images/contactos.jpg"
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-          />
+          <Parallax amount={0.12} className="absolute inset-0 scale-110">
+            <Image
+              src="/images/contactos.jpg"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+          </Parallax>
         </div>
       </section>
 

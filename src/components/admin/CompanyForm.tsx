@@ -24,6 +24,7 @@ interface CompanyInitial {
   phone: string;
   email: string;
   whatsapp: string;
+  messenger: string;
   address_street: string;
   address_city: string;
   address_postal: string;
@@ -43,6 +44,7 @@ export function CompanyForm({ initial }: { initial: CompanyInitial }) {
     phone: initial.phone,
     email: initial.email,
     whatsapp: initial.whatsapp,
+    messenger: initial.messenger,
     address_street: initial.address_street,
     address_city: initial.address_city,
     address_postal: initial.address_postal,
@@ -125,6 +127,17 @@ export function CompanyForm({ initial }: { initial: CompanyInitial }) {
               value={form.hours}
               onChange={(e) => set("hours", e.target.value)}
               placeholder="Seg–Sáb · 09h00–19h00"
+            />
+          </Field>
+          <Field
+            label="Messenger (link m.me)"
+            hint="Link da tua página no Messenger. Ex.: https://m.me/aminhapagina"
+          >
+            <input
+              className="field"
+              value={form.messenger}
+              onChange={(e) => set("messenger", e.target.value)}
+              placeholder="https://m.me/aminhapagina"
             />
           </Field>
         </div>

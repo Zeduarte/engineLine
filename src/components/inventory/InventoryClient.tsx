@@ -24,8 +24,17 @@ import { VehicleCard } from "@/components/vehicle/VehicleCard";
  * transição ao filtrar/ordenar (entrada/saída em stagger via `delay` por
  * índice). O Framer Motion respeita `prefers-reduced-motion` do sistema.
  */
-export function InventoryClient({ vehicles }: { vehicles: Vehicle[] }) {
-  const [filters, setFilters] = useState<VehicleFilters>(emptyFilters);
+export function InventoryClient({
+  vehicles,
+  initialFilters,
+}: {
+  vehicles: Vehicle[];
+  initialFilters?: Partial<VehicleFilters>;
+}) {
+  const [filters, setFilters] = useState<VehicleFilters>(() => ({
+    ...emptyFilters(),
+    ...initialFilters,
+  }));
   const [sort, setSort] = useState<SortKey>("relevance");
 
   const options = useMemo(

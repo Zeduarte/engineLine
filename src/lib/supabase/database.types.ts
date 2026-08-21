@@ -240,6 +240,7 @@ type SiteSettingsRow = {
   phone: string | null;
   email: string | null;
   whatsapp: string | null;
+  messenger: string | null;
   address_street: string | null;
   address_city: string | null;
   address_postal: string | null;
@@ -263,6 +264,7 @@ type SiteSettingsInsert = {
   phone?: string | null;
   email?: string | null;
   whatsapp?: string | null;
+  messenger?: string | null;
   address_street?: string | null;
   address_city?: string | null;
   address_postal?: string | null;

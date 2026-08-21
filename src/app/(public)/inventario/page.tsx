@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getVehicles } from "@/lib/queries";
 import { InventoryClient } from "@/components/inventory/InventoryClient";
+import type { FuelType } from "@/types/vehicle";
 
 export const revalidate = 60;
 
@@ -10,8 +11,21 @@ export const metadata: Metadata = {
     "Explore o stock completo de viaturas premium do engineLine. Filtre por marca, modelo, preço, ano, combustível e quilómetros.",
 };
 
-export default async function InventoryPage() {
+export default async function InventoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  const sp = await searchParams;
   const vehicles = await getVehicles();
+
+  // Filtros iniciais vindos do URL (ex.: da pesquisa rápida da homepage).
+  const initialFilters = {
+    make: sp.make || null,
+    model: sp.model || null,
+    fuel: (sp.fuel as FuelType) || null,
+    query: sp.q || null,
+  };
 
   return (
     <div className="container-px pb-24 pt-32 md:pt-40">
@@ -26,7 +40,7 @@ export default async function InventoryPage() {
         </p>
       </header>
 
-      <InventoryClient vehicles={vehicles} />
+      <InventoryClient vehicles={vehicles} initialFilters={initialFilters} />
     </div>
   );
 }

@@ -210,6 +210,7 @@ export const companySchema = z.object({
     .regex(/^\d*$/, "Só dígitos, com indicativo (ex.: 351910000000)")
     .optional()
     .or(z.literal("")),
+  messenger: z.string().trim().max(200).optional().or(z.literal("")),
   address_street: z.string().trim().max(160).optional().or(z.literal("")),
   address_city: z.string().trim().max(80).optional().or(z.literal("")),
   address_postal: z.string().trim().max(20).optional().or(z.literal("")),
