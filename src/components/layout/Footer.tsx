@@ -2,15 +2,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { site } from "@/lib/site";
 import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
+import { LEGAL_NAME, NIF } from "@/lib/legal";
 
-// Identificação legal e links obrigatórios (rodapé).
-const LEGAL_NAME = "Carlos Moreira – Supermotas, Unipessoal Lda";
-const NIF = "518429261";
-const LEGAL_LINKS: { label: string; href: string }[] = [
-  { label: "Livro de Reclamações", href: "https://www.livroreclamacoes.pt/Inicio/" },
-  { label: "Política de Privacidade", href: "https://www.supermotas.com/politica-de-privacidade/" },
-  { label: "Política de Cookies", href: "https://www.supermotas.com/politica-de-cookies/" },
-  { label: "Termos de Condições", href: "https://www.supermotas.com/termos-condicoes/" },
+// Links obrigatórios do rodapé. As políticas são páginas internas do site; o
+// Livro de Reclamações é o portal oficial (externo).
+const LEGAL_LINKS: { label: string; href: string; external?: boolean }[] = [
+  { label: "Livro de Reclamações", href: "https://www.livroreclamacoes.pt/Inicio/", external: true },
+  { label: "Política de Privacidade", href: "/politica-de-privacidade" },
+  { label: "Política de Cookies", href: "/politica-de-cookies" },
+  { label: "Termos de Condições", href: "/termos-condicoes" },
 ];
 
 export function Footer({
@@ -99,7 +99,7 @@ export function Footer({
           <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 uppercase tracking-wide">
             {LEGAL_LINKS.map((l, i) => (
               <span key={l.label} className="flex items-center gap-3">
-                {l.href ? (
+                {l.external ? (
                   <a
                     href={l.href}
                     target="_blank"
@@ -109,9 +109,12 @@ export function Footer({
                     {l.label}
                   </a>
                 ) : (
-                  <span className="text-paper/50" title="Brevemente">
+                  <Link
+                    href={l.href}
+                    className="text-paper/50 transition-colors hover:text-paper"
+                  >
                     {l.label}
-                  </span>
+                  </Link>
                 )}
                 {i < LEGAL_LINKS.length - 1 && (
                   <span aria-hidden className="text-paper/25">

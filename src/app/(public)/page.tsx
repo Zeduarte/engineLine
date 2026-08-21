@@ -30,16 +30,12 @@ export default async function HomePage() {
       getVehicles(),
     ]);
 
-  // Opções para a pesquisa rápida (marca → modelos → combustível).
-  const makes = [...new Set(allVehicles.map((v) => v.make))].sort((a, b) =>
-    a.localeCompare(b, "pt"),
-  );
-  const modelsByMake: Record<string, string[]> = {};
-  for (const v of allVehicles) {
-    const list = (modelsByMake[v.make] ??= []);
-    if (!list.includes(v.model)) list.push(v.model);
-  }
-  const fuels = [...new Set(allVehicles.map((v) => v.fuel))];
+  // Dados mínimos para a pesquisa rápida (marca/modelo/combustível + contagem).
+  const searchItems = allVehicles.map((v) => ({
+    make: v.make,
+    model: v.model,
+    fuel: v.fuel,
+  }));
 
   return (
     <>
@@ -47,11 +43,7 @@ export default async function HomePage() {
 
       {allVehicles.length > 0 && (
         <div className="container-px -mt-8 md:-mt-12">
-          <QuickSearch
-            makes={makes}
-            modelsByMake={modelsByMake}
-            fuels={fuels}
-          />
+          <QuickSearch vehicles={searchItems} />
         </div>
       )}
 
