@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { getHomeContent } from "@/lib/queries";
+import { requireSection } from "@/lib/guard";
 import { HomeContentForm } from "@/components/admin/HomeContentForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomeContentPage() {
+  await requireSection("pagina-inicial");
   const content = await getHomeContent();
 
   return (

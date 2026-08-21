@@ -1,13 +1,12 @@
-import { redirect } from "next/navigation";
-import { getCurrentProfile, getProfiles } from "@/lib/admin-queries";
+import { getProfiles } from "@/lib/admin-queries";
+import { requireSection } from "@/lib/guard";
 import { UsersManager, type UserItem } from "@/components/admin/UsersManager";
+import { effectiveSections } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
-  const profile = await getCurrentProfile();
-  if (!profile) redirect("/admin/login");
-  if (profile.role !== "admin") redirect("/admin");
+  const me = await requireSection("utilizadores");
 
   const profiles = await getProfiles();
   const users: UserItem[] = profiles.map((p) => ({
@@ -15,6 +14,7 @@ export default async function UsersPage() {
     email: p.email,
     full_name: p.full_name,
     role: p.role,
+    allowed_sections: p.allowed_sections,
     created_at: p.created_at,
   }));
 
@@ -25,12 +25,14 @@ export default async function UsersPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-paper">Utilizadores</h1>
         <p className="mt-1 text-sm text-paper/50">
-          Faça a gestão de quem acede ao backoffice e das suas permissões.
+          Faça a gestão de quem acede ao backoffice e dos separadores a que cada
+          um tem acesso. Só pode gerir utilizadores de nível inferior ao seu.
         </p>
       </div>
       <UsersManager
         users={users}
-        currentUserId={profile.id}
+        currentUser={{ id: me.id, role: me.role }}
+        managerSections={effectiveSections(me.role, me.allowed_sections)}
         canManageAuth={canManageAuth}
       />
     </>

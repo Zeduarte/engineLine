@@ -3,31 +3,39 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/lib/actions/auth";
+import type { Section } from "@/lib/permissions";
 
-const NAV = [
-  { href: "/admin", label: "Dashboard", icon: "▨", exact: true, adminOnly: false },
-  { href: "/admin/carros", label: "Viaturas", icon: "▦", exact: false, adminOnly: false },
-  { href: "/admin/carros/novo", label: "Nova viatura", icon: "＋", exact: true, adminOnly: false },
-  { href: "/admin/pagina-inicial", label: "Página inicial", icon: "◧", exact: false, adminOnly: false },
-  { href: "/admin/leads", label: "Leads", icon: "✉", exact: false, adminOnly: false },
-  { href: "/admin/testemunhos", label: "Testemunhos", icon: "★", exact: false, adminOnly: false },
-  { href: "/admin/integracoes", label: "Integrações", icon: "⇄", exact: false, adminOnly: true },
-  { href: "/admin/utilizadores", label: "Utilizadores", icon: "◑", exact: false, adminOnly: true },
-  { href: "/admin/definicoes", label: "Definições", icon: "⚙", exact: false, adminOnly: true },
+const NAV: {
+  href: string;
+  label: string;
+  icon: string;
+  exact: boolean;
+  section: Section;
+}[] = [
+  { href: "/admin", label: "Dashboard", icon: "▨", exact: true, section: "dashboard" },
+  { href: "/admin/carros", label: "Viaturas", icon: "▦", exact: false, section: "carros" },
+  { href: "/admin/carros/novo", label: "Nova viatura", icon: "＋", exact: true, section: "carros" },
+  { href: "/admin/pagina-inicial", label: "Página inicial", icon: "◧", exact: false, section: "pagina-inicial" },
+  { href: "/admin/leads", label: "Leads", icon: "✉", exact: false, section: "leads" },
+  { href: "/admin/testemunhos", label: "Testemunhos", icon: "★", exact: false, section: "testemunhos" },
+  { href: "/admin/integracoes", label: "Integrações", icon: "⇄", exact: false, section: "integracoes" },
+  { href: "/admin/utilizadores", label: "Utilizadores", icon: "◑", exact: false, section: "utilizadores" },
+  { href: "/admin/definicoes", label: "Definições", icon: "⚙", exact: false, section: "definicoes" },
 ];
 
 export function Sidebar({
   user,
+  sections,
   companyName = "engineLine",
   newLeads = 0,
 }: {
   user: { name: string; role: string };
+  sections: Section[];
   companyName?: string;
   newLeads?: number;
 }) {
   const pathname = usePathname();
-  const isAdmin = user.role === "admin";
-  const items = NAV.filter((i) => !i.adminOnly || isAdmin);
+  const items = NAV.filter((i) => sections.includes(i.section));
 
   const isActive = (href: string, exact: boolean) =>
     exact ? pathname === href : pathname.startsWith(href);
