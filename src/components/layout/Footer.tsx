@@ -8,7 +8,7 @@ const LEGAL_NAME = "Carlos Moreira – Supermotas, Unipessoal Lda";
 const NIF = "518429261";
 const LEGAL_LINKS: { label: string; href: string }[] = [
   { label: "Livro de Reclamações", href: "https://www.livroreclamacoes.pt/Inicio/" },
-  { label: "Política de Privacidade", href: "" }, // vazio (a definir)
+  { label: "Política de Privacidade", href: "https://www.supermotas.com/politica-de-privacidade/" },
   { label: "Política de Cookies", href: "https://www.supermotas.com/politica-de-cookies/" },
   { label: "Termos de Condições", href: "https://www.supermotas.com/termos-condicoes/" },
 ];
