@@ -3,6 +3,16 @@ import Image from "next/image";
 import { site } from "@/lib/site";
 import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
 
+// Identificação legal e links obrigatórios (rodapé).
+const LEGAL_NAME = "Carlos Moreira – Supermotas, Unipessoal Lda";
+const NIF = "518429261";
+const LEGAL_LINKS: { label: string; href: string }[] = [
+  { label: "Livro de Reclamações", href: "https://www.livroreclamacoes.pt/Inicio/" },
+  { label: "Política de Privacidade", href: "" }, // vazio (a definir)
+  { label: "Política de Cookies", href: "https://www.supermotas.com/politica-de-cookies/" },
+  { label: "Termos de Condições", href: "https://www.supermotas.com/termos-condicoes/" },
+];
+
 export function Footer({
   branding = DEFAULT_BRANDING,
 }: {
@@ -82,20 +92,44 @@ export function Footer({
       </div>
 
       <div className="border-t border-white/5">
-        <div className="container-px flex flex-col items-center justify-between gap-2 py-6 text-xs text-paper/40 md:flex-row">
-          <p>
-            © {new Date().getFullYear()} {branding.companyName}. Todos os
-            direitos reservados.
+        <div className="container-px flex flex-col items-center justify-between gap-3 py-6 text-xs text-paper/50 md:flex-row">
+          <p className="text-center md:text-left">
+            {LEGAL_NAME} | NIF: {NIF} | Copyright © {new Date().getFullYear()}
           </p>
-          <div className="flex items-center gap-4">
-            <p>Feito em Portugal.</p>
+          <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 uppercase tracking-wide">
+            {LEGAL_LINKS.map((l, i) => (
+              <span key={l.label} className="flex items-center gap-3">
+                {l.href ? (
+                  <a
+                    href={l.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-paper/50 transition-colors hover:text-paper"
+                  >
+                    {l.label}
+                  </a>
+                ) : (
+                  <span className="text-paper/50" title="Brevemente">
+                    {l.label}
+                  </span>
+                )}
+                {i < LEGAL_LINKS.length - 1 && (
+                  <span aria-hidden className="text-paper/25">
+                    ·
+                  </span>
+                )}
+              </span>
+            ))}
+            <span aria-hidden className="text-paper/25">
+              ·
+            </span>
             <Link
               href="/admin"
-              className="text-paper/40 transition-colors hover:text-accent"
+              className="text-paper/30 transition-colors hover:text-accent"
             >
               Área reservada
             </Link>
-          </div>
+          </nav>
         </div>
       </div>
     </footer>
