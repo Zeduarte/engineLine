@@ -26,7 +26,8 @@ const STEPS = [
     key: "budget" as const,
     title: "Qual é o seu orçamento?",
     options: [
-      { value: "0-20000", label: "Até 20.000 €" },
+      { value: "0-10000", label: "Até 10.000 €" },
+      { value: "10000-20000", label: "10.000 – 20.000 €" },
       { value: "20000-40000", label: "20.000 – 40.000 €" },
       { value: "40000-70000", label: "40.000 – 70.000 €" },
       { value: "70000-999999999", label: "Mais de 70.000 €" },
