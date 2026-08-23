@@ -48,7 +48,7 @@ export function QuickSearch({ vehicles }: { vehicles: Item[] }) {
   }
 
   return (
-    <div className="rounded-3xl bg-white p-5 shadow-2xl shadow-black/30 md:p-6">
+    <div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
         <Field label="Marca">
           <select
@@ -128,7 +128,7 @@ function Field({
 }) {
   return (
     <div>
-      <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-accent">
+      <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]">
         {label}
       </span>
       {children}
