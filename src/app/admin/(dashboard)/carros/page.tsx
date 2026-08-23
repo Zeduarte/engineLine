@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { getAdminCars } from "@/lib/admin-queries";
+import { requireSection } from "@/lib/guard";
 import { coverImage } from "@/lib/mappers";
 import { CarsTable, type CarListItem } from "@/components/admin/CarsTable";
 
 export const dynamic = "force-dynamic";
 
 export default async function CarsPage() {
+  await requireSection("carros");
   const cars = await getAdminCars();
 
   const items: CarListItem[] = cars.map((c) => ({

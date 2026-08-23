@@ -7,6 +7,29 @@ import type {
   ProfileRow,
 } from "@/lib/supabase/database.types";
 import { DEFAULT_COMPANY } from "@/lib/branding";
+import { CAR_BRANDS } from "@/lib/car-brands";
+
+// Marca canónica por chave minúscula (ex.: "bmw" -> "BMW").
+const BRAND_CANON = new Map(CAR_BRANDS.map((b) => [b.toLowerCase(), b]));
+
+/**
+ * Agrupa marcas ignorando maiúsculas/minúsculas ("BMW" e "Bmw" contam como a
+ * mesma). O nome mostrado usa a forma canónica da lista de marcas quando existe,
+ * senão a primeira grafia encontrada.
+ */
+function tallyBrands(makes: string[]): { name: string; value: number }[] {
+  const m = new Map<string, { name: string; value: number }>();
+  for (const raw of makes) {
+    const trimmed = (raw ?? "").trim();
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    const display = BRAND_CANON.get(key) ?? trimmed;
+    const cur = m.get(key);
+    if (cur) cur.value += 1;
+    else m.set(key, { name: display, value: 1 });
+  }
+  return [...m.values()].sort((a, b) => b.value - a.value);
+}
 
 /** Perfil (role) do utilizador autenticado. */
 export async function getCurrentProfile(): Promise<ProfileRow | null> {
@@ -219,7 +242,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       ? Math.round(((totalLeads ?? 0) / totalViews) * 1000) / 10
       : 0,
     byFuel: tally((c) => c.fuel),
-    byMake: tally((c) => c.make).slice(0, 6),
+    byMake: tallyBrands(list.map((c) => c.make)).slice(0, 6),
     byPriceBand,
     salesByMonth,
     topViewed,
@@ -281,6 +304,7 @@ export async function getCompanySettings(): Promise<{
   phone: string;
   email: string;
   whatsapp: string;
+  messenger: string;
   address_street: string;
   address_city: string;
   address_postal: string;
@@ -293,7 +317,7 @@ export async function getCompanySettings(): Promise<{
   const { data } = await supabase
     .from("site_settings")
     .select(
-      "phone, email, whatsapp, address_street, address_city, address_postal, address_country, hours, geo_lat, geo_lng",
+      "phone, email, whatsapp, messenger, address_street, address_city, address_postal, address_country, hours, geo_lat, geo_lng",
     )
     .eq("id", 1)
     .maybeSingle();
@@ -302,6 +326,7 @@ export async function getCompanySettings(): Promise<{
     phone: data?.phone ?? d.phone,
     email: data?.email ?? d.email,
     whatsapp: data?.whatsapp ?? d.whatsapp,
+    messenger: data?.messenger ?? d.messenger,
     address_street: data?.address_street ?? d.address.street,
     address_city: data?.address_city ?? d.address.city,
     address_postal: data?.address_postal ?? d.address.postalCode,

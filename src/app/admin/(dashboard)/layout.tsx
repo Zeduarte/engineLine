@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/admin-queries";
+import { effectiveSections } from "@/lib/permissions";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { MobileNav } from "@/components/admin/MobileNav";
 
@@ -34,13 +35,19 @@ export default async function DashboardLayout({
     name: profile.full_name || profile.email || "Utilizador",
     role: profile.role,
   };
+  const sections = effectiveSections(profile.role, profile.allowed_sections);
 
   return (
     <div className="min-h-dvh bg-ink text-paper">
       {/* Desktop */}
       <div className="hidden md:grid md:grid-cols-[248px_1fr]">
         <div className="sticky top-0 h-dvh">
-          <Sidebar user={user} companyName={companyName} newLeads={count ?? 0} />
+          <Sidebar
+            user={user}
+            sections={sections}
+            companyName={companyName}
+            newLeads={count ?? 0}
+          />
         </div>
         <div className="min-w-0">
           <div className="mx-auto max-w-6xl px-6 py-8 lg:px-10">{children}</div>
@@ -49,7 +56,12 @@ export default async function DashboardLayout({
 
       {/* Mobile / tablet */}
       <div className="md:hidden">
-        <MobileNav user={user} companyName={companyName} newLeads={count ?? 0} />
+        <MobileNav
+          user={user}
+          sections={sections}
+          companyName={companyName}
+          newLeads={count ?? 0}
+        />
         <div className="px-4 py-6">{children}</div>
       </div>
     </div>

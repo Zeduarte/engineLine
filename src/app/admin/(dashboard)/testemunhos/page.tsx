@@ -1,4 +1,5 @@
 import { getAllTestimonials } from "@/lib/admin-queries";
+import { requireSection } from "@/lib/guard";
 import {
   TestimonialsManager,
   type TestimonialItem,
@@ -7,6 +8,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function TestimonialsPage() {
+  await requireSection("testemunhos");
   const rows = await getAllTestimonials();
   const items = rows as TestimonialItem[];
 

@@ -10,7 +10,7 @@
  * Manter sincronizado com o schema é a fonte da verdade de tipos do backend.
  */
 
-export type UserRole = "admin" | "vendedor";
+export type UserRole = "admin" | "chefe" | "vendedor";
 export type FuelType =
   | "Gasolina"
   | "Diesel"
@@ -56,6 +56,7 @@ type ProfilesRow = {
   email: string | null;
   full_name: string | null;
   role: UserRole;
+  allowed_sections: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -64,12 +65,14 @@ type ProfilesInsert = {
   email?: string | null;
   full_name?: string | null;
   role?: UserRole;
+  allowed_sections?: string[] | null;
 }
 type ProfilesUpdate = {
   id?: string;
   email?: string | null;
   full_name?: string | null;
   role?: UserRole;
+  allowed_sections?: string[] | null;
 }
 
 // ---- cars ------------------------------------------------------------------
@@ -237,6 +240,7 @@ type SiteSettingsRow = {
   phone: string | null;
   email: string | null;
   whatsapp: string | null;
+  messenger: string | null;
   address_street: string | null;
   address_city: string | null;
   address_postal: string | null;
@@ -260,6 +264,7 @@ type SiteSettingsInsert = {
   phone?: string | null;
   email?: string | null;
   whatsapp?: string | null;
+  messenger?: string | null;
   address_street?: string | null;
   address_city?: string | null;
   address_postal?: string | null;

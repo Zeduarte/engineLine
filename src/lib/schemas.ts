@@ -210,6 +210,7 @@ export const companySchema = z.object({
     .regex(/^\d*$/, "Só dígitos, com indicativo (ex.: 351910000000)")
     .optional()
     .or(z.literal("")),
+  messenger: z.string().trim().max(200).optional().or(z.literal("")),
   address_street: z.string().trim().max(160).optional().or(z.literal("")),
   address_city: z.string().trim().max(80).optional().or(z.literal("")),
   address_postal: z.string().trim().max(20).optional().or(z.literal("")),
@@ -267,6 +268,8 @@ export const newUserSchema = z.object({
   full_name: z.string().trim().min(2, "Indique o nome").max(80),
   email: z.string().trim().email("Email inválido"),
   password: z.string().min(8, "Mínimo 8 caracteres").max(72),
-  role: z.enum(["admin", "vendedor"]).default("vendedor"),
+  role: z.enum(["admin", "chefe", "vendedor"]).default("vendedor"),
+  /** Separadores a que o novo utilizador terá acesso (opcional). */
+  allowed_sections: z.array(z.string()).optional(),
 });
 export type NewUserValues = z.infer<typeof newUserSchema>;

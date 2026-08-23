@@ -2,6 +2,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { site } from "@/lib/site";
 import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
+import { LEGAL_NAME, NIF } from "@/lib/legal";
+
+// Links obrigatórios do rodapé. As políticas são páginas internas do site; o
+// Livro de Reclamações é o portal oficial (externo).
+const LEGAL_LINKS: { label: string; href: string; external?: boolean }[] = [
+  { label: "Livro de Reclamações", href: "https://www.livroreclamacoes.pt/Inicio/", external: true },
+  { label: "Política de Privacidade", href: "/politica-de-privacidade" },
+  { label: "Política de Cookies", href: "/politica-de-cookies" },
+  { label: "Termos de Condições", href: "/termos-condicoes" },
+];
 
 export function Footer({
   branding = DEFAULT_BRANDING,
@@ -82,20 +92,47 @@ export function Footer({
       </div>
 
       <div className="border-t border-white/5">
-        <div className="container-px flex flex-col items-center justify-between gap-2 py-6 text-xs text-paper/40 md:flex-row">
-          <p>
-            © {new Date().getFullYear()} {branding.companyName}. Todos os
-            direitos reservados.
+        <div className="container-px flex flex-col items-center justify-between gap-3 py-6 text-xs text-paper/50 md:flex-row">
+          <p className="text-center md:text-left">
+            {LEGAL_NAME} | NIF: {NIF} | Copyright © {new Date().getFullYear()}
           </p>
-          <div className="flex items-center gap-4">
-            <p>Feito em Portugal.</p>
+          <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 uppercase tracking-wide">
+            {LEGAL_LINKS.map((l, i) => (
+              <span key={l.label} className="flex items-center gap-3">
+                {l.external ? (
+                  <a
+                    href={l.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-paper/50 transition-colors hover:text-paper"
+                  >
+                    {l.label}
+                  </a>
+                ) : (
+                  <Link
+                    href={l.href}
+                    className="text-paper/50 transition-colors hover:text-paper"
+                  >
+                    {l.label}
+                  </Link>
+                )}
+                {i < LEGAL_LINKS.length - 1 && (
+                  <span aria-hidden className="text-paper/25">
+                    ·
+                  </span>
+                )}
+              </span>
+            ))}
+            <span aria-hidden className="text-paper/25">
+              ·
+            </span>
             <Link
               href="/admin"
-              className="text-paper/40 transition-colors hover:text-accent"
+              className="text-paper/30 transition-colors hover:text-accent"
             >
               Área reservada
             </Link>
-          </div>
+          </nav>
         </div>
       </div>
     </footer>

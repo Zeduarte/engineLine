@@ -1,18 +1,12 @@
-import { redirect } from "next/navigation";
-import {
-  getCurrentProfile,
-  getSiteSettings,
-  getCompanySettings,
-} from "@/lib/admin-queries";
+import { getSiteSettings, getCompanySettings } from "@/lib/admin-queries";
+import { requireSection } from "@/lib/guard";
 import { BrandingForm } from "@/components/admin/BrandingForm";
 import { CompanyForm } from "@/components/admin/CompanyForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const profile = await getCurrentProfile();
-  if (!profile) redirect("/admin/login");
-  if (profile.role !== "admin") redirect("/admin");
+  await requireSection("definicoes");
 
   const [settings, company] = await Promise.all([
     getSiteSettings(),

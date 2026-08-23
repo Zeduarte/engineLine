@@ -63,8 +63,8 @@ export default async function AboutPage() {
         <div className="relative aspect-[21/9] overflow-hidden rounded-3xl bg-ink-muted">
           <Parallax amount={0.12} className="absolute inset-0 scale-110">
             <Image
-              src="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=2000&q=80"
-              alt="Interior do showroom do engineLine com viaturas premium"
+              src="/images/sobre.jpg"
+              alt={`${companyName} — a nossa paixão por duas rodas`}
               fill
               sizes="100vw"
               className="object-cover"

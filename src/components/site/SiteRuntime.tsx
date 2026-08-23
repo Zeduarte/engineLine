@@ -102,8 +102,10 @@ export function SiteRuntime({
     setDecision(value);
   }
 
-  const hasTrackers = Boolean(ga4Id || pixelId);
-  const showBanner = hasTrackers && decision === null;
+  // Mostra o banner a qualquer visitante que ainda não decidiu. Os scripts de
+  // rastreio (GA4/Pixel) só carregam depois de "Aceitar" e só se estiverem
+  // configurados — mas o aviso de cookies aparece sempre.
+  const showBanner = decision === null;
 
   if (!showBanner) return null;
 

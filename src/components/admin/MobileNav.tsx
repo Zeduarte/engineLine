@@ -4,31 +4,34 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/lib/actions/auth";
+import type { Section } from "@/lib/permissions";
 
-const NAV = [
-  { href: "/admin", label: "Dashboard", exact: true, adminOnly: false },
-  { href: "/admin/carros", label: "Viaturas", exact: false, adminOnly: false },
-  { href: "/admin/carros/novo", label: "Nova viatura", exact: true, adminOnly: false },
-  { href: "/admin/pagina-inicial", label: "Página inicial", exact: false, adminOnly: false },
-  { href: "/admin/leads", label: "Leads", exact: false, adminOnly: false },
-  { href: "/admin/testemunhos", label: "Testemunhos", exact: false, adminOnly: false },
-  { href: "/admin/integracoes", label: "Integrações", exact: false, adminOnly: true },
-  { href: "/admin/utilizadores", label: "Utilizadores", exact: false, adminOnly: true },
-  { href: "/admin/definicoes", label: "Definições", exact: false, adminOnly: true },
+const NAV: { href: string; label: string; exact: boolean; section: Section }[] = [
+  { href: "/admin", label: "Dashboard", exact: true, section: "dashboard" },
+  { href: "/admin/carros", label: "Viaturas", exact: false, section: "carros" },
+  { href: "/admin/carros/novo", label: "Nova viatura", exact: true, section: "carros" },
+  { href: "/admin/pagina-inicial", label: "Página inicial", exact: false, section: "pagina-inicial" },
+  { href: "/admin/leads", label: "Leads", exact: false, section: "leads" },
+  { href: "/admin/testemunhos", label: "Testemunhos", exact: false, section: "testemunhos" },
+  { href: "/admin/integracoes", label: "Integrações", exact: false, section: "integracoes" },
+  { href: "/admin/utilizadores", label: "Utilizadores", exact: false, section: "utilizadores" },
+  { href: "/admin/definicoes", label: "Definições", exact: false, section: "definicoes" },
 ];
 
 export function MobileNav({
   user,
+  sections,
   companyName = "engineLine",
   newLeads = 0,
 }: {
   user: { name: string; role: string };
+  sections: Section[];
   companyName?: string;
   newLeads?: number;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const items = NAV.filter((i) => !i.adminOnly || user.role === "admin");
+  const items = NAV.filter((i) => sections.includes(i.section));
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-ink-soft/95 backdrop-blur">

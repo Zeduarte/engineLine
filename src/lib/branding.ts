@@ -9,6 +9,8 @@ export interface Company {
   email: string;
   /** Número de WhatsApp só com dígitos (ex.: "351910000000"). */
   whatsapp: string;
+  /** Link do Facebook Messenger (ex.: "https://m.me/aminhapagina"). */
+  messenger: string;
   address: {
     street: string;
     city: string;
@@ -63,6 +65,7 @@ export const DEFAULT_COMPANY: Company = {
   phoneHref: site.phoneHref,
   email: site.email,
   whatsapp: site.whatsapp,
+  messenger: "",
   address: {
     street: site.address.street,
     city: site.address.city,

@@ -1,9 +1,11 @@
 import { getLeads } from "@/lib/admin-queries";
+import { requireSection } from "@/lib/guard";
 import { LeadsTable } from "@/components/admin/LeadsTable";
 
 export const dynamic = "force-dynamic";
 
 export default async function LeadsPage() {
+  await requireSection("leads");
   const leads = await getLeads();
 
   return (

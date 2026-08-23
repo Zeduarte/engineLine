@@ -1,5 +1,6 @@
 import { Hero } from "@/components/hero/Hero";
 import { BrandMarquee } from "@/components/home/BrandMarquee";
+import { QuickSearch } from "@/components/home/QuickSearch";
 import { FeaturedVehicles } from "@/components/home/FeaturedVehicles";
 import { PinnedTrust } from "@/components/home/PinnedTrust";
 import { ContactCTA } from "@/components/home/ContactCTA";
@@ -10,6 +11,7 @@ import {
   getHomeContent,
   getTestimonials,
   getBranding,
+  getVehicles,
 } from "@/lib/queries";
 
 // ISR: revalida a cada 60s — novos destaques e edições de conteúdo aparecem
@@ -19,16 +21,31 @@ export const revalidate = 60;
 // Server Component: os dados (destaques + conteúdo editável) são obtidos no
 // servidor e passados às ilhas cliente. Zero JS de dados enviado para o browser.
 export default async function HomePage() {
-  const [recent, content, testimonials, branding] = await Promise.all([
-    getRecentVehicles(),
-    getHomeContent(),
-    getTestimonials(),
-    getBranding(),
-  ]);
+  const [recent, content, testimonials, branding, allVehicles] =
+    await Promise.all([
+      getRecentVehicles(),
+      getHomeContent(),
+      getTestimonials(),
+      getBranding(),
+      getVehicles(),
+    ]);
+
+  // Dados mínimos para a pesquisa rápida (marca/modelo/combustível + contagem).
+  const searchItems = allVehicles.map((v) => ({
+    make: v.make,
+    model: v.model,
+    fuel: v.fuel,
+  }));
 
   return (
     <>
-      <Hero content={content.hero} />
+      <Hero
+        content={content.hero}
+        search={
+          allVehicles.length > 0 ? <QuickSearch vehicles={searchItems} /> : null
+        }
+      />
+
       <BrandMarquee brands={content.brands} />
       <FeaturedVehicles vehicles={recent} />
       <PinnedTrust content={content.trust} />

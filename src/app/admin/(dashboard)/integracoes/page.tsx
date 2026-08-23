@@ -1,9 +1,5 @@
-import { redirect } from "next/navigation";
-import {
-  getCurrentProfile,
-  getSiteSettings,
-  getIntegrations,
-} from "@/lib/admin-queries";
+import { getSiteSettings, getIntegrations } from "@/lib/admin-queries";
+import { requireSection } from "@/lib/guard";
 import { MarketingForm } from "@/components/admin/MarketingForm";
 import {
   IntegrationsForm,
@@ -15,9 +11,7 @@ import { site } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 export default async function IntegrationsPage() {
-  const profile = await getCurrentProfile();
-  if (!profile) redirect("/admin/login");
-  if (profile.role !== "admin") redirect("/admin");
+  await requireSection("integracoes");
 
   const [settings, integrations] = await Promise.all([
     getSiteSettings(),

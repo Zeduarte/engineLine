@@ -3,7 +3,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { GrainOverlay } from "@/components/ui/GrainOverlay";
-import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { ContactFab } from "@/components/layout/ContactFab";
 import { CompareProvider } from "@/components/inventory/CompareContext";
 import { CompareBar } from "@/components/inventory/CompareBar";
 import { getBranding } from "@/lib/queries";
@@ -32,8 +32,9 @@ export default async function PublicLayout({
         <Header branding={branding} />
         <main id="conteudo">{children}</main>
         <Footer branding={branding} />
-        <WhatsAppButton
+        <ContactFab
           whatsapp={branding.company.whatsapp}
+          messenger={branding.company.messenger}
           name={branding.companyName}
         />
         <CompareBar />

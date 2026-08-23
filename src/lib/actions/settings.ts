@@ -81,6 +81,7 @@ export async function saveCompany(input: unknown): Promise<SettingsResult> {
       phone: d.phone || null,
       email: d.email || null,
       whatsapp: d.whatsapp || null,
+      messenger: d.messenger || null,
       address_street: d.address_street || null,
       address_city: d.address_city || null,
       address_postal: d.address_postal || null,

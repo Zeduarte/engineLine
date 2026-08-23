@@ -125,7 +125,7 @@ export const getBranding = unstable_cache(
     const { data, error } = await supabasePublic
       .from("site_settings")
       .select(
-        "company_name, logo_url, tagline, accent, accent_soft, ga4_id, pixel_id, reservation_enabled, deposit_amount, phone, email, whatsapp, address_street, address_city, address_postal, address_country, hours, geo_lat, geo_lng",
+        "company_name, logo_url, tagline, accent, accent_soft, ga4_id, pixel_id, reservation_enabled, deposit_amount, phone, email, whatsapp, messenger, address_street, address_city, address_postal, address_country, hours, geo_lat, geo_lng",
       )
       .eq("id", 1)
       .maybeSingle();
@@ -151,6 +151,7 @@ export const getBranding = unstable_cache(
         phoneHref: telHref(phone),
         email: data.email || d.email,
         whatsapp: (data.whatsapp || d.whatsapp).replace(/\D/g, ""),
+        messenger: data.messenger || d.messenger,
         address: {
           street: data.address_street || d.address.street,
           city: data.address_city || d.address.city,
