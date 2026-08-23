@@ -6,15 +6,13 @@ import { useRouter } from "next/navigation";
 type Item = { make: string; model: string; fuel: string };
 
 /**
- * Pesquisa rápida (Marca / Modelo / Combustível) — cartão claro e direto, à
- * imagem de um portal auto. O Modelo depende da Marca e o botão mostra quantas
- * viaturas correspondem à seleção. Ao pesquisar, abre o stock já filtrado.
+ * Pesquisa rápida da homepage — apenas Marca e Modelo, direto ao ponto. O botão
+ * mostra quantas viaturas correspondem e leva ao stock já filtrado.
  */
 export function QuickSearch({ vehicles }: { vehicles: Item[] }) {
   const router = useRouter();
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
-  const [fuel, setFuel] = useState("");
 
   const makes = useMemo(
     () =>
@@ -32,34 +30,26 @@ export function QuickSearch({ vehicles }: { vehicles: Item[] }) {
         : [],
     [vehicles, make],
   );
-  const fuels = useMemo(
-    () => [...new Set(vehicles.map((v) => v.fuel))],
-    [vehicles],
-  );
 
   const count = useMemo(
     () =>
       vehicles.filter(
-        (v) =>
-          (!make || v.make === make) &&
-          (!model || v.model === model) &&
-          (!fuel || v.fuel === fuel),
+        (v) => (!make || v.make === make) && (!model || v.model === model),
       ).length,
-    [vehicles, make, model, fuel],
+    [vehicles, make, model],
   );
 
   function search() {
     const params = new URLSearchParams();
     if (make) params.set("make", make);
     if (model) params.set("model", model);
-    if (fuel) params.set("fuel", fuel);
     const qs = params.toString();
     router.push(qs ? `/inventario?${qs}` : "/inventario");
   }
 
   return (
-    <div className="rounded-3xl bg-white p-5 shadow-2xl shadow-black/30 md:p-7">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
+    <div className="rounded-3xl bg-white p-5 shadow-2xl shadow-black/30 md:p-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
         <Field label="Marca">
           <select
             className="qs-select"
@@ -94,21 +84,6 @@ export function QuickSearch({ vehicles }: { vehicles: Item[] }) {
           </select>
         </Field>
 
-        <Field label="Combustível">
-          <select
-            className="qs-select"
-            value={fuel}
-            onChange={(e) => setFuel(e.target.value)}
-          >
-            <option value="">Selecionar</option>
-            {fuels.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </select>
-        </Field>
-
         <button
           type="button"
           onClick={search}
@@ -118,7 +93,7 @@ export function QuickSearch({ vehicles }: { vehicles: Item[] }) {
             <circle cx="11" cy="11" r="7" />
             <path d="m21 21-4.3-4.3" />
           </svg>
-          Pesquisar {count}
+          Ver stock ({count})
         </button>
       </div>
 

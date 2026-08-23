@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type {
   VehicleFilters,
   FuelType,
@@ -52,6 +53,8 @@ export function Filters({
   onSort,
   onReset,
 }: FiltersProps) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <div className="rounded-2xl border border-white/10 bg-ink-soft p-5 md:p-6">
       {/* Pesquisa livre */}
@@ -64,21 +67,8 @@ export function Filters({
         className="mb-4 w-full rounded-lg border border-white/10 bg-ink px-4 py-2.5 text-sm text-paper transition-colors placeholder:text-paper/30 focus:border-accent"
       />
 
-      {/* Atalhos rápidos */}
-      <div className="mb-5 flex flex-wrap gap-2">
-        {QUICK_CHIPS.map((chip) => (
-          <button
-            key={chip.label}
-            type="button"
-            onClick={() => onChange(chip.patch)}
-            className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-paper/70 transition-colors hover:border-accent hover:text-accent"
-          >
-            {chip.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+      {/* Filtros básicos sempre visíveis: Marca, Modelo + botão de expandir */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
         <Field label="Marca">
           <Select
             value={filters.make ?? ""}
@@ -107,82 +97,126 @@ export function Filters({
           </Select>
         </Field>
 
-        <Field label="Combustível">
-          <Select
-            value={filters.fuel ?? ""}
-            onChange={(v) => onChange({ fuel: (v || null) as FuelType | null })}
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          className="flex items-center justify-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm text-paper/80 transition-colors hover:border-accent hover:text-accent"
+        >
+          {expanded ? "Menos filtros" : "Mais filtros"}
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+            aria-hidden
           >
-            <option value="">Todos</option>
-            {options.fuels.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </Select>
-        </Field>
-
-        <Field label="Caixa">
-          <Select
-            value={filters.transmission ?? ""}
-            onChange={(v) =>
-              onChange({ transmission: (v || null) as Transmission | null })
-            }
-          >
-            <option value="">Todas</option>
-            {options.transmissions.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </Select>
-        </Field>
-
-        <Field label="Carroçaria">
-          <Select
-            value={filters.body ?? ""}
-            onChange={(v) => onChange({ body: (v || null) as BodyType | null })}
-          >
-            <option value="">Todas</option>
-            {options.bodies.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </Select>
-        </Field>
-
-        <Field label="Preço mín. (€)">
-          <NumberInput
-            value={filters.minPrice}
-            placeholder="0"
-            onChange={(v) => onChange({ minPrice: v })}
-          />
-        </Field>
-
-        <Field label="Preço máx. (€)">
-          <NumberInput
-            value={filters.maxPrice}
-            placeholder="—"
-            onChange={(v) => onChange({ maxPrice: v })}
-          />
-        </Field>
-
-        <Field label="Ano desde">
-          <NumberInput
-            value={filters.minYear}
-            placeholder="—"
-            onChange={(v) => onChange({ minYear: v })}
-          />
-        </Field>
-
-        <Field label="Km até">
-          <NumberInput
-            value={filters.maxMileage}
-            placeholder="—"
-            onChange={(v) => onChange({ maxMileage: v })}
-          />
-        </Field>
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
       </div>
+
+      {/* Filtros avançados (expansíveis) */}
+      {expanded && (
+        <div className="mt-5 border-t border-white/10 pt-5">
+          {/* Atalhos rápidos */}
+          <div className="mb-5 flex flex-wrap gap-2">
+            {QUICK_CHIPS.map((chip) => (
+              <button
+                key={chip.label}
+                type="button"
+                onClick={() => onChange(chip.patch)}
+                className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-paper/70 transition-colors hover:border-accent hover:text-accent"
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <Field label="Combustível">
+              <Select
+                value={filters.fuel ?? ""}
+                onChange={(v) => onChange({ fuel: (v || null) as FuelType | null })}
+              >
+                <option value="">Todos</option>
+                {options.fuels.map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field label="Caixa">
+              <Select
+                value={filters.transmission ?? ""}
+                onChange={(v) =>
+                  onChange({ transmission: (v || null) as Transmission | null })
+                }
+              >
+                <option value="">Todas</option>
+                {options.transmissions.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field label="Carroçaria">
+              <Select
+                value={filters.body ?? ""}
+                onChange={(v) => onChange({ body: (v || null) as BodyType | null })}
+              >
+                <option value="">Todas</option>
+                {options.bodies.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field label="Preço mín. (€)">
+              <NumberInput
+                value={filters.minPrice}
+                placeholder="0"
+                onChange={(v) => onChange({ minPrice: v })}
+              />
+            </Field>
+
+            <Field label="Preço máx. (€)">
+              <NumberInput
+                value={filters.maxPrice}
+                placeholder="—"
+                onChange={(v) => onChange({ maxPrice: v })}
+              />
+            </Field>
+
+            <Field label="Ano desde">
+              <NumberInput
+                value={filters.minYear}
+                placeholder="—"
+                onChange={(v) => onChange({ minYear: v })}
+              />
+            </Field>
+
+            <Field label="Km até">
+              <NumberInput
+                value={filters.maxMileage}
+                placeholder="—"
+                onChange={(v) => onChange({ maxMileage: v })}
+              />
+            </Field>
+          </div>
+        </div>
+      )}
 
       <div className="mt-5 flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-5 sm:flex-row sm:items-center">
         <p className="text-sm text-paper/60" role="status" aria-live="polite">
