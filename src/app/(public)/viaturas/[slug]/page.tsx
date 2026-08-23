@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getVehicleBySlug, getAllSlugs, getBranding } from "@/lib/queries";
+import {
+  getVehicleBySlug,
+  getAllSlugs,
+  getBranding,
+  getVehicles,
+} from "@/lib/queries";
+import { VehicleCard } from "@/components/vehicle/VehicleCard";
 import { formatKm, priceLabel } from "@/lib/format";
 import { Gallery } from "@/components/vehicle/Gallery";
 import { Specs } from "@/components/vehicle/Specs";
@@ -63,6 +69,13 @@ export default async function VehiclePage({ params }: { params: Params }) {
   const canReserve =
     branding.reservationEnabled && vehicle.status === "published";
 
+  // Viaturas relacionadas: prioriza a mesma marca, depois preenche com outras.
+  const all = await getVehicles();
+  const related = [
+    ...all.filter((v) => v.slug !== vehicle.slug && v.make === vehicle.make),
+    ...all.filter((v) => v.slug !== vehicle.slug && v.make !== vehicle.make),
+  ].slice(0, 3);
+
   return (
     <>
       <VehicleJsonLd vehicle={vehicle} sellerName={branding.companyName} />
@@ -81,11 +94,14 @@ export default async function VehiclePage({ params }: { params: Params }) {
           <header className="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
             <div>
               <p className="eyebrow mb-3">{vehicle.year} · {vehicle.body}</p>
+              <p className="text-xl font-semibold uppercase tracking-wide text-paper/60">
+                {vehicle.make}
+              </p>
               <AnimatedText
                 as="h1"
-                className="text-headline font-semibold text-paper"
+                className="mt-1 text-headline font-semibold text-paper"
               >
-                {`${vehicle.make} ${vehicle.model}`}
+                {vehicle.model}
               </AnimatedText>
               {vehicle.variant && (
                 <p className="mt-2 text-xl font-light text-paper/60">
@@ -139,6 +155,10 @@ export default async function VehiclePage({ params }: { params: Params }) {
           {/* Corpo em duas colunas */}
           <div className="mt-16 grid gap-12 lg:grid-cols-[1.4fr_1fr] lg:gap-16">
             <div className="space-y-16">
+              <Specs vehicle={vehicle} />
+
+              <TransparencySection vehicle={vehicle} />
+
               <section>
                 <h2 className="text-2xl font-semibold text-paper">
                   Sobre esta viatura
@@ -147,10 +167,6 @@ export default async function VehiclePage({ params }: { params: Params }) {
                   {vehicle.description}
                 </p>
               </section>
-
-              <TransparencySection vehicle={vehicle} />
-
-              <Specs vehicle={vehicle} />
             </div>
 
             <div className="space-y-8 lg:sticky lg:top-28 lg:self-start">
@@ -163,6 +179,20 @@ export default async function VehiclePage({ params }: { params: Params }) {
               />
             </div>
           </div>
+
+          {/* Viaturas relacionadas */}
+          {related.length > 0 && (
+            <section className="mt-24">
+              <h2 className="mb-8 text-2xl font-semibold text-paper">
+                Viaturas relacionadas
+              </h2>
+              <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+                {related.map((v) => (
+                  <VehicleCard key={v.slug} vehicle={v} />
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Retoma / encomenda no fim da ficha */}
           <div className="mt-20">
