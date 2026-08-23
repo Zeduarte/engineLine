@@ -195,9 +195,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
           )}
 
           {/* Retoma / encomenda no fim da ficha */}
-          <div className="mt-20">
-            <SellCTA />
-          </div>
+          <SellCTA />
         </div>
 
         <div className="mt-20">

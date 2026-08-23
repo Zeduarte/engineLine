@@ -6,7 +6,7 @@ import Link from "next/link";
  */
 export function SellCTA() {
   return (
-    <section className="container-px">
+    <section className="container-px py-20 md:py-28">
       <div className="grid gap-8 overflow-hidden rounded-3xl border border-white/10 bg-ink-soft p-8 md:grid-cols-2 md:items-center md:p-12">
         <div>
           <p className="eyebrow mb-4">Retoma & Encomenda</p>
