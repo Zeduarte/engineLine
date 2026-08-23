@@ -39,13 +39,12 @@ export default async function HomePage() {
 
   return (
     <>
-      <Hero content={content.hero} />
-
-      {allVehicles.length > 0 && (
-        <div className="container-px -mt-8 md:-mt-12">
-          <QuickSearch vehicles={searchItems} />
-        </div>
-      )}
+      <Hero
+        content={content.hero}
+        search={
+          allVehicles.length > 0 ? <QuickSearch vehicles={searchItems} /> : null
+        }
+      />
 
       <BrandMarquee brands={content.brands} />
       <FeaturedVehicles vehicles={recent} />

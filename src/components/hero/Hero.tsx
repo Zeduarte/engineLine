@@ -26,8 +26,11 @@ import {
  */
 export function Hero({
   content = DEFAULT_HOME_CONTENT.hero,
+  search,
 }: {
   content?: HeroContent;
+  /** Cartão de pesquisa rápida, mostrado por baixo dos CTAs, sobre o vídeo. */
+  search?: React.ReactNode;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -99,6 +102,17 @@ export function Hero({
               {content.secondaryCta.label}
             </Link>
           </motion.div>
+
+          {search && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9, duration: 0.6 }}
+              className="pointer-events-auto mx-auto mt-10 max-w-3xl text-left"
+            >
+              {search}
+            </motion.div>
+          )}
         </div>
 
         {/* Indicador de scroll. */}
