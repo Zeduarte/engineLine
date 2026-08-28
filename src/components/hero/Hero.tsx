@@ -62,10 +62,15 @@ export function Hero({
           )}
         </div>
 
-        {/* Vinheta para garantir contraste AA do texto sobre o canvas. */}
+        {/* Vinheta para garantir contraste AA do texto. Sobre imagem (que pode
+            ser clara) escurece um pouco mais o centro. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink/70 via-transparent to-ink"
+          className={`pointer-events-none absolute inset-0 bg-gradient-to-b ${
+            isVideo
+              ? "from-ink/70 via-transparent to-ink"
+              : "from-ink/80 via-ink/30 to-ink"
+          }`}
         />
 
         {/* Conteúdo */}
@@ -74,7 +79,7 @@ export function Hero({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="eyebrow mb-6"
+            className="eyebrow hero-text-shadow mb-6"
           >
             {content.eyebrow}
           </motion.p>
@@ -82,7 +87,7 @@ export function Hero({
           <AnimatedText
             as="h1"
             splitBy="word"
-            className="mx-auto max-w-5xl text-display font-bold text-paper"
+            className="hero-text-shadow mx-auto max-w-5xl text-display font-bold text-paper"
           >
             {content.title}
           </AnimatedText>
@@ -91,7 +96,7 @@ export function Hero({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="mx-auto mt-8 max-w-xl text-lg font-light text-paper/70"
+            className="hero-text-shadow mx-auto mt-8 max-w-xl text-lg font-light text-paper/80"
           >
             {content.subtitle}
           </motion.p>
