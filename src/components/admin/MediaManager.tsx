@@ -21,23 +21,58 @@ export interface MediaItem {
   position: number;
 }
 
-// Formatos que a WEB consegue mostrar. HEIC/HEIF (iPhone) e MOV não entram —
-// o browser não os renderiza, ficariam partidos no site.
-const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+// Aceita QUALQUER foto: as web-friendly entram diretas; HEIC/HEIF (iPhone) são
+// convertidas para JPG no browser antes do upload. Vídeo continua mp4/webm
+// (converter vídeo no browser seria pesado demais).
+const WEB_IMAGE = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"];
 const VIDEO_TYPES = ["video/mp4", "video/webm"];
-const ACCEPT = [...IMAGE_TYPES, ...VIDEO_TYPES].join(",");
+const ACCEPT = "image/*,video/mp4,video/webm,.heic,.heif";
 const MAX_MB = 50;
 
-/** Extensões incompatíveis frequentes (quando o type do ficheiro vem vazio). */
-const BLOCKED_EXT = ["heic", "heif", "mov", "avi", "mkv", "tiff", "tif"];
+function ext(name: string): string {
+  return name.split(".").pop()?.toLowerCase() ?? "";
+}
 
-function isSupported(file: File): boolean {
+/**
+ * Devolve um ficheiro pronto a carregar (web-friendly), convertendo HEIC/HEIF
+ * para JPG quando necessário. Devolve null (com aviso) para o que não dá.
+ */
+async function normalizeFile(file: File): Promise<File | null> {
   const type = file.type.toLowerCase();
-  if (IMAGE_TYPES.includes(type) || VIDEO_TYPES.includes(type)) return true;
-  // Alguns browsers não preenchem o type — recorre à extensão.
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  if (BLOCKED_EXT.includes(ext)) return false;
-  return ["jpg", "jpeg", "png", "webp", "avif", "mp4", "webm"].includes(ext);
+  const e = ext(file.name);
+
+  // Vídeo
+  if (type.startsWith("video/") || ["mp4", "webm", "mov", "avi", "mkv"].includes(e)) {
+    if (VIDEO_TYPES.includes(type) || ["mp4", "webm"].includes(e)) return file;
+    toast.error(`${file.name}: vídeo não suportado. Exporte em MP4.`);
+    return null;
+  }
+
+  // Imagem já compatível com a web
+  if (WEB_IMAGE.includes(type) || ["jpg", "jpeg", "png", "webp", "avif", "gif"].includes(e)) {
+    return file;
+  }
+
+  // HEIC/HEIF do iPhone → converte para JPG no browser
+  if (type.includes("heic") || type.includes("heif") || ["heic", "heif"].includes(e)) {
+    try {
+      const heic2any = (await import("heic2any")).default;
+      const out = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
+      const blob = Array.isArray(out) ? out[0]! : out;
+      return new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
+        type: "image/jpeg",
+      });
+    } catch {
+      toast.error(`${file.name}: não foi possível converter a imagem.`);
+      return null;
+    }
+  }
+
+  // Outra imagem qualquer — tenta na mesma (o browser pode aguentar)
+  if (type.startsWith("image/")) return file;
+
+  toast.error(`${file.name}: formato não suportado.`);
+  return null;
 }
 
 /** Lê dimensões de uma imagem no browser (evita CLS no site público). */
@@ -76,30 +111,31 @@ export function MediaManager({
       const all = fileList ? Array.from(fileList) : [];
       if (all.length === 0) return;
 
-      // Separa suportados dos incompatíveis (HEIC/MOV…) e dos grandes demais.
+      setUploading((n) => n + all.length);
+
+      // Normaliza (converte HEIC→JPG) sequencialmente para não sobrecarregar
+      // o CPU; depois valida o tamanho do ficheiro final.
       const valid: File[] = [];
       for (const file of all) {
-        if (!isSupported(file)) {
-          toast.error(
-            `${file.name}: formato não suportado pela web. Converta para JPG (fotos) ou MP4 (vídeo).`,
-          );
-          continue;
-        }
-        if (file.size > MAX_MB * 1024 * 1024) {
+        const normalized = await normalizeFile(file);
+        if (!normalized) continue;
+        if (normalized.size > MAX_MB * 1024 * 1024) {
           toast.error(`${file.name}: excede ${MAX_MB}MB.`);
           continue;
         }
-        valid.push(file);
+        valid.push(normalized);
       }
-      if (valid.length === 0) return;
-
-      setUploading((n) => n + valid.length);
+      if (valid.length === 0) {
+        setUploading((n) => Math.max(0, n - all.length));
+        if (inputRef.current) inputRef.current.value = "";
+        return;
+      }
       try {
         // Upload em PARALELO (rápido), preservando a ordem de seleção.
         const results = await Promise.all(
           valid.map(async (file) => {
-            const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
-            const path = `${carId}/${crypto.randomUUID()}.${ext}`;
+            const fileExt = ext(file.name) || "bin";
+            const path = `${carId}/${crypto.randomUUID()}.${fileExt}`;
             const { error } = await supabase.storage
               .from(MEDIA_BUCKET)
               .upload(path, file, { cacheControl: "3600", upsert: false });
@@ -135,7 +171,7 @@ export function MediaManager({
           toast.error(res.error ?? "Erro ao registar media.");
         }
       } finally {
-        setUploading((n) => Math.max(0, n - valid.length));
+        setUploading((n) => Math.max(0, n - all.length));
         if (inputRef.current) inputRef.current.value = "";
       }
     },
