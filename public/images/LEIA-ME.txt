@@ -7,6 +7,10 @@ Guarda os 4 ficheiros nesta pasta (public/images/) com EXATAMENTE estes nomes:
   pilar-2.jpg     -> 3ª imagem enviada  (painel de instrumentos / velocímetro)
   sobre.jpg       -> 2ª imagem enviada  (piloto sentado na mota, vista lateral)
   contactos.jpg   -> 4ª imagem enviada  (piloto a colocar o capacete)
+  showcase.jpg    -> banner da homepage (entre destaques e "Retoma") — foto
+                     cinematográfica larga (ex.: o Porsche GT3 RS). 21:9 fica
+                     perfeito (ex.: 1920x823). Se faltar, aparece um fundo
+                     gradiente elegante em vez de erro.
 
 Onde aparecem:
   - pilar-1.jpg + pilar-2.jpg  -> secção "Porquê comprar" da página inicial

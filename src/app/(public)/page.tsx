@@ -2,6 +2,7 @@ import { Hero } from "@/components/hero/Hero";
 import { BrandMarquee } from "@/components/home/BrandMarquee";
 import { QuickSearch } from "@/components/home/QuickSearch";
 import { FeaturedVehicles } from "@/components/home/FeaturedVehicles";
+import { Showcase } from "@/components/home/Showcase";
 import { PinnedTrust } from "@/components/home/PinnedTrust";
 import { ContactCTA } from "@/components/home/ContactCTA";
 import { SellCTA } from "@/components/home/SellCTA";
@@ -48,6 +49,7 @@ export default async function HomePage() {
 
       <BrandMarquee brands={content.brands} />
       <FeaturedVehicles vehicles={recent} />
+      <Showcase />
       <SellCTA />
       <PinnedTrust content={content.trust} />
       <Testimonials items={testimonials} />
