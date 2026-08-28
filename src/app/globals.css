@@ -105,6 +105,19 @@ html.lenis body {
   }
 }
 
+/* Zoom lento (Ken Burns) para a imagem fixa do hero. */
+@keyframes hero-kenburns {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1.15);
+  }
+}
+.hero-kenburns {
+  animation: hero-kenburns 22s ease-in-out infinite alternate;
+}
+
 /* Brilho pulsante subtil (painel de média da secção de confiança). */
 @keyframes glow-pulse {
   0%,

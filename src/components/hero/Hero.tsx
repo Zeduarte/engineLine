@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { HeroVideo } from "./HeroVideo";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { asset } from "@/lib/asset";
+import type { HeroMedia } from "@/lib/hero-media";
 import {
   DEFAULT_HOME_CONTENT,
   type HeroContent,
@@ -27,26 +28,38 @@ import {
 export function Hero({
   content = DEFAULT_HOME_CONTENT.hero,
   search,
+  media = { type: "video", poster: "/hero/hero-poster.jpg" },
 }: {
   content?: HeroContent;
   /** Cartão de pesquisa rápida, mostrado por baixo dos CTAs, sobre o vídeo. */
   search?: React.ReactNode;
+  /** Vídeo (scroll) ou imagem fixa — detetado pelo ficheiro em public/hero/. */
+  media?: HeroMedia;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
+  const isVideo = media.type === "video";
 
   return (
     <section
       ref={sectionRef}
-      className="relative h-[140vh]"
+      // O vídeo precisa de "pista" extra de scroll (140vh) para ser percorrido;
+      // a imagem fixa ocupa só o ecrã.
+      className={`relative ${isVideo ? "h-[140vh]" : "h-dvh"}`}
       aria-label="Viatura em destaque"
     >
       <div className="sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden">
-        {/* Vídeo controlado pelo scroll */}
+        {/* Fundo: vídeo controlado pelo scroll OU imagem fixa */}
         <div className="absolute inset-0 bg-ink">
-          <HeroVideo
-            triggerRef={sectionRef}
-            poster={asset("/hero/hero-poster.jpg")}
-          />
+          {isVideo ? (
+            <HeroVideo triggerRef={sectionRef} poster={asset(media.poster)} />
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={asset(media.src)}
+              alt=""
+              className="hero-kenburns h-full w-full object-cover"
+            />
+          )}
         </div>
 
         {/* Vinheta para garantir contraste AA do texto sobre o canvas. */}

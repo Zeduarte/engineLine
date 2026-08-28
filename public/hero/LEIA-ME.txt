@@ -1,0 +1,24 @@
+IMAGEM OU VÍDEO DO TOPO (HERO)
+==============================
+
+O topo da página inicial pode ser um VÍDEO ou uma IMAGEM fixa. O site deteta
+automaticamente pelo ficheiro que tiveres nesta pasta (public/hero/):
+
+  Queres VÍDEO?   ->  põe    hero.mp4     (é percorrido com o scroll)
+  Queres IMAGEM?  ->  põe    hero.jpg     (também aceita .png / .webp / .avif)
+
+REGRA IMPORTANTE: tem só UM dos dois de cada vez.
+  - Se existir hero.mp4, é usado o vídeo (mesmo que também haja um hero.jpg).
+  - Para passar de vídeo para imagem: APAGA o hero.mp4 e põe o hero.jpg.
+  - Para voltar ao vídeo: apaga o hero.jpg e põe de novo o hero.mp4.
+
+Outros ficheiros:
+  hero-poster.jpg  ->  imagem mostrada enquanto o vídeo carrega (só p/ vídeo).
+
+Depois de trocares o ficheiro:
+  - Localmente:  para o servidor e corre  npm run dev:clean
+  - Em produção: faz commit + push (o Netlify reconstrói e aplica).
+
+Tamanhos recomendados:
+  - Vídeo: MP4, horizontal (16:9), curto, otimizado (<10 MB de preferência).
+  - Imagem: horizontal, grande (ex.: 1920x1080 ou maior), JPG.

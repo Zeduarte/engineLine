@@ -14,6 +14,7 @@ import {
   getBranding,
   getVehicles,
 } from "@/lib/queries";
+import { getHeroMedia } from "@/lib/hero-media";
 
 // ISR: revalida a cada 60s — novos destaques e edições de conteúdo aparecem
 // sem rebuild manual.
@@ -38,10 +39,13 @@ export default async function HomePage() {
     fuel: v.fuel,
   }));
 
+  const heroMedia = getHeroMedia();
+
   return (
     <>
       <Hero
         content={content.hero}
+        media={heroMedia}
         search={
           allVehicles.length > 0 ? <QuickSearch vehicles={searchItems} /> : null
         }
