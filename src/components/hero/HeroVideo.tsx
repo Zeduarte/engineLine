@@ -24,8 +24,10 @@ interface HeroVideoProps {
   poster?: string;
 }
 
+// Um único ficheiro (mp4, o formato universal) para simplificar a troca do
+// vídeo: basta substituir public/hero/hero.mp4. Evita a confusão de o browser
+// preferir um .webm antigo quando só o .mp4 é atualizado.
 const DEFAULT_SOURCES: VideoSource[] = [
-  { src: asset("/hero/hero.webm"), type: "video/webm" },
   { src: asset("/hero/hero.mp4"), type: "video/mp4" },
 ];
 

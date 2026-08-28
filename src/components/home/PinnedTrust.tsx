@@ -158,7 +158,6 @@ export function PinnedTrust({
               playsInline
               poster="/trust/trust.jpg"
             >
-              <source src="/trust/trust.webm" type="video/webm" />
               <source src="/trust/trust.mp4" type="video/mp4" />
             </video>
 

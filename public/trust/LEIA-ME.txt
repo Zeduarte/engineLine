@@ -8,8 +8,7 @@ fundo animado com o KPI — nunca fica vazio.
 Para colocares o TEU vídeo, guarda nesta pasta (public/trust/) com estes
 nomes EXATOS:
 
-  trust.mp4     -> o vídeo (formato mp4, o mais compatível)
-  trust.webm    -> (opcional) versão .webm, mais leve
+  trust.mp4     -> o vídeo (formato mp4)
   trust.jpg     -> imagem de "poster" (o que se vê antes do vídeo arrancar)
 
 Recomendações:
