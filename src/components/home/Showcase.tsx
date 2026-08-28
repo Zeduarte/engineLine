@@ -15,8 +15,8 @@ export function Showcase() {
   const [failed, setFailed] = useState(false);
 
   return (
-    <section className="container-px py-16 md:py-20">
-      <div className="relative aspect-[21/9] overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-ink-soft to-ink-muted">
+    <section className="container-px py-6 md:py-8">
+      <div className="relative aspect-[21/8] overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-ink-soft to-ink-muted">
         {!failed && (
           <Parallax amount={0.12} className="absolute inset-0 scale-110">
             {/* Plain <img> para poder cair no fallback via onError. */}
