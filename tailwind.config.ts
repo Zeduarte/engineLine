@@ -27,8 +27,8 @@ const config: Config = {
       },
       fontSize: {
         // Escala tipográfica confiante — títulos grandes.
-        "display": ["clamp(3rem, 9vw, 9rem)", { lineHeight: "0.95", letterSpacing: "-0.03em" }],
-        "headline": ["clamp(2rem, 5vw, 4rem)", { lineHeight: "1.02", letterSpacing: "-0.02em" }],
+        "display": ["clamp(2.35rem, 9vw, 9rem)", { lineHeight: "0.98", letterSpacing: "-0.03em" }],
+        "headline": ["clamp(1.75rem, 5vw, 4rem)", { lineHeight: "1.05", letterSpacing: "-0.02em" }],
       },
       letterSpacing: {
         tightest: "-0.04em",

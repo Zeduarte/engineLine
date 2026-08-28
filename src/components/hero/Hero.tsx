@@ -47,9 +47,15 @@ export function Hero({
       className={`relative ${isVideo ? "h-[140vh]" : "h-dvh"}`}
       aria-label="Viatura em destaque"
     >
-      <div className="sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden">
+      <div
+        className={`flex w-full items-center justify-center ${
+          isVideo
+            ? "sticky top-0 h-dvh overflow-hidden"
+            : "relative min-h-dvh py-28 md:py-0"
+        }`}
+      >
         {/* Fundo: vídeo controlado pelo scroll OU imagem fixa */}
-        <div className="absolute inset-0 bg-ink">
+        <div className="absolute inset-0 overflow-hidden bg-ink">
           {isVideo ? (
             <HeroVideo triggerRef={sectionRef} poster={asset(media.poster)} />
           ) : (
@@ -79,7 +85,7 @@ export function Hero({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="eyebrow hero-text-shadow mb-6"
+            className="eyebrow hero-text-shadow mb-4 md:mb-6"
           >
             {content.eyebrow}
           </motion.p>
@@ -96,7 +102,7 @@ export function Hero({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="hero-text-shadow mx-auto mt-8 max-w-xl text-lg font-light text-paper/80"
+            className="hero-text-shadow mx-auto mt-5 max-w-xl text-base font-light text-paper/80 md:mt-8 md:text-lg"
           >
             {content.subtitle}
           </motion.p>
@@ -105,7 +111,7 @@ export function Hero({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.6 }}
-            className="pointer-events-auto mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
+            className="pointer-events-auto mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row md:mt-10 md:gap-4"
           >
             <Link
               href={content.primaryCta.href}
@@ -126,7 +132,7 @@ export function Hero({
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9, duration: 0.6 }}
-              className="pointer-events-auto mx-auto mt-10 max-w-3xl text-left"
+              className="pointer-events-auto mx-auto mt-7 max-w-3xl text-left md:mt-10"
             >
               {search}
             </motion.div>

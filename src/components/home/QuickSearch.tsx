@@ -101,19 +101,24 @@ export function QuickSearch({ vehicles }: { vehicles: Item[] }) {
         .qs-select {
           width: 100%;
           border-radius: 9999px;
-          border: 1px solid #d4d4d8;
-          background: #fff;
-          padding: 0.8rem 1.1rem;
-          font-size: 0.95rem;
-          color: #18181b;
+          border: 1px solid rgba(255,255,255,0.18);
+          background-color: rgba(10,10,10,0.55);
+          -webkit-backdrop-filter: blur(12px);
+          backdrop-filter: blur(12px);
+          padding: 0.9rem 1.1rem;
+          font-size: 1rem; /* ≥16px evita zoom automático no iOS */
+          color: #f5f5f4;
           appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23bbb' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
           background-repeat: no-repeat;
           background-position: right 1.1rem center;
-          transition: border-color 0.2s;
+          transition: border-color 0.2s, background-color 0.2s;
         }
+        .qs-select:hover { border-color: rgba(255,255,255,0.35); }
         .qs-select:focus { outline: none; border-color: var(--accent); }
-        .qs-select:disabled { opacity: 0.55; }
+        .qs-select:disabled { opacity: 0.5; }
+        /* As opções abrem no menu nativo do SO — força fundo escuro legível. */
+        .qs-select option { color: #18181b; }
       `}</style>
     </div>
   );
