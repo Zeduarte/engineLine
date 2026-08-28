@@ -76,8 +76,8 @@ export function PinnedTrust({
     <section
       ref={ref}
       className="relative bg-ink-soft"
-      // ~50vh de scroll por pilar (metade do anterior) — avança mais depressa.
-      style={{ height: `${PILLARS.length * 50}vh` }}
+      // ~70vh de scroll por pilar — meio-termo entre o lento (100) e o rápido (50).
+      style={{ height: `${PILLARS.length * 70}vh` }}
       aria-label="Porquê comprar no engineLine"
     >
       <div

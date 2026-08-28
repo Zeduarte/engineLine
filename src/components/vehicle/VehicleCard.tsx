@@ -15,6 +15,13 @@ interface VehicleCardProps {
   priority?: boolean;
   /** Índice para a jante do stagger (informativo). */
   index?: number;
+  /**
+   * Ativa a transição partilhada (morph card → galeria). Deve ser `true` só
+   * para a grelha "fonte" (homepage/stock). Em listas secundárias da mesma
+   * página (relacionadas, vistas recentemente) tem de ser `false`, senão dois
+   * cards com o mesmo `layoutId` colidem e a imagem desaparece.
+   */
+  morph?: boolean;
 }
 
 /**
@@ -55,7 +62,11 @@ function vehicleBadges(vehicle: Vehicle): { label: string; tone: string }[] {
   return badges.slice(0, 3);
 }
 
-export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {
+export function VehicleCard({
+  vehicle,
+  priority = false,
+  morph = true,
+}: VehicleCardProps) {
   const images = vehicle.images.length ? vehicle.images : [];
   const badges = vehicleBadges(vehicle);
   const [index, setIndex] = useState(0);
@@ -82,7 +93,7 @@ export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {
         aria-label={`${vehicle.make} ${vehicle.model} ${vehicle.year} — ${priceLabel(vehicle.price, vehicle.priceOnRequest)}`}
       >
         <motion.div
-          layoutId={`card-media-${vehicle.slug}`}
+          layoutId={morph ? `card-media-${vehicle.slug}` : undefined}
           className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-ink-muted"
         >
           <motion.div

@@ -44,7 +44,7 @@ export function RecentlyViewed({
       </h2>
       <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
         {recent.map((v) => (
-          <VehicleCard key={v.slug} vehicle={v} />
+          <VehicleCard key={v.slug} vehicle={v} morph={false} />
         ))}
       </div>
     </section>
