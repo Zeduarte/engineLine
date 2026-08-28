@@ -102,6 +102,15 @@ export interface DashboardStats {
   byPriceBand: { name: string; value: number }[];
   salesByMonth: { name: string; vendidos: number }[];
   topViewed: { name: string; slug: string; views: number }[];
+  /** Funil viatura a viatura: visitas → leads → taxa de conversão. */
+  conversion: {
+    name: string;
+    slug: string;
+    status: CarRow["status"];
+    views: number;
+    leads: number;
+    rate: number;
+  }[];
 }
 
 const PRICE_BANDS: [string, number, number][] = [
@@ -131,6 +140,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     { count: totalLeads },
     { data: views },
     { count: viewsThisMonth },
+    { data: leadCars },
   ] = await Promise.all([
     supabase
       .from("cars")
@@ -147,6 +157,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .from("car_views")
       .select("id", { count: "exact", head: true })
       .gte("created_at", monthStartIso),
+    supabase.from("leads").select("car_id"),
   ]);
 
   const list = (cars ?? []) as Pick<
@@ -181,6 +192,32 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     })
     .sort((a, b) => b.views - a.views)
     .slice(0, 5);
+
+  // Leads por viatura (para o funil de conversão por viatura).
+  const leadsByCar = new Map<string, number>();
+  for (const l of (leadCars ?? []) as { car_id: string | null }[]) {
+    if (l.car_id) leadsByCar.set(l.car_id, (leadsByCar.get(l.car_id) ?? 0) + 1);
+  }
+
+  // Conversão viatura a viatura: visitas → leads. Ordena pelas mais vistas e
+  // mostra as 8 com mais tração — ajuda a detetar preços mal calibrados
+  // (muitas visitas, poucos contactos).
+  const conversion = list
+    .map((c) => {
+      const v = viewsByCar.get(c.id) ?? 0;
+      const l = leadsByCar.get(c.id) ?? 0;
+      return {
+        name: `${c.make} ${c.model}`,
+        slug: c.slug,
+        status: c.status,
+        views: v,
+        leads: l,
+        rate: v ? Math.round((l / v) * 1000) / 10 : 0,
+      };
+    })
+    .filter((c) => c.views > 0)
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 8);
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -246,6 +283,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     byPriceBand,
     salesByMonth,
     topViewed,
+    conversion,
   };
 }
 

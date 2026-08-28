@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useLocalList, RECENT_KEY } from "@/hooks/useLocalList";
 
 /**
  * Regista uma visita à ficha da viatura (uma vez por carregamento).
@@ -14,6 +15,12 @@ export function ViewTracker({
   slug: string;
 }) {
   const sent = useRef(false);
+  // Histórico local "vistos recentemente" (máx. 8, mais recente primeiro).
+  const { add: addRecent } = useLocalList(RECENT_KEY, { max: 8, prepend: true });
+
+  useEffect(() => {
+    addRecent(slug);
+  }, [slug, addRecent]);
 
   useEffect(() => {
     if (sent.current) return;

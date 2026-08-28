@@ -1,6 +1,7 @@
 import type { Vehicle } from "@/types/vehicle";
 import { priceLabel } from "@/lib/format";
 import { waHref, type Company } from "@/lib/branding";
+import { site } from "@/lib/site";
 
 /**
  * Barra de ação fixa no fundo (mobile-first). Mantém os CTAs de contacto —
@@ -13,7 +14,8 @@ export function ContactBar({
   vehicle: Vehicle;
   company: Company;
 }) {
-  const message = `Olá! Tenho interesse no ${vehicle.make} ${vehicle.model} ${vehicle.year} (${priceLabel(vehicle.price, vehicle.priceOnRequest)}).`;
+  const url = `${site.url}/viaturas/${vehicle.slug}`;
+  const message = `Olá! Tenho interesse no ${vehicle.make} ${vehicle.model} ${vehicle.year} (${priceLabel(vehicle.price, vehicle.priceOnRequest)}).\n${url}`;
 
   return (
     <div className="sticky bottom-0 z-40 border-t border-white/10 bg-ink/90 backdrop-blur-xl">

@@ -9,6 +9,7 @@ type Cred = { username?: string; token?: string; enabled?: boolean };
 export type IntegrationsInitial = Record<string, unknown> & {
   stripe_secret?: string;
   feed_token?: string;
+  lead_webhook?: string;
 };
 
 export function IntegrationsForm({
@@ -31,6 +32,7 @@ export function IntegrationsForm({
     return out;
   });
   const [stripe, setStripe] = useState(initial.stripe_secret ?? "");
+  const [leadWebhook, setLeadWebhook] = useState(initial.lead_webhook ?? "");
 
   function update(id: string, patch: Partial<Cred>) {
     setCreds((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
@@ -39,7 +41,11 @@ export function IntegrationsForm({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const res = await saveIntegrations({ ...creds, stripe_secret: stripe });
+      const res = await saveIntegrations({
+        ...creds,
+        stripe_secret: stripe,
+        lead_webhook: leadWebhook,
+      });
       if (res.ok) toast.success("Credenciais guardadas.");
       else toast.error(res.error ?? "Erro ao guardar.");
     });
@@ -112,6 +118,27 @@ export function IntegrationsForm({
             value={stripe}
             onChange={(e) => setStripe(e.target.value)}
             placeholder="sk_live_…"
+          />
+        </div>
+      </div>
+
+      <div className="border-t border-white/10 pt-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-paper/50">
+          Notificações de leads
+        </h2>
+        <p className="mt-1 text-xs text-paper/40">
+          Cole um webhook (Slack, Discord, Make ou Zapier) para receber um aviso
+          automático sempre que entrar um novo lead pelo site. Deixe vazio para
+          desligar.
+        </p>
+        <div className="mt-3 max-w-md">
+          <span className="field-label">URL do webhook</span>
+          <input
+            type="url"
+            className="field"
+            value={leadWebhook}
+            onChange={(e) => setLeadWebhook(e.target.value)}
+            placeholder="https://hooks.slack.com/… ou https://discord.com/api/webhooks/…"
           />
         </div>
       </div>

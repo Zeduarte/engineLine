@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import type { Vehicle } from "@/types/vehicle";
 import { formatKm, priceLabel } from "@/lib/format";
 import { CompareButton } from "@/components/inventory/CompareButton";
+import { FavoriteButton } from "@/components/inventory/FavoriteButton";
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -100,8 +101,11 @@ export function VehicleCard({ vehicle, priority = false }: VehicleCardProps) {
             />
           </motion.div>
 
-          <div className="absolute right-4 top-4 rounded-full bg-ink/70 px-3 py-1 text-xs font-medium text-paper backdrop-blur">
-            {vehicle.year}
+          <div className="absolute right-4 top-4 flex items-center gap-2">
+            <FavoriteButton slug={vehicle.slug} />
+            <span className="rounded-full bg-ink/70 px-3 py-1 text-xs font-medium text-paper backdrop-blur">
+              {vehicle.year}
+            </span>
           </div>
 
           {badges.length > 0 && (

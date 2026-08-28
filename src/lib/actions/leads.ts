@@ -2,8 +2,67 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { leadSchema } from "@/lib/schemas";
-import type { LeadStatus } from "@/lib/supabase/database.types";
+import type { LeadStatus, LeadKind } from "@/lib/supabase/database.types";
+
+const KIND_LABEL: Record<LeadKind, string> = {
+  contact: "Contacto",
+  test_drive: "Test drive",
+  finance: "Financiamento",
+  trade_in: "Retoma",
+  order: "Encomenda",
+  reservation: "Reserva",
+  offer: "Proposta",
+  alert: "Alerta de stock",
+};
+
+/**
+ * Notifica o staff de um novo lead através de um webhook configurável
+ * (Slack/Discord/Make/Zapier). Best-effort: lê o URL com a chave de serviço
+ * (a RLS bloqueia o utilizador anónimo) e falha em silêncio — nunca afeta a
+ * submissão do lead. Envia `text` e `content` para ser compatível com Slack
+ * (usa `text`) e Discord (usa `content`).
+ */
+async function notifyNewLead(lead: {
+  kind: LeadKind;
+  name: string;
+  email: string;
+  phone: string | null;
+  car_label: string | null;
+  message: string | null;
+}) {
+  try {
+    const admin = createAdminClient();
+    if (!admin) return;
+    const { data } = await admin
+      .from("integration_secrets")
+      .select("data")
+      .eq("id", 1)
+      .maybeSingle();
+    const webhook = (data?.data as Record<string, unknown> | undefined)
+      ?.lead_webhook;
+    if (typeof webhook !== "string" || !webhook.startsWith("http")) return;
+
+    const lines = [
+      `🚗 *Novo lead: ${KIND_LABEL[lead.kind]}*`,
+      `Nome: ${lead.name}`,
+      `Email: ${lead.email}`,
+      lead.phone ? `Telefone: ${lead.phone}` : null,
+      lead.car_label ? `Viatura: ${lead.car_label}` : null,
+      lead.message ? `Mensagem: ${lead.message}` : null,
+    ].filter(Boolean);
+    const body = lines.join("\n");
+
+    await fetch(webhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: body, content: body }),
+    });
+  } catch {
+    // Notificação é acessória — nunca bloqueia nem falha a submissão.
+  }
+}
 
 export interface LeadActionState {
   ok: boolean;
@@ -71,6 +130,15 @@ export async function submitLead(
     console.error("submitLead:", error.message);
     return { ok: false, error: "Não foi possível enviar. Tente novamente." };
   }
+
+  await notifyNewLead({
+    kind: v.kind,
+    name: v.name,
+    email: v.email,
+    phone: v.phone || null,
+    car_label: v.car_label || null,
+    message: v.message || null,
+  });
 
   return { ok: true };
 }

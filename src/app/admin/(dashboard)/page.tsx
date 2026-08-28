@@ -122,6 +122,59 @@ export default async function DashboardPage() {
         </section>
       )}
 
+      {stats.conversion.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-paper">
+              Conversão por viatura
+            </h2>
+            <p className="mt-1 text-xs text-paper/50">
+              Visitas → leads. Muitas visitas com poucos contactos podem indicar
+              preço ou fotos a rever.
+            </p>
+          </div>
+          <div className="card overflow-x-auto">
+            <table className="w-full min-w-[520px] text-sm">
+              <thead>
+                <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wider text-paper/40">
+                  <th className="p-3 font-medium">Viatura</th>
+                  <th className="p-3 text-right font-medium">Visitas</th>
+                  <th className="p-3 text-right font-medium">Leads</th>
+                  <th className="p-3 text-right font-medium">Conversão</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {stats.conversion.map((c) => (
+                  <tr key={c.slug || c.name}>
+                    <td className="p-3">
+                      <Link
+                        href={`/viaturas/${c.slug}`}
+                        className="text-paper hover:text-accent"
+                      >
+                        {c.name}
+                      </Link>
+                    </td>
+                    <td className="p-3 text-right tabular-nums text-paper/80">
+                      {c.views}
+                    </td>
+                    <td className="p-3 text-right tabular-nums text-paper/80">
+                      {c.leads}
+                    </td>
+                    <td
+                      className={`p-3 text-right font-semibold tabular-nums ${
+                        c.leads > 0 ? "text-accent" : "text-paper/40"
+                      }`}
+                    >
+                      {c.rate}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       <section className="mt-8">
         <InventoryCharts stats={stats} />
       </section>

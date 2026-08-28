@@ -14,6 +14,9 @@ import { Specs } from "@/components/vehicle/Specs";
 import { TransparencySection } from "@/components/vehicle/TransparencySection";
 import { VehicleActions } from "@/components/vehicle/VehicleActions";
 import { ViewTracker } from "@/components/vehicle/ViewTracker";
+import { ShareButton } from "@/components/vehicle/ShareButton";
+import { FavoriteButton } from "@/components/inventory/FavoriteButton";
+import { RecentlyViewed } from "@/components/vehicle/RecentlyViewed";
 import { SellCTA } from "@/components/home/SellCTA";
 import { ContactBar } from "@/components/vehicle/ContactBar";
 import { VehicleJsonLd } from "@/components/seo/VehicleJsonLd";
@@ -51,11 +54,16 @@ export async function generateMetadata({
   return {
     title,
     description,
+    // As imagens Open Graph vêm de `opengraph-image.tsx` (geradas por viatura).
     openGraph: {
       title,
       description,
       type: "website",
-      images: [{ url: vehicle.images[0]!.src, alt: vehicle.images[0]!.alt }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
     },
   };
 }
@@ -113,12 +121,19 @@ export default async function VehiclePage({ params }: { params: Params }) {
               <p className="text-4xl font-bold text-accent">
                 {priceLabel(vehicle.price, vehicle.priceOnRequest)}
               </p>
-              <Link
-                href={`/viaturas/${vehicle.slug}/ficha`}
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-medium text-paper/80 transition-colors hover:border-accent hover:text-accent"
-              >
-                ⤓ Ficha PDF + QR
-              </Link>
+              <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                <FavoriteButton slug={vehicle.slug} variant="inline" />
+                <ShareButton
+                  title={`${vehicle.make} ${vehicle.model} ${vehicle.year}`}
+                  text={`${vehicle.make} ${vehicle.model} ${vehicle.year} · ${priceLabel(vehicle.price, vehicle.priceOnRequest)}`}
+                />
+                <Link
+                  href={`/viaturas/${vehicle.slug}/ficha`}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-medium text-paper/80 transition-colors hover:border-accent hover:text-accent"
+                >
+                  ⤓ Ficha PDF + QR
+                </Link>
+              </div>
             </div>
           </header>
 
@@ -136,7 +151,11 @@ export default async function VehiclePage({ params }: { params: Params }) {
             </div>
           )}
 
-          <Gallery slug={vehicle.slug} images={vehicle.images} />
+          <Gallery
+            slug={vehicle.slug}
+            images={vehicle.images}
+            video={vehicle.video}
+          />
 
           {/* Destaques rápidos */}
           <ul className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-5">
@@ -193,6 +212,9 @@ export default async function VehiclePage({ params }: { params: Params }) {
               </div>
             </section>
           )}
+
+          {/* Vistas recentemente (histórico local do visitante) */}
+          <RecentlyViewed vehicles={all} excludeSlug={vehicle.slug} />
 
           {/* Retoma / encomenda no fim da ficha */}
           <SellCTA />

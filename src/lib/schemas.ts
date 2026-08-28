@@ -107,6 +107,7 @@ export const leadSchema = z.object({
       "order",
       "reservation",
       "offer",
+      "alert",
     ])
     .default("contact"),
   car_id: z.string().uuid().nullable().optional(),
@@ -260,6 +261,14 @@ export const integrationsSchema = z.object({
   piscapisca: channelCred,
   stripe_secret: z.string().trim().max(200).optional().or(z.literal("")),
   feed_token: z.string().trim().max(80).optional().or(z.literal("")),
+  /** Webhook (Slack/Discord/Make/Zapier) notificado a cada novo lead. */
+  lead_webhook: z
+    .string()
+    .trim()
+    .url("URL inválido")
+    .max(500)
+    .optional()
+    .or(z.literal("")),
 });
 export type IntegrationsValues = z.infer<typeof integrationsSchema>;
 

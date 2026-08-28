@@ -6,6 +6,7 @@ import { GrainOverlay } from "@/components/ui/GrainOverlay";
 import { ContactFab } from "@/components/layout/ContactFab";
 import { CompareProvider } from "@/components/inventory/CompareContext";
 import { CompareBar } from "@/components/inventory/CompareBar";
+import { DealerJsonLd } from "@/components/seo/DealerJsonLd";
 import { getBranding } from "@/lib/queries";
 
 /**
@@ -28,6 +29,7 @@ export default async function PublicLayout({
         >
           Saltar para o conteúdo
         </a>
+        <DealerJsonLd branding={branding} />
         <ScrollProgress />
         <Header branding={branding} />
         <main id="conteudo">{children}</main>

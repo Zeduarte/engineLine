@@ -33,6 +33,7 @@ const KIND_LABEL: Record<LeadKind, string> = {
   order: "Encomenda",
   reservation: "Reserva",
   offer: "Proposta",
+  alert: "Alerta de stock",
 };
 
 // Pipeline de estados (ordem visual do funil).
@@ -60,6 +61,55 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
       ),
     [leads, filter, kindFilter],
   );
+
+  // Contagem por tipo (origem do lead) para os chips.
+  const kindCounts = useMemo(() => {
+    const m = {} as Record<LeadKind, number>;
+    for (const l of leads) m[l.kind] = (m[l.kind] ?? 0) + 1;
+    return m;
+  }, [leads]);
+
+  function exportCsv() {
+    const cols = [
+      "Data",
+      "Tipo",
+      "Estado",
+      "Nome",
+      "Email",
+      "Telefone",
+      "Viatura",
+      "Mensagem",
+      "Notas",
+    ];
+    const esc = (v: unknown) => {
+      const s = String(v ?? "").replace(/"/g, '""');
+      return `"${s}"`;
+    };
+    const rows = filtered.map((l) =>
+      [
+        new Date(l.created_at).toLocaleString("pt-PT"),
+        KIND_LABEL[l.kind],
+        STATUS_LABEL[l.status],
+        l.name,
+        l.email,
+        l.phone ?? "",
+        l.car_label ?? "",
+        (l.message ?? "").replace(/\n/g, " "),
+        (l.notes ?? "").replace(/\n/g, " "),
+      ]
+        .map(esc)
+        .join(","),
+    );
+    // BOM para o Excel abrir os acentos corretamente.
+    const csv = "﻿" + [cols.map(esc).join(","), ...rows].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   function change(id: string, status: LeadStatus) {
     startTransition(async () => {
@@ -103,23 +153,31 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
         ))}
       </div>
 
-      {/* Filtro por tipo */}
-      <div className="flex flex-wrap gap-2 text-xs">
+      {/* Filtro por tipo (origem) + exportação */}
+      <div className="flex flex-wrap items-center gap-2 text-xs">
         <button
           onClick={() => setKindFilter("")}
           className={`rounded-full px-3 py-1 ${kindFilter === "" ? "bg-white/15 text-paper" : "text-paper/50 hover:text-paper"}`}
         >
           Todos os tipos
         </button>
-        {(Object.keys(KIND_LABEL) as LeadKind[]).map((k) => (
-          <button
-            key={k}
-            onClick={() => setKindFilter(k)}
-            className={`rounded-full px-3 py-1 ${kindFilter === k ? "bg-white/15 text-paper" : "text-paper/50 hover:text-paper"}`}
-          >
-            {KIND_LABEL[k]}
-          </button>
-        ))}
+        {(Object.keys(KIND_LABEL) as LeadKind[])
+          .filter((k) => (kindCounts[k] ?? 0) > 0)
+          .map((k) => (
+            <button
+              key={k}
+              onClick={() => setKindFilter(k)}
+              className={`rounded-full px-3 py-1 ${kindFilter === k ? "bg-white/15 text-paper" : "text-paper/50 hover:text-paper"}`}
+            >
+              {KIND_LABEL[k]} ({kindCounts[k]})
+            </button>
+          ))}
+        <button
+          onClick={exportCsv}
+          className="ml-auto rounded-full border border-white/15 px-3 py-1 font-medium text-paper/70 transition-colors hover:border-accent hover:text-accent"
+        >
+          ⤓ Exportar CSV ({filtered.length})
+        </button>
       </div>
 
       <ul className="space-y-3">

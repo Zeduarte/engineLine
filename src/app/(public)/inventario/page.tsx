@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getVehicles } from "@/lib/queries";
 import { InventoryClient } from "@/components/inventory/InventoryClient";
+import { StockAlertForm } from "@/components/inventory/StockAlertForm";
 import type { FuelType } from "@/types/vehicle";
 
 export const revalidate = 60;
@@ -41,6 +42,10 @@ export default async function InventoryPage({
       </header>
 
       <InventoryClient vehicles={vehicles} initialFilters={initialFilters} />
+
+      <section className="mt-20">
+        <StockAlertForm defaultQuery={sp.q ?? ""} />
+      </section>
     </div>
   );
 }

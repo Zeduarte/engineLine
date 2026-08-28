@@ -15,14 +15,40 @@ export const revalidate = 60;
 
 type Params = { searchParams: Promise<{ ids?: string }> };
 
-const ROWS: { label: string; get: (v: Vehicle) => string }[] = [
-  { label: "Preço", get: (v) => priceLabel(v.price, v.priceOnRequest) },
-  { label: "Ano", get: (v) => String(v.year) },
-  { label: "Quilómetros", get: (v) => formatKm(v.mileage) },
+/**
+ * `best` marca as linhas numéricas onde faz sentido destacar o "vencedor":
+ * `min` = menor é melhor (preço, km); `max` = maior é melhor (ano, potência).
+ * `metric` extrai o número a comparar (null quando não se aplica, ex.: preço
+ * sob consulta — não entra na comparação).
+ */
+const ROWS: {
+  label: string;
+  get: (v: Vehicle) => string;
+  best?: "min" | "max";
+  metric?: (v: Vehicle) => number | null;
+}[] = [
+  {
+    label: "Preço",
+    get: (v) => priceLabel(v.price, v.priceOnRequest),
+    best: "min",
+    metric: (v) => (v.priceOnRequest || !v.price ? null : v.price),
+  },
+  { label: "Ano", get: (v) => String(v.year), best: "max", metric: (v) => v.year },
+  {
+    label: "Quilómetros",
+    get: (v) => formatKm(v.mileage),
+    best: "min",
+    metric: (v) => (v.mileage > 0 ? v.mileage : null),
+  },
   { label: "Combustível", get: (v) => v.fuel },
   { label: "Caixa", get: (v) => v.transmission },
   { label: "Carroçaria", get: (v) => v.body },
-  { label: "Potência", get: (v) => (v.power ? `${v.power} cv` : "—") },
+  {
+    label: "Potência",
+    get: (v) => (v.power ? `${v.power} cv` : "—"),
+    best: "max",
+    metric: (v) => (v.power > 0 ? v.power : null),
+  },
   {
     label: "Cilindrada",
     get: (v) => (v.displacement ? `${formatNumber(v.displacement)} cm³` : "—"),
@@ -31,6 +57,25 @@ const ROWS: { label: string; get: (v: Vehicle) => string }[] = [
   { label: "Portas", get: (v) => String(v.doors) },
   { label: "Lugares", get: (v) => String(v.seats) },
 ];
+
+/**
+ * Valor "vencedor" de uma linha, ou null quando não há um vencedor claro
+ * (todos iguais, ou menos de dois valores comparáveis).
+ */
+function winningValue(
+  row: (typeof ROWS)[number],
+  vehicles: Vehicle[],
+): number | null {
+  if (!row.best || !row.metric) return null;
+  const values = vehicles
+    .map(row.metric)
+    .filter((n): n is number => typeof n === "number");
+  if (values.length < 2) return null;
+  const best = row.best === "min" ? Math.min(...values) : Math.max(...values);
+  // Só destaca se houver de facto uma diferença.
+  if (values.every((v) => v === best)) return null;
+  return best;
+}
 
 export default async function ComparePage({ searchParams }: Params) {
   const { ids } = await searchParams;
@@ -108,21 +153,39 @@ export default async function ComparePage({ searchParams }: Params) {
             ))}
 
             {/* Especificações */}
-            {ROWS.map((row) => (
-              <Fragment key={row.label}>
-                <div className="flex items-center bg-ink p-2 text-[10px] font-semibold uppercase tracking-wider text-paper/40 sm:p-3 sm:text-xs">
-                  {row.label}
-                </div>
-                {found.map((v) => (
-                  <div
-                    key={v.slug}
-                    className="flex items-center bg-ink p-2 text-xs text-paper/80 sm:p-3 sm:text-sm"
-                  >
-                    {row.get(v)}
+            {ROWS.map((row) => {
+              const winner = winningValue(row, found);
+              return (
+                <Fragment key={row.label}>
+                  <div className="flex items-center bg-ink p-2 text-[10px] font-semibold uppercase tracking-wider text-paper/40 sm:p-3 sm:text-xs">
+                    {row.label}
                   </div>
-                ))}
-              </Fragment>
-            ))}
+                  {found.map((v) => {
+                    const isWinner =
+                      winner !== null &&
+                      row.metric != null &&
+                      row.metric(v) === winner;
+                    return (
+                      <div
+                        key={v.slug}
+                        className={`flex items-center gap-1.5 p-2 text-xs sm:p-3 sm:text-sm ${
+                          isWinner
+                            ? "bg-accent/10 font-semibold text-accent"
+                            : "bg-ink text-paper/80"
+                        }`}
+                      >
+                        {isWinner && (
+                          <span aria-label="Melhor valor" title="Melhor valor">
+                            ✓
+                          </span>
+                        )}
+                        {row.get(v)}
+                      </div>
+                    );
+                  })}
+                </Fragment>
+              );
+            })}
 
             {/* Extras */}
             <div className="bg-ink p-2 text-[10px] font-semibold uppercase tracking-wider text-paper/40 sm:p-3 sm:text-xs">
