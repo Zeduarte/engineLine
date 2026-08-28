@@ -1,7 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
-import Image from "next/image";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -22,8 +21,24 @@ export interface MediaItem {
   position: number;
 }
 
-const ACCEPT = "image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm";
+// Formatos que a WEB consegue mostrar. HEIC/HEIF (iPhone) e MOV não entram —
+// o browser não os renderiza, ficariam partidos no site.
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+const VIDEO_TYPES = ["video/mp4", "video/webm"];
+const ACCEPT = [...IMAGE_TYPES, ...VIDEO_TYPES].join(",");
 const MAX_MB = 50;
+
+/** Extensões incompatíveis frequentes (quando o type do ficheiro vem vazio). */
+const BLOCKED_EXT = ["heic", "heif", "mov", "avi", "mkv", "tiff", "tif"];
+
+function isSupported(file: File): boolean {
+  const type = file.type.toLowerCase();
+  if (IMAGE_TYPES.includes(type) || VIDEO_TYPES.includes(type)) return true;
+  // Alguns browsers não preenchem o type — recorre à extensão.
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (BLOCKED_EXT.includes(ext)) return false;
+  return ["jpg", "jpeg", "png", "webp", "avif", "mp4", "webm"].includes(ext);
+}
 
 /** Lê dimensões de uma imagem no browser (evita CLS no site público). */
 function imageSize(file: File): Promise<{ width: number; height: number }> {
@@ -51,73 +66,102 @@ export function MediaManager({
   const supabase = createClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<MediaItem[]>(initial);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState(0); // nº de ficheiros a carregar
   const [dragOver, setDragOver] = useState(false);
   const [pending, startTransition] = useTransition();
   const dragIndex = useRef<number | null>(null);
 
-  async function handleFiles(files: FileList | null) {
-    if (!files || files.length === 0) return;
-    setUploading(true);
-    const registered: Parameters<typeof registerMedia>[1] = [];
+  const processFiles = useCallback(
+    async (fileList: FileList | File[] | null) => {
+      const all = fileList ? Array.from(fileList) : [];
+      if (all.length === 0) return;
 
-    try {
-      for (const file of Array.from(files)) {
+      // Separa suportados dos incompatíveis (HEIC/MOV…) e dos grandes demais.
+      const valid: File[] = [];
+      for (const file of all) {
+        if (!isSupported(file)) {
+          toast.error(
+            `${file.name}: formato não suportado pela web. Converta para JPG (fotos) ou MP4 (vídeo).`,
+          );
+          continue;
+        }
         if (file.size > MAX_MB * 1024 * 1024) {
           toast.error(`${file.name}: excede ${MAX_MB}MB.`);
           continue;
         }
-        const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
-        const path = `${carId}/${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage
-          .from(MEDIA_BUCKET)
-          .upload(path, file, { cacheControl: "3600", upsert: false });
-
-        if (error) {
-          toast.error(`Falha ao carregar ${file.name}.`);
-          continue;
-        }
-        const { width, height } = await imageSize(file);
-        registered.push({
-          storage_path: path,
-          kind: file.type.startsWith("video/") ? "video" : "image",
-          alt: "",
-          width,
-          height,
-        });
+        valid.push(file);
       }
+      if (valid.length === 0) return;
 
-      if (registered.length) {
+      setUploading((n) => n + valid.length);
+      try {
+        // Upload em PARALELO (rápido), preservando a ordem de seleção.
+        const results = await Promise.all(
+          valid.map(async (file) => {
+            const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+            const path = `${carId}/${crypto.randomUUID()}.${ext}`;
+            const { error } = await supabase.storage
+              .from(MEDIA_BUCKET)
+              .upload(path, file, { cacheControl: "3600", upsert: false });
+            if (error) {
+              toast.error(`Falha ao carregar ${file.name}.`);
+              return null;
+            }
+            const { width, height } = await imageSize(file);
+            return {
+              storage_path: path,
+              kind: file.type.startsWith("video/")
+                ? ("video" as const)
+                : ("image" as const),
+              alt: "",
+              width,
+              height,
+            };
+          }),
+        );
+
+        const registered = results.filter(
+          (r): r is NonNullable<typeof r> => r !== null,
+        );
+        if (registered.length === 0) return;
+
         const res = await registerMedia(carId, registered);
         if (res.ok) {
-          toast.success(`${registered.length} ficheiro(s) adicionado(s).`);
+          toast.success(
+            `${registered.length} ficheiro(s) adicionado(s).`,
+          );
           router.refresh();
-          // Otimista: acrescenta ao estado local.
-          setItems((prev) => [
-            ...prev,
-            ...registered.map((r, i) => ({
-              id: `tmp-${Date.now()}-${i}`,
-              storage_path: r.storage_path,
-              kind: r.kind,
-              alt: "",
-              is_cover: prev.length === 0 && i === 0,
-              position: prev.length + i,
-            })),
-          ]);
         } else {
           toast.error(res.error ?? "Erro ao registar media.");
         }
+      } finally {
+        setUploading((n) => Math.max(0, n - valid.length));
+        if (inputRef.current) inputRef.current.value = "";
       }
-    } finally {
-      setUploading(false);
-      if (inputRef.current) inputRef.current.value = "";
-    }
-  }
+    },
+    [carId, router, supabase],
+  );
+
+  // Colar (Cmd/Ctrl+V) imagens diretamente da área de transferência.
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const files = Array.from(e.clipboardData?.files ?? []);
+      const media = files.filter(
+        (f) => f.type.startsWith("image/") || f.type.startsWith("video/"),
+      );
+      if (media.length > 0) {
+        e.preventDefault();
+        void processFiles(media);
+      }
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [processFiles]);
 
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
-    handleFiles(e.dataTransfer.files);
+    void processFiles(e.dataTransfer.files);
   }
 
   // ---- Reordenação por drag ----
@@ -152,16 +196,21 @@ export function MediaManager({
     });
   }
 
+  // Apaga SEM confirmação (rápido). Remove logo do ecrã (otimista).
   function remove(id: string) {
-    if (!confirm("Apagar este ficheiro? Esta ação é irreversível.")) return;
     setItems((prev) => prev.filter((m) => m.id !== id));
     startTransition(async () => {
       const res = await deleteMedia(carId, id);
       if (res.ok) toast.success("Ficheiro apagado.");
-      else toast.error("Erro ao apagar.");
-      router.refresh();
+      else {
+        toast.error("Erro ao apagar.");
+        router.refresh(); // repõe se falhou
+      }
     });
   }
+
+  // Mantém o estado local sincronizado quando o servidor devolve dados novos.
+  useEffect(() => setItems(initial), [initial]);
 
   return (
     <section className="card p-5">
@@ -198,20 +247,22 @@ export function MediaManager({
           accept={ACCEPT}
           multiple
           hidden
-          onChange={(e) => handleFiles(e.target.files)}
+          onChange={(e) => processFiles(e.target.files)}
         />
         <p className="text-sm text-paper/70">
-          {uploading ? (
-            "A carregar…"
+          {uploading > 0 ? (
+            `A carregar ${uploading} ficheiro(s)…`
           ) : (
             <>
-              <span className="font-medium text-paper">Clique</span> ou arraste
-              fotos / vídeo aqui
+              <span className="font-medium text-paper">Clique</span>, arraste
+              ou <span className="font-medium text-paper">cole (Cmd+V)</span>{" "}
+              fotos / vídeo
             </>
           )}
         </p>
         <p className="mt-1 text-xs text-paper/40">
-          JPG, PNG, WebP, AVIF, MP4, WebM · até {MAX_MB}MB
+          JPG, PNG, WebP, AVIF, MP4, WebM · até {MAX_MB}MB · vários ao mesmo
+          tempo
         </p>
       </div>
 
@@ -225,23 +276,9 @@ export function MediaManager({
               onDragStart={() => onCardDragStart(i)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => onCardDrop(i)}
-              className="group relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10 bg-ink-muted"
+              className="group relative aspect-[4/3] cursor-move overflow-hidden rounded-xl border border-white/10 bg-ink-muted"
             >
-              {m.kind === "video" ? (
-                <video
-                  src={publicMediaUrl(m.storage_path)}
-                  muted
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <Image
-                  src={publicMediaUrl(m.storage_path)}
-                  alt={m.alt || "Media da viatura"}
-                  fill
-                  sizes="(max-width:640px) 50vw, 25vw"
-                  className="object-cover"
-                />
-              )}
+              <Thumb item={m} />
 
               {m.is_cover && (
                 <span className="absolute left-2 top-2 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-ink">
@@ -254,8 +291,19 @@ export function MediaManager({
                 </span>
               )}
 
-              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-ink/90 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
-                {m.kind === "image" && !m.is_cover && (
+              {/* Ações — sempre com um X de apagar bem visível ao passar o rato */}
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => remove(m.id)}
+                aria-label="Apagar ficheiro"
+                className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-red-500/90 text-sm font-bold text-white opacity-0 transition-opacity hover:bg-red-500 group-hover:opacity-100"
+              >
+                ✕
+              </button>
+
+              {m.kind === "image" && !m.is_cover && (
+                <div className="absolute inset-x-0 bottom-0 flex bg-gradient-to-t from-ink/90 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
                   <button
                     type="button"
                     disabled={pending}
@@ -264,20 +312,62 @@ export function MediaManager({
                   >
                     Definir capa
                   </button>
-                )}
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => remove(m.id)}
-                  className="ml-auto rounded bg-red-500/80 px-2 py-1 text-[10px] font-medium text-white hover:bg-red-500"
-                >
-                  Apagar
-                </button>
-              </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>
       )}
     </section>
+  );
+}
+
+/**
+ * Miniatura tolerante a falhas: se a imagem não carregar (ex.: HEIC antigo já
+ * guardado), mostra um cartão de aviso em vez do ícone partido — e o ficheiro
+ * continua a poder ser apagado.
+ */
+function Thumb({ item }: { item: MediaItem }) {
+  const [failed, setFailed] = useState(false);
+  const url = publicMediaUrl(item.storage_path);
+
+  if (item.kind === "video") {
+    return failed ? (
+      <Fallback label="Vídeo" />
+    ) : (
+      <video
+        src={url}
+        muted
+        playsInline
+        preload="metadata"
+        onError={() => setFailed(true)}
+        className="h-full w-full object-cover"
+      />
+    );
+  }
+
+  return failed ? (
+    <Fallback label="Pré-visualização indisponível" />
+  ) : (
+    // Plain <img> (não next/image): evita config de domínios e mostra o
+    // onError de forma fiável para podermos cair no fallback.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt={item.alt || "Media da viatura"}
+      onError={() => setFailed(true)}
+      className="h-full w-full object-cover"
+    />
+  );
+}
+
+function Fallback({ label }: { label: string }) {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-white/5 p-2 text-center">
+      <span className="text-lg" aria-hidden>
+        🚫
+      </span>
+      <span className="text-[10px] leading-tight text-paper/50">{label}</span>
+    </div>
   );
 }
