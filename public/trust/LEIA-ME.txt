@@ -1,0 +1,24 @@
+PAINEL DE MÉDIA DA SECÇÃO "CONFIANÇA" (homepage)
+=================================================
+
+A coluna da direita da secção "Comprar sem margem para dúvidas" mostra um
+vídeo (ou imagem) à tua escolha. É OPCIONAL: se não puseres nada, aparece um
+fundo animado com o KPI — nunca fica vazio.
+
+Para colocares o TEU vídeo, guarda nesta pasta (public/trust/) com estes
+nomes EXATOS:
+
+  trust.mp4     -> o vídeo (formato mp4, o mais compatível)
+  trust.webm    -> (opcional) versão .webm, mais leve
+  trust.jpg     -> imagem de "poster" (o que se vê antes do vídeo arrancar)
+
+Recomendações:
+  - Vertical ou quadrado fica melhor (a caixa é mais alta que larga).
+  - Curto e em loop (5–15s), sem som (o vídeo é reproduzido em silêncio).
+  - Mantém o ficheiro leve (<10 MB) para não atrasar a página.
+
+Só queres uma IMAGEM fixa (sem vídeo)?
+  - Guarda só o trust.jpg (podes ignorar o mp4/webm).
+
+Depois de colocares os ficheiros, faz commit + push (ou envia-mos que eu trato).
+Podes apagar este LEIA-ME.txt.

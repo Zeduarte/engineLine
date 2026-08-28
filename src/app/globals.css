@@ -105,6 +105,22 @@ html.lenis body {
   }
 }
 
+/* Brilho pulsante subtil (painel de média da secção de confiança). */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.15);
+  }
+}
+.glow-pulse {
+  animation: glow-pulse 6s ease-in-out infinite;
+}
+
 /* Rede de segurança final: se o SO pedir menos movimento, cortamos tudo.
    O LenisProvider também não injeta `.js-anim`, mas isto cobre transições
    CSS residuais e animações de terceiros. */

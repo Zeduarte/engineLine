@@ -48,8 +48,8 @@ export default async function HomePage() {
 
       <BrandMarquee brands={content.brands} />
       <FeaturedVehicles vehicles={recent} />
-      <PinnedTrust content={content.trust} />
       <SellCTA />
+      <PinnedTrust content={content.trust} />
       <Testimonials items={testimonials} />
       <ContactCTA content={content.cta} company={branding.company} />
     </>
