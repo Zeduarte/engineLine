@@ -5,6 +5,7 @@
   "description": "Stand de automóveis premium — Next.js 15, GSAP, Lenis, Framer Motion",
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "rm -rf .next && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
