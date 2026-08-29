@@ -32,7 +32,7 @@ export function Footer({
         className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/70 to-ink/55"
       />
 
-      <div className="relative z-10 container-px grid gap-12 py-16 md:grid-cols-4 md:py-20">
+      <div className="relative z-10 container-px grid gap-12 py-16 [text-shadow:0_1px_4px_rgba(0,0,0,0.7)] md:grid-cols-4 md:py-20">
         <div className="md:col-span-2">
           {branding.logoUrl ? (
             <Image
@@ -47,28 +47,28 @@ export function Footer({
               {branding.companyName}
             </p>
           )}
-          <p className="mt-4 max-w-sm text-sm font-light text-paper/60">
+          <p className="mt-4 max-w-sm text-sm text-paper/85">
             {branding.tagline || site.description}
           </p>
         </div>
 
         <div>
-          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-paper/40">
+          <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-paper/70">
             Navegação
           </h2>
           <ul className="mt-4 space-y-3 text-sm">
             <li>
-              <Link href="/inventario" className="text-paper/70 hover:text-paper">
+              <Link href="/inventario" className="font-medium text-paper transition-colors hover:text-accent">
                 Stock
               </Link>
             </li>
             <li>
-              <Link href="/sobre" className="text-paper/70 hover:text-paper">
+              <Link href="/sobre" className="font-medium text-paper transition-colors hover:text-accent">
                 Sobre
               </Link>
             </li>
             <li>
-              <Link href="/contactos" className="text-paper/70 hover:text-paper">
+              <Link href="/contactos" className="font-medium text-paper transition-colors hover:text-accent">
                 Contactos
               </Link>
             </li>
@@ -76,10 +76,10 @@ export function Footer({
         </div>
 
         <div>
-          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-paper/40">
+          <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-paper/70">
             Contactos
           </h2>
-          <ul className="mt-4 space-y-3 text-sm text-paper/70">
+          <ul className="mt-4 space-y-3 text-sm font-medium text-paper/90">
             <li>
               <a href={branding.company.phoneHref} className="hover:text-paper">
                 {branding.company.phone}
@@ -98,13 +98,13 @@ export function Footer({
               {branding.company.address.postalCode}{" "}
               {branding.company.address.city}
             </li>
-            <li className="text-paper/50">{branding.company.hours}</li>
+            <li className="text-paper/70">{branding.company.hours}</li>
           </ul>
         </div>
       </div>
 
       <div className="relative z-10 border-t border-white/5">
-        <div className="container-px flex flex-col items-center justify-between gap-3 py-6 text-xs text-paper/50 md:flex-row">
+        <div className="container-px flex flex-col items-center justify-between gap-3 py-6 text-xs text-paper/75 [text-shadow:0_1px_4px_rgba(0,0,0,0.7)] md:flex-row">
           <p className="text-center md:text-left">
             {LEGAL_NAME} | NIF: {NIF} | Copyright © {new Date().getFullYear()}
           </p>
@@ -116,31 +116,31 @@ export function Footer({
                     href={l.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-paper/50 transition-colors hover:text-paper"
+                    className="font-medium text-paper/80 transition-colors hover:text-paper"
                   >
                     {l.label}
                   </a>
                 ) : (
                   <Link
                     href={l.href}
-                    className="text-paper/50 transition-colors hover:text-paper"
+                    className="font-medium text-paper/80 transition-colors hover:text-paper"
                   >
                     {l.label}
                   </Link>
                 )}
                 {i < LEGAL_LINKS.length - 1 && (
-                  <span aria-hidden className="text-paper/25">
+                  <span aria-hidden className="text-paper/40">
                     ·
                   </span>
                 )}
               </span>
             ))}
-            <span aria-hidden className="text-paper/25">
+            <span aria-hidden className="text-paper/40">
               ·
             </span>
             <Link
               href="/admin"
-              className="text-paper/30 transition-colors hover:text-accent"
+              className="text-paper/55 transition-colors hover:text-accent"
             >
               Área reservada
             </Link>
