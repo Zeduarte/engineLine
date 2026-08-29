@@ -43,7 +43,14 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
   });
   if (error) {
     console.error("createTask:", error.message);
-    return { ok: false, error: "Não foi possível criar a tarefa." };
+    return {
+      ok: false,
+      error:
+        error.message.includes("vehicle_tasks") ||
+        error.message.includes("does not exist")
+          ? "A tabela de tarefas ainda não existe. Aplique a migração 0012 no Supabase."
+          : `Não foi possível criar a tarefa: ${error.message}`,
+    };
   }
   revalidatePath(`/admin/oficina/${v.car_id}`);
   revalidatePath("/admin/oficina");

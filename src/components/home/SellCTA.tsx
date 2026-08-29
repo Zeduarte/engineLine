@@ -21,7 +21,7 @@ export function SellCTA() {
           className="absolute inset-0 bg-gradient-to-br from-ink/95 via-ink/80 to-ink/45"
         />
 
-        <div className="relative z-10 grid gap-8 p-8 md:grid-cols-2 md:items-center md:p-12">
+        <div className="relative z-10 grid gap-8 px-8 py-14 md:grid-cols-2 md:items-center md:px-12 md:py-20">
           <div>
             <p className="eyebrow mb-4">Retoma & Encomenda</p>
             <h2 className="text-3xl font-semibold text-paper md:text-4xl">
