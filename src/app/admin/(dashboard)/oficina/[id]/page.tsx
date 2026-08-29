@@ -64,7 +64,11 @@ export default async function OficinaVehiclePage({
         </div>
       )}
 
-      <TaskManager carId={vehicle.id} initial={vehicle.tasks} />
+      <TaskManager
+        carId={vehicle.id}
+        initial={vehicle.logs}
+        lastEnd={vehicle.lastEnd}
+      />
     </>
   );
 }

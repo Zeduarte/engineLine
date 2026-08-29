@@ -1,35 +1,51 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  createTask,
-  setTaskDone,
-  deleteTask,
-} from "@/lib/actions/workshop";
+import { createWorklog, deleteWorklog } from "@/lib/actions/workshop";
 import type { VehicleTaskRow } from "@/lib/supabase/database.types";
 
+/** "HH:MM:SS" ou "HH:MM" → "HH:MM". */
+function hm(t: string | null): string {
+  return t ? t.slice(0, 5) : "";
+}
+
+function nowHM(): string {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function todayISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Registo de HORAS por viatura: data (default hoje), início (default = último
+ * fim registado) e fim; as horas são calculadas automaticamente.
+ */
 export function TaskManager({
   carId,
   initial,
+  lastEnd,
 }: {
   carId: string;
   initial: VehicleTaskRow[];
+  lastEnd: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
-  const open = initial.filter((t) => !t.done);
-  const done = initial.filter((t) => t.done);
   const totalHours = initial.reduce((s, t) => s + Number(t.hours || 0), 0);
+  const defaultStart = lastEnd || nowHM();
 
   function add(formData: FormData) {
     startTransition(async () => {
-      const res = await createTask(formData);
+      const res = await createWorklog(formData);
       if (res.ok) {
-        toast.success("Tarefa registada.");
+        toast.success("Horas registadas.");
         formRef.current?.reset();
         router.refresh();
       } else {
@@ -38,19 +54,11 @@ export function TaskManager({
     });
   }
 
-  function toggle(id: string, done: boolean) {
-    startTransition(async () => {
-      const res = await setTaskDone(id, done);
-      if (res.ok) router.refresh();
-      else toast.error("Erro ao atualizar.");
-    });
-  }
-
   function remove(id: string) {
     startTransition(async () => {
-      const res = await deleteTask(id);
+      const res = await deleteWorklog(id);
       if (res.ok) {
-        toast.success("Tarefa apagada.");
+        toast.success("Registo apagado.");
         router.refresh();
       } else {
         toast.error("Erro ao apagar.");
@@ -60,107 +68,106 @@ export function TaskManager({
 
   return (
     <div className="space-y-6">
-      {/* Nova tarefa */}
+      {/* Novo registo */}
       <form ref={formRef} action={add} className="card space-y-3 p-4">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-paper/50">
-          Nova tarefa
+          Registar horas
         </h2>
         <input type="hidden" name="car_id" value={carId} />
-        <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
+        <div className="grid gap-3 sm:grid-cols-3">
           <div>
-            <span className="field-label">Descrição</span>
+            <span className="field-label">Data</span>
             <input
-              name="title"
-              placeholder="Ex.: Mudança de óleo e filtros"
+              name="work_date"
+              type="date"
+              defaultValue={todayISO()}
               className="field"
               required
             />
           </div>
           <div>
-            <span className="field-label">Horas</span>
+            <span className="field-label">Início</span>
             <input
-              name="hours"
-              type="number"
-              step="0.5"
-              min="0"
-              defaultValue="0"
+              name="start_time"
+              type="time"
+              defaultValue={defaultStart}
               className="field"
-              onFocus={(e) => e.currentTarget.select()}
+              required
+            />
+          </div>
+          <div>
+            <span className="field-label">Fim</span>
+            <input
+              name="end_time"
+              type="time"
+              defaultValue={nowHM()}
+              className="field"
             />
           </div>
         </div>
         <div>
-          <span className="field-label">Notas (opcional)</span>
+          <span className="field-label">Trabalho realizado (opcional)</span>
           <textarea
-            name="notes"
+            name="description"
             rows={2}
-            placeholder="Peças usadas, observações…"
+            placeholder="Ex.: Mudança de óleo e filtros; revisão de travões…"
             className="field"
           />
         </div>
         <button type="submit" disabled={pending} className="btn-primary">
-          {pending ? "A guardar…" : "Registar tarefa"}
+          {pending ? "A guardar…" : "Registar"}
         </button>
       </form>
 
       {/* Resumo */}
-      <div className="flex gap-3 text-sm">
+      <div className="flex flex-wrap gap-3 text-sm">
         <span className="rounded-full bg-white/5 px-3 py-1 text-paper/70">
-          {open.length} por fazer
-        </span>
-        <span className="rounded-full bg-white/5 px-3 py-1 text-paper/70">
-          {done.length} concluídas
+          {initial.length} {initial.length === 1 ? "registo" : "registos"}
         </span>
         <span className="rounded-full bg-accent/15 px-3 py-1 font-medium text-accent">
           {totalHours.toLocaleString("pt-PT")} h no total
         </span>
       </div>
 
-      {/* Listas */}
+      {/* Lista de registos */}
       {initial.length === 0 ? (
         <div className="card grid place-items-center p-12 text-center">
-          <p className="text-3xl">📋</p>
+          <p className="text-3xl">⏱️</p>
           <p className="mt-2 text-sm text-paper/50">
-            Ainda não há tarefas para esta viatura.
+            Ainda não há horas registadas para esta viatura.
           </p>
         </div>
       ) : (
         <ul className="space-y-2">
-          {[...open, ...done].map((t) => (
-            <li
-              key={t.id}
-              className={`card flex items-start gap-3 p-4 ${t.done ? "opacity-60" : ""}`}
-            >
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => toggle(t.id, !t.done)}
-                aria-label={t.done ? "Marcar por fazer" : "Marcar concluída"}
-                className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md border text-xs ${
-                  t.done
-                    ? "border-accent bg-accent text-ink"
-                    : "border-white/25 text-transparent hover:border-accent"
-                }`}
-              >
-                ✓
-              </button>
+          {initial.map((t) => (
+            <li key={t.id} className="card flex items-start gap-3 p-4">
               <div className="min-w-0 flex-1">
-                <p className={`font-medium text-paper ${t.done ? "line-through" : ""}`}>
-                  {t.title}
-                </p>
-                {t.notes && (
-                  <p className="mt-1 text-sm text-paper/60">{t.notes}</p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="font-medium text-paper">
+                    {new Date(t.work_date).toLocaleDateString("pt-PT", {
+                      weekday: "short",
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </span>
+                  <span className="font-mono text-sm text-paper/70">
+                    {hm(t.start_time)}
+                    {t.end_time ? ` – ${hm(t.end_time)}` : " (em curso)"}
+                  </span>
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent">
+                    {Number(t.hours).toLocaleString("pt-PT")} h
+                  </span>
+                </div>
+                {t.description && (
+                  <p className="mt-1 text-sm text-paper/60">{t.description}</p>
                 )}
-                <p className="mt-1 text-xs text-paper/40">
-                  {Number(t.hours) > 0 && `${Number(t.hours)} h · `}
-                  {new Date(t.created_at).toLocaleDateString("pt-PT")}
-                </p>
               </div>
               <button
                 type="button"
                 disabled={pending}
                 onClick={() => remove(t.id)}
-                aria-label="Apagar tarefa"
+                aria-label="Apagar registo"
                 className="shrink-0 rounded-md px-2 py-1 text-xs text-paper/40 hover:bg-red-500/15 hover:text-red-300"
               >
                 ✕

@@ -96,9 +96,9 @@ export function WorkshopList({ vehicles }: { vehicles: WorkshopVehicle[] }) {
                     sizes="(max-width:768px) 100vw, 33vw"
                     className="object-cover"
                   />
-                  {v.openTasks > 0 && (
+                  {v.totalHours > 0 && (
                     <span className="absolute right-2 top-2 rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-ink">
-                      {v.openTasks} por fazer
+                      {v.totalHours.toLocaleString("pt-PT")} h
                     </span>
                   )}
                 </div>
@@ -110,7 +110,7 @@ export function WorkshopList({ vehicles }: { vehicles: WorkshopVehicle[] }) {
                     {v.plate || "— sem matrícula —"}
                   </p>
                   <p className="mt-2 text-xs text-paper/40">
-                    {v.totalTasks} {v.totalTasks === 1 ? "tarefa" : "tarefas"}
+                    {v.logCount} {v.logCount === 1 ? "registo" : "registos"}
                   </p>
                 </div>
               </Link>

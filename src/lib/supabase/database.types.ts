@@ -326,14 +326,15 @@ type IntegrationSecretsInsert = {
 };
 type IntegrationSecretsUpdate = Partial<IntegrationSecretsInsert>;
 
-// ---- vehicle_tasks (oficina) -----------------------------------------------
+// ---- vehicle_tasks (oficina — registo de horas) ----------------------------
 type VehicleTasksRow = {
   id: string;
   car_id: string;
-  title: string;
-  notes: string | null;
+  work_date: string; // "YYYY-MM-DD"
+  start_time: string; // "HH:MM:SS"
+  end_time: string | null; // "HH:MM:SS"
+  description: string | null;
   hours: number;
-  done: boolean;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -341,10 +342,11 @@ type VehicleTasksRow = {
 type VehicleTasksInsert = {
   id?: string;
   car_id: string;
-  title: string;
-  notes?: string | null;
+  work_date?: string;
+  start_time: string;
+  end_time?: string | null;
+  description?: string | null;
   hours?: number;
-  done?: boolean;
   created_by?: string | null;
 };
 type VehicleTasksUpdate = Partial<VehicleTasksInsert>;

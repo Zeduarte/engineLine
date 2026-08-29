@@ -12,44 +12,65 @@ export interface ActionResult {
   id?: string;
 }
 
-const taskSchema = z.object({
+const HHMM = /^\d{2}:\d{2}$/;
+
+const logSchema = z.object({
   car_id: z.string().uuid(),
-  title: z.string().trim().min(2, "Descreva a tarefa").max(200),
-  hours: z.coerce.number().min(0, "Horas inválidas").max(9999).default(0),
-  notes: z.string().trim().max(2000).optional().or(z.literal("")),
+  work_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
+  start_time: z.string().regex(HHMM, "Hora de início inválida"),
+  end_time: z.string().regex(HHMM, "Hora de fim inválida").optional().or(z.literal("")),
+  description: z.string().trim().max(2000).optional().or(z.literal("")),
 });
 
-/** Cria uma tarefa de oficina para uma viatura. */
-export async function createTask(formData: FormData): Promise<ActionResult> {
+/** Minutos desde 00:00 de uma hora "HH:MM". */
+function toMinutes(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return (h ?? 0) * 60 + (m ?? 0);
+}
+
+/** Cria um registo de horas para uma viatura. */
+export async function createWorklog(formData: FormData): Promise<ActionResult> {
   const profile = await requireSection("oficina");
-  const parsed = taskSchema.safeParse({
+  const parsed = logSchema.safeParse({
     car_id: formData.get("car_id"),
-    title: formData.get("title"),
-    hours: formData.get("hours") || 0,
-    notes: formData.get("notes") ?? "",
+    work_date: formData.get("work_date"),
+    start_time: formData.get("start_time"),
+    end_time: formData.get("end_time") ?? "",
+    description: formData.get("description") ?? "",
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
   }
   const v = parsed.data;
 
+  // Horas = fim − início (se cruzar a meia-noite, soma 24h). Sem fim → 0.
+  let hours = 0;
+  if (v.end_time) {
+    let diff = toMinutes(v.end_time) - toMinutes(v.start_time);
+    if (diff < 0) diff += 24 * 60;
+    hours = Math.round((diff / 60) * 100) / 100;
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.from("vehicle_tasks").insert({
     car_id: v.car_id,
-    title: v.title,
-    hours: v.hours,
-    notes: v.notes || null,
+    work_date: v.work_date,
+    start_time: v.start_time,
+    end_time: v.end_time || null,
+    description: v.description || null,
+    hours,
     created_by: profile.id,
   });
   if (error) {
-    console.error("createTask:", error.message);
+    console.error("createWorklog:", error.message);
     return {
       ok: false,
       error:
         error.message.includes("vehicle_tasks") ||
-        error.message.includes("does not exist")
-          ? "A tabela de tarefas ainda não existe. Aplique a migração 0012 no Supabase."
-          : `Não foi possível criar a tarefa: ${error.message}`,
+        error.message.includes("does not exist") ||
+        error.message.includes("column")
+          ? "A tabela de registos ainda não está atualizada. Aplique a migração 0012 no Supabase."
+          : `Não foi possível registar: ${error.message}`,
     };
   }
   revalidatePath(`/admin/oficina/${v.car_id}`);
@@ -57,26 +78,8 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
-/** Marca uma tarefa como concluída/por fazer. */
-export async function setTaskDone(
-  id: string,
-  done: boolean,
-): Promise<ActionResult> {
-  await requireSection("oficina");
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("vehicle_tasks")
-    .update({ done })
-    .eq("id", id)
-    .select("car_id")
-    .maybeSingle();
-  if (error) return { ok: false, error: "Erro ao atualizar." };
-  if (data?.car_id) revalidatePath(`/admin/oficina/${data.car_id}`);
-  return { ok: true };
-}
-
-/** Apaga uma tarefa. */
-export async function deleteTask(id: string): Promise<ActionResult> {
+/** Apaga um registo de horas. */
+export async function deleteWorklog(id: string): Promise<ActionResult> {
   await requireSection("oficina");
   const supabase = await createClient();
   const { data, error } = await supabase
