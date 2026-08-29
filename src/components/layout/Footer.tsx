@@ -19,8 +19,20 @@ export function Footer({
   branding?: Branding;
 }) {
   return (
-    <footer className="border-t border-white/10 bg-ink">
-      <div className="container-px grid gap-12 py-16 md:grid-cols-4 md:py-20">
+    <footer className="relative overflow-hidden border-t border-white/10 bg-ink">
+      {/* Imagem de fundo subtil (public/images/footer.jpg) + escurecimento
+          forte para manter o texto legível. Fallback: fica só o fundo escuro. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-cover bg-center opacity-40"
+        style={{ backgroundImage: "url(/images/footer.jpg)" }}
+      />
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-gradient-to-t from-ink via-ink/90 to-ink/75"
+      />
+
+      <div className="relative z-10 container-px grid gap-12 py-16 md:grid-cols-4 md:py-20">
         <div className="md:col-span-2">
           {branding.logoUrl ? (
             <Image
@@ -91,7 +103,7 @@ export function Footer({
         </div>
       </div>
 
-      <div className="border-t border-white/5">
+      <div className="relative z-10 border-t border-white/5">
         <div className="container-px flex flex-col items-center justify-between gap-3 py-6 text-xs text-paper/50 md:flex-row">
           <p className="text-center md:text-left">
             {LEGAL_NAME} | NIF: {NIF} | Copyright © {new Date().getFullYear()}

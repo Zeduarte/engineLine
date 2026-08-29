@@ -12,6 +12,8 @@ Guarda os 4 ficheiros nesta pasta (public/images/) com EXATAMENTE estes nomes:
                      fundo sólido escuro.
   quiz.jpg        -> banner do quiz "Carro ideal" (aparece em todos os passos).
                      Retangular/larga. Se faltar, fica um fundo sólido.
+  footer.jpg      -> fundo subtil do rodapé (fim de todas as páginas). Larga.
+                     Aparece esbatida e escurecida. Se faltar, fica só escuro.
 
 Onde aparecem:
   - pilar-1.jpg + pilar-2.jpg  -> secção "Porquê comprar" da página inicial
