@@ -14,6 +14,8 @@ Guarda os 4 ficheiros nesta pasta (public/images/) com EXATAMENTE estes nomes:
                      Retangular/larga. Se faltar, fica um fundo sólido.
   footer.jpg      -> fundo subtil do rodapé (fim de todas as páginas). Larga.
                      Aparece esbatida e escurecida. Se faltar, fica só escuro.
+  contacto-cta.jpg -> fundo da secção "Vamos falar" (fim da homepage). Larga.
+                     Escurecida para o texto se ler. Se faltar, fundo sólido.
 
 Onde aparecem:
   - pilar-1.jpg + pilar-2.jpg  -> secção "Porquê comprar" da página inicial

@@ -17,7 +17,20 @@ export function ContactCTA({
   return (
     <section className="container-px py-24 md:py-40">
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-ink-soft px-6 py-20 text-center md:px-16 md:py-32">
-        <p className="eyebrow mb-6">{content.eyebrow}</p>
+        {/* Imagem de fundo (public/images/contacto-cta.jpg) + escurecimento
+            para o texto se manter legível. Fallback: fundo sólido. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url(/images/contacto-cta.jpg)" }}
+        />
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-gradient-to-t from-ink/95 via-ink/85 to-ink/70"
+        />
+
+        <div className="relative z-10">
+          <p className="eyebrow mb-6">{content.eyebrow}</p>
         <AnimatedText
           as="h2"
           className="mx-auto max-w-3xl text-headline font-semibold text-paper"
@@ -48,6 +61,7 @@ export function ContactCTA({
             {company.phone}
           </a>
         </p>
+        </div>
       </div>
     </section>
   );
