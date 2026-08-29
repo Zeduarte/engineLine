@@ -221,25 +221,23 @@ export function CarQuiz({ vehicles }: { vehicles: Vehicle[] }) {
             ))}
           </div>
 
-          {/* Banner do passo do orçamento — imagem definível em
-              public/images/quiz-orcamento.jpg (fallback: fundo sólido). */}
-          {current.key === "budget" && (
+          {/* Banner do quiz (em todos os passos) — imagem definível em
+              public/images/quiz.jpg (fallback: fundo sólido). */}
+          <div
+            className="relative mt-6 h-40 overflow-hidden rounded-2xl border border-white/10 bg-ink-soft bg-cover bg-center md:h-56"
+            style={{ backgroundImage: "url(/images/quiz.jpg)" }}
+          >
             <div
-              className="relative mt-6 h-40 overflow-hidden rounded-2xl border border-white/10 bg-ink-soft bg-cover bg-center md:h-56"
-              style={{ backgroundImage: "url(/images/quiz-orcamento.jpg)" }}
-            >
-              <div
-                aria-hidden
-                className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent"
-              />
-              <div className="absolute bottom-4 left-5">
-                <p className="eyebrow mb-1">O carro certo, no seu orçamento</p>
-                <p className="text-lg font-semibold text-paper">
-                  Sem surpresas, sem pressão.
-                </p>
-              </div>
+              aria-hidden
+              className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent"
+            />
+            <div className="absolute bottom-4 left-5">
+              <p className="eyebrow mb-1">Encontre o seu carro ideal</p>
+              <p className="text-lg font-semibold text-paper">
+                Sem surpresas, sem pressão.
+              </p>
             </div>
-          )}
+          </div>
         </motion.div>
       </AnimatePresence>
 

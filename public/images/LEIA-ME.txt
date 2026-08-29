@@ -10,7 +10,7 @@ Guarda os 4 ficheiros nesta pasta (public/images/) com EXATAMENTE estes nomes:
   showcase.jpg    -> fundo do card "Retoma & Encomenda" (homepage e ficha).
                      Foto larga (ex.: o Porsche GT3 RS). Se faltar, fica um
                      fundo sólido escuro.
-  quiz-orcamento.jpg -> banner no passo do orçamento do quiz "Carro ideal".
+  quiz.jpg        -> banner do quiz "Carro ideal" (aparece em todos os passos).
                      Retangular/larga. Se faltar, fica um fundo sólido.
 
 Onde aparecem:
