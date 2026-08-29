@@ -26,14 +26,14 @@ export function ContactCTA({
         />
         <div
           aria-hidden
-          className="absolute inset-0 bg-gradient-to-t from-ink/95 via-ink/85 to-ink/70"
+          className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/55 to-ink/45"
         />
 
         <div className="relative z-10">
-          <p className="eyebrow mb-6">{content.eyebrow}</p>
+          <p className="eyebrow hero-text-shadow mb-6">{content.eyebrow}</p>
         <AnimatedText
           as="h2"
-          className="mx-auto max-w-3xl text-headline font-semibold text-paper"
+          className="hero-text-shadow mx-auto max-w-3xl text-headline font-semibold text-paper"
         >
           {content.title}
         </AnimatedText>

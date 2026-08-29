@@ -24,12 +24,12 @@ export function Footer({
           forte para manter o texto legível. Fallback: fica só o fundo escuro. */}
       <div
         aria-hidden
-        className="absolute inset-0 bg-cover bg-center opacity-40"
+        className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: "url(/images/footer.jpg)" }}
       />
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-t from-ink via-ink/90 to-ink/75"
+        className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/70 to-ink/55"
       />
 
       <div className="relative z-10 container-px grid gap-12 py-16 md:grid-cols-4 md:py-20">
