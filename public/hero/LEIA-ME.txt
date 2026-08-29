@@ -15,6 +15,20 @@ REGRA IMPORTANTE: tem só UM dos dois de cada vez.
 Outros ficheiros:
   hero-poster.jpg  ->  imagem mostrada enquanto o vídeo carrega (só p/ vídeo).
 
+EFEITO "CROSS-FADE" AO FAZER SCROLL (opcional, só com imagem)
+------------------------------------------------------------
+Se, além do hero.jpg, colocares um SEGUNDO ficheiro chamado hero-2.jpg
+(aceita .png/.webp/.avif), o topo faz um cross-fade do primeiro para o
+segundo à medida que fazes scroll para baixo.
+
+  hero.jpg    ->  imagem inicial (ex.: foto com o semáforo VERMELHO)
+  hero-2.jpg  ->  imagem final    (ex.: a MESMA foto com o semáforo VERDE)
+
+IMPORTANTE: as duas fotos têm de ser o MESMO enquadramento (mesmo tamanho e
+posição), mudando só o pormenor que queres animar — senão a imagem "salta".
+A versão verde tens de a preparar num editor de imagem (o site não altera a
+foto sozinho).
+
 Depois de trocares o ficheiro:
   - Localmente:  para o servidor e corre  npm run dev:clean
   - Em produção: faz commit + push (o Netlify reconstrói e aplica).

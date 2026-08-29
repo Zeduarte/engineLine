@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { HeroVideo } from "./HeroVideo";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { asset } from "@/lib/asset";
@@ -38,33 +38,58 @@ export function Hero({
 }) {
   const sectionRef = useRef<HTMLElement>(null);
   const isVideo = media.type === "video";
+  // Cross-fade por scroll entre duas imagens (ex.: semáforo vermelho -> verde).
+  const crossfade = media.type === "image" && Boolean(media.src2);
+
+  // Progresso do scroll DESTA secção → opacidade da 2ª imagem (0 → 1).
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end end"],
+  });
+  const topOpacity = useTransform(scrollYProgress, [0.12, 0.62], [0, 1]);
+
+  // O vídeo e o cross-fade precisam de "pista" de scroll + sticky; a imagem
+  // fixa simples ocupa só o ecrã (melhor no telemóvel).
+  const needsScroll = isVideo || crossfade;
 
   return (
     <section
       ref={sectionRef}
-      // O vídeo precisa de "pista" extra de scroll (140vh) para ser percorrido;
-      // a imagem fixa ocupa só o ecrã.
-      className={`relative ${isVideo ? "h-[140vh]" : "h-dvh"}`}
+      className={`relative ${
+        isVideo ? "h-[140vh]" : crossfade ? "h-[200vh]" : "h-dvh"
+      }`}
       aria-label="Viatura em destaque"
     >
       <div
         className={`flex w-full items-center justify-center ${
-          isVideo
+          needsScroll
             ? "sticky top-0 h-dvh overflow-hidden"
             : "relative min-h-dvh py-28 md:py-0"
         }`}
       >
-        {/* Fundo: vídeo controlado pelo scroll OU imagem fixa */}
+        {/* Fundo: vídeo controlado pelo scroll OU imagem (fixa ou cross-fade) */}
         <div className="absolute inset-0 overflow-hidden bg-ink">
           {isVideo ? (
             <HeroVideo triggerRef={sectionRef} poster={asset(media.poster)} />
           ) : (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={asset(media.src)}
-              alt=""
-              className="hero-kenburns h-full w-full object-cover"
-            />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={asset(media.src)}
+                alt=""
+                className={`h-full w-full object-cover ${
+                  crossfade ? "" : "hero-kenburns"
+                }`}
+              />
+              {crossfade && media.src2 && (
+                <motion.img
+                  src={asset(media.src2)}
+                  alt=""
+                  style={{ opacity: topOpacity }}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
+            </>
           )}
         </div>
 
