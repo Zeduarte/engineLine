@@ -16,6 +16,7 @@ const NAV: { href: string; label: string; exact: boolean; section: Section }[] =
   { href: "/admin/integracoes", label: "Integrações", exact: false, section: "integracoes" },
   { href: "/admin/utilizadores", label: "Utilizadores", exact: false, section: "utilizadores" },
   { href: "/admin/definicoes", label: "Definições", exact: false, section: "definicoes" },
+  { href: "/admin/oficina", label: "Oficina", exact: false, section: "oficina" },
 ];
 
 export function MobileNav({

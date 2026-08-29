@@ -10,7 +10,7 @@
  * Manter sincronizado com o schema é a fonte da verdade de tipos do backend.
  */
 
-export type UserRole = "admin" | "chefe" | "vendedor";
+export type UserRole = "admin" | "chefe" | "vendedor" | "mecanico";
 export type FuelType =
   | "Gasolina"
   | "Diesel"
@@ -326,6 +326,29 @@ type IntegrationSecretsInsert = {
 };
 type IntegrationSecretsUpdate = Partial<IntegrationSecretsInsert>;
 
+// ---- vehicle_tasks (oficina) -----------------------------------------------
+type VehicleTasksRow = {
+  id: string;
+  car_id: string;
+  title: string;
+  notes: string | null;
+  hours: number;
+  done: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+type VehicleTasksInsert = {
+  id?: string;
+  car_id: string;
+  title: string;
+  notes?: string | null;
+  hours?: number;
+  done?: boolean;
+  created_by?: string | null;
+};
+type VehicleTasksUpdate = Partial<VehicleTasksInsert>;
+
 export type Database = {
   public: {
     Tables: {
@@ -383,6 +406,12 @@ export type Database = {
         Update: IntegrationSecretsUpdate;
         Relationships: [];
       };
+      vehicle_tasks: {
+        Row: VehicleTasksRow;
+        Insert: VehicleTasksInsert;
+        Update: VehicleTasksUpdate;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -409,6 +438,7 @@ export type CarUpdate = CarsUpdate;
 export type CarMediaRow = CarMediaRowT;
 export type LeadRow = LeadsRow;
 export type ProfileRow = ProfilesRow;
+export type VehicleTaskRow = VehicleTasksRow;
 
 /** Carro com a sua media (join usado nas queries). */
 export type CarWithMedia = CarRow & { car_media: CarMediaRow[] };

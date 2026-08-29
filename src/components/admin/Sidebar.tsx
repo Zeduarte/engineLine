@@ -21,6 +21,7 @@ const NAV: {
   { href: "/admin/integracoes", label: "Integrações", icon: "⇄", exact: false, section: "integracoes" },
   { href: "/admin/utilizadores", label: "Utilizadores", icon: "◑", exact: false, section: "utilizadores" },
   { href: "/admin/definicoes", label: "Definições", icon: "⚙", exact: false, section: "definicoes" },
+  { href: "/admin/oficina", label: "Oficina", icon: "⚒", exact: false, section: "oficina" },
 ];
 
 export function Sidebar({

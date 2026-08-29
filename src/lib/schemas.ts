@@ -277,7 +277,7 @@ export const newUserSchema = z.object({
   full_name: z.string().trim().min(2, "Indique o nome").max(80),
   email: z.string().trim().email("Email inválido"),
   password: z.string().min(8, "Mínimo 8 caracteres").max(72),
-  role: z.enum(["admin", "chefe", "vendedor"]).default("vendedor"),
+  role: z.enum(["admin", "chefe", "vendedor", "mecanico"]).default("vendedor"),
   /** Separadores a que o novo utilizador terá acesso (opcional). */
   allowed_sections: z.array(z.string()).optional(),
 });

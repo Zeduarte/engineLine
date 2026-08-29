@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getAdminCars, getDashboardStats } from "@/lib/admin-queries";
+import { redirect } from "next/navigation";
+import { getAdminCars, getDashboardStats, getCurrentProfile } from "@/lib/admin-queries";
 import { coverImage } from "@/lib/mappers";
 import { formatPrice, priceLabel } from "@/lib/format";
 import { InventoryCharts } from "@/components/admin/InventoryCharts";
@@ -36,6 +37,10 @@ function Kpi({
 }
 
 export default async function DashboardPage() {
+  // O mecânico não tem dashboard — vai direto para a Oficina.
+  const profile = await getCurrentProfile();
+  if (profile?.role === "mecanico") redirect("/admin/oficina");
+
   const [stats, cars] = await Promise.all([
     getDashboardStats(),
     getAdminCars(),

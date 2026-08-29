@@ -73,6 +73,19 @@ export function VehicleCard({
   const current = images[index] ?? images[0]!;
   const hasMultiple = images.length > 1;
 
+  // Em listas secundárias (relacionadas, vistas recentemente) desligamos por
+  // completo o framer-motion do media: evita qualquer colisão de layout
+  // partilhado que deixava a imagem em branco. O zoom no hover passa a ser CSS.
+  const Media: React.ElementType = morph ? motion.div : "div";
+  const Zoom: React.ElementType = morph ? motion.div : "div";
+  const mediaProps = morph ? { layoutId: `card-media-${vehicle.slug}` } : {};
+  const zoomProps = morph
+    ? {
+        variants: { hover: { scale: 1.05 } },
+        transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+      }
+    : {};
+
   // As setas mudam a foto sem navegar para a ficha (o card é um Link).
   function step(e: React.MouseEvent, dir: 1 | -1) {
     e.preventDefault();
@@ -92,14 +105,17 @@ export function VehicleCard({
         className="block focus:outline-none"
         aria-label={`${vehicle.make} ${vehicle.model} ${vehicle.year} — ${priceLabel(vehicle.price, vehicle.priceOnRequest)}`}
       >
-        <motion.div
-          layoutId={morph ? `card-media-${vehicle.slug}` : undefined}
+        <Media
+          {...mediaProps}
           className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-ink-muted"
         >
-          <motion.div
-            variants={{ hover: { scale: 1.05 } }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0"
+          <Zoom
+            {...zoomProps}
+            className={
+              morph
+                ? "absolute inset-0"
+                : "absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-105"
+            }
           >
             <Image
               key={current.src}
@@ -110,7 +126,7 @@ export function VehicleCard({
               priority={priority}
               className="object-cover"
             />
-          </motion.div>
+          </Zoom>
 
           <div className="absolute right-4 top-4 flex items-center gap-2">
             <FavoriteButton slug={vehicle.slug} />
@@ -170,7 +186,7 @@ export function VehicleCard({
           <div className="absolute bottom-3 right-3 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100">
             <CompareButton slug={vehicle.slug} />
           </div>
-        </motion.div>
+        </Media>
 
         <div className="mt-5 flex items-start justify-between gap-4">
           <div>
