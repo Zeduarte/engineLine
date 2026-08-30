@@ -100,7 +100,7 @@ export default async function ContactsPage() {
             <iframe
               title={`Mapa da localização do ${companyName}`}
               src={mapSrc}
-              className="h-full min-h-[20rem] w-full grayscale"
+              className="h-full min-h-[20rem] w-full"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             />
