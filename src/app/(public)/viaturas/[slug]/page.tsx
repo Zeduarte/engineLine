@@ -117,18 +117,23 @@ export default async function VehiclePage({ params }: { params: Params }) {
                 </p>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-2 md:justify-end">
-              <FavoriteButton slug={vehicle.slug} variant="inline" />
-              <ShareButton
-                title={`${vehicle.make} ${vehicle.model} ${vehicle.year}`}
-                text={`${vehicle.make} ${vehicle.model} ${vehicle.year} · ${priceLabel(vehicle.price, vehicle.priceOnRequest)}`}
-              />
-              <Link
-                href={`/viaturas/${vehicle.slug}/ficha`}
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-medium text-paper/80 transition-colors hover:border-accent hover:text-accent"
-              >
-                ⤓ Ficha PDF + QR
-              </Link>
+            <div className="flex flex-col items-start gap-3 md:items-end">
+              <p className="text-4xl font-bold text-accent">
+                {priceLabel(vehicle.price, vehicle.priceOnRequest)}
+              </p>
+              <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                <FavoriteButton slug={vehicle.slug} variant="inline" />
+                <ShareButton
+                  title={`${vehicle.make} ${vehicle.model} ${vehicle.year}`}
+                  text={`${vehicle.make} ${vehicle.model} ${vehicle.year} · ${priceLabel(vehicle.price, vehicle.priceOnRequest)}`}
+                />
+                <Link
+                  href={`/viaturas/${vehicle.slug}/ficha`}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-medium text-paper/80 transition-colors hover:border-accent hover:text-accent"
+                >
+                  ⤓ Ficha PDF + QR
+                </Link>
+              </div>
             </div>
           </header>
 
@@ -146,32 +151,29 @@ export default async function VehiclePage({ params }: { params: Params }) {
             </div>
           )}
 
-          {/* Duas colunas: media + info à esquerda; painel de preço/contacto
-              fixo (sticky) à direita, que acompanha o scroll — como nos grandes
-              stands. Em mobile, o painel fica a seguir à galeria. */}
-          <div className="grid gap-8 lg:grid-cols-[1.55fr_1fr] lg:items-start lg:gap-12">
-            {/* Coluna esquerda */}
-            <div className="space-y-10 lg:space-y-16">
-              <Gallery
-                slug={vehicle.slug}
-                images={vehicle.images}
-                video={vehicle.video}
-              />
+          <Gallery
+            slug={vehicle.slug}
+            images={vehicle.images}
+            video={vehicle.video}
+          />
 
-              {/* Destaques rápidos */}
-              <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-3">
-                {vehicle.highlights.map((h) => (
-                  <li key={h.label} className="bg-ink p-5">
-                    <p className="text-xs uppercase tracking-wider text-paper/40">
-                      {h.label}
-                    </p>
-                    <p className="mt-1 text-lg font-semibold text-paper">
-                      {h.value}
-                    </p>
-                  </li>
-                ))}
-              </ul>
+          {/* Destaques rápidos */}
+          <ul className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-5">
+            {vehicle.highlights.map((h) => (
+              <li key={h.label} className="bg-ink p-5">
+                <p className="text-xs uppercase tracking-wider text-paper/40">
+                  {h.label}
+                </p>
+                <p className="mt-1 text-lg font-semibold text-paper">
+                  {h.value}
+                </p>
+              </li>
+            ))}
+          </ul>
 
+          {/* Corpo em duas colunas */}
+          <div className="mt-16 grid gap-12 lg:grid-cols-[1.4fr_1fr] lg:gap-16">
+            <div className="space-y-16">
               <Specs vehicle={vehicle} />
 
               <TransparencySection vehicle={vehicle} />
@@ -186,23 +188,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
               </section>
             </div>
 
-            {/* Coluna direita — sticky, acompanha o scroll */}
-            <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-              {/* Preço */}
-              <div className="rounded-3xl border border-white/10 bg-ink-soft p-6">
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm text-paper/50">Preço de venda</p>
-                  {vehicle.warrantyMonths ? (
-                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-paper/70">
-                      Garantia {vehicle.warrantyMonths} meses
-                    </span>
-                  ) : null}
-                </div>
-                <p className="mt-1 text-4xl font-bold text-accent">
-                  {priceLabel(vehicle.price, vehicle.priceOnRequest)}
-                </p>
-              </div>
-
+            <div className="space-y-8 lg:sticky lg:top-28 lg:self-start">
               <VehicleActions
                 vehicleName={`${vehicle.make} ${vehicle.model}`}
                 vehicleId={vehicle.id}
