@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { Reveal } from "@/components/ui/Reveal";
@@ -57,16 +56,17 @@ export default async function AboutPage() {
         </p>
       </section>
 
-      {/* Imagem com parallax subtil (≤12%). */}
+      {/* Banner com parallax subtil (≤12%). A foto (public/images/sobre.jpg) é
+          opcional: se faltar, fica o gradiente por baixo — nunca dá imagem
+          partida. Basta colocar o ficheiro para aparecer automaticamente. */}
       <section className="container-px mt-20">
-        <div className="relative aspect-[21/9] overflow-hidden rounded-3xl bg-ink-muted">
+        <div className="relative aspect-[21/9] overflow-hidden rounded-3xl bg-gradient-to-br from-ink-muted via-ink to-black">
           <Parallax amount={0.12} className="absolute inset-0 scale-110">
-            <Image
-              src="/images/sobre.jpg"
-              alt={`${companyName} — a nossa paixão por duas rodas`}
-              fill
-              sizes="100vw"
-              className="object-cover"
+            <div
+              role="img"
+              aria-label={`${companyName} — a nossa paixão por duas rodas`}
+              className="h-full w-full bg-cover bg-center"
+              style={{ backgroundImage: "url(/images/sobre.jpg)" }}
             />
           </Parallax>
         </div>

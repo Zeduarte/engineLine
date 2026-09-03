@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { Reveal } from "@/components/ui/Reveal";
 import { Parallax } from "@/components/ui/Parallax";
@@ -36,17 +35,16 @@ export default async function ContactsPage() {
         </AnimatedText>
       </section>
 
-      {/* Banner com parallax subtil (imagem guardada em public/images/). */}
+      {/* Banner com parallax subtil. A foto (public/images/contactos.jpg) é
+          opcional: se faltar, fica o gradiente por baixo — nunca dá imagem
+          partida. Basta colocar o ficheiro para aparecer automaticamente. */}
       <section className="container-px mt-12">
-        <div className="relative aspect-[21/9] overflow-hidden rounded-3xl border border-white/10 bg-ink-muted">
+        <div className="relative aspect-[21/9] overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-ink-muted via-ink to-black">
           <Parallax amount={0.12} className="absolute inset-0 scale-110">
-            <Image
-              src="/images/contactos.jpg"
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover"
+            <div
+              aria-hidden
+              className="h-full w-full bg-cover bg-center"
+              style={{ backgroundImage: "url(/images/contactos.jpg)" }}
             />
           </Parallax>
         </div>
