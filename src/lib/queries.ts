@@ -76,6 +76,28 @@ export async function getRecentVehicles(limit = 12): Promise<Vehicle[]> {
   return (data as unknown as CarWithMedia[]).map(toVehicle);
 }
 
+/**
+ * Viaturas já vendidas (prova social). Ordenadas pela data de venda mais
+ * recente. `limit` opcional — a homepage mostra as últimas 10, a página
+ * `/vendidos` mostra todas.
+ */
+export async function getSoldVehicles(limit?: number): Promise<Vehicle[]> {
+  let query = supabasePublic
+    .from("cars")
+    .select(CAR_SELECT)
+    .eq("status", "sold")
+    .order("sold_at", { ascending: false, nullsFirst: false })
+    .order("updated_at", { ascending: false });
+  if (limit) query = query.limit(limit);
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("getSoldVehicles:", error.message);
+    return [];
+  }
+  return (data as unknown as CarWithMedia[]).map(toVehicle);
+}
+
 export async function getVehicleBySlug(
   slug: string,
 ): Promise<Vehicle | undefined> {

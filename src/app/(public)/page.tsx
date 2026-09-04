@@ -3,6 +3,7 @@ import { BrandMarquee } from "@/components/home/BrandMarquee";
 import { QuickSearch } from "@/components/home/QuickSearch";
 import { FeaturedVehicles } from "@/components/home/FeaturedVehicles";
 import { PinnedTrust } from "@/components/home/PinnedTrust";
+import { SoldShowcase } from "@/components/home/SoldShowcase";
 import { ContactCTA } from "@/components/home/ContactCTA";
 import { SellCTA } from "@/components/home/SellCTA";
 import { Testimonials } from "@/components/home/Testimonials";
@@ -12,6 +13,7 @@ import {
   getTestimonials,
   getBranding,
   getVehicles,
+  getSoldVehicles,
 } from "@/lib/queries";
 import { getHeroMedia } from "@/lib/hero-media";
 
@@ -22,13 +24,14 @@ export const revalidate = 60;
 // Server Component: os dados (destaques + conteúdo editável) são obtidos no
 // servidor e passados às ilhas cliente. Zero JS de dados enviado para o browser.
 export default async function HomePage() {
-  const [recent, content, testimonials, branding, allVehicles] =
+  const [recent, content, testimonials, branding, allVehicles, sold] =
     await Promise.all([
       getRecentVehicles(),
       getHomeContent(),
       getTestimonials(),
       getBranding(),
       getVehicles(),
+      getSoldVehicles(10),
     ]);
 
   // Dados mínimos para a pesquisa rápida (marca/modelo/combustível + contagem).
@@ -54,6 +57,7 @@ export default async function HomePage() {
       <FeaturedVehicles vehicles={recent} />
       <SellCTA />
       <PinnedTrust content={content.trust} />
+      <SoldShowcase vehicles={sold} />
       <Testimonials items={testimonials} />
       <ContactCTA content={content.cta} company={branding.company} />
     </>
