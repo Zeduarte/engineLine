@@ -7,11 +7,12 @@ import { VehicleCard } from "@/components/vehicle/VehicleCard";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 
 /**
- * Carrossel de anúncios recentes na homepage.
+ * Anúncios recentes na homepage (primeiros 10).
  *
- * Scroll horizontal com snap (nativo, suave em qualquer dispositivo) + botões
- * de navegação que fazem scroll por "página". Em mobile arrasta-se com o dedo.
- * A ordem vem já do servidor (mais recentes primeiro).
+ * Mobile: lista vertical (um card por linha), mais fácil de percorrer com o
+ * polegar. Desktop (≥md): carrossel horizontal com snap + botões de navegação
+ * que fazem scroll por "página". A ordem vem já do servidor (mais recentes
+ * primeiro).
  */
 export function FeaturedVehicles({
   vehicles,
@@ -84,12 +85,12 @@ export function FeaturedVehicles({
       ) : (
         <div
           ref={trackRef}
-          className="-mx-6 flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth px-6 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex flex-col gap-10 md:-mx-6 md:flex-row md:snap-x md:snap-mandatory md:gap-6 md:overflow-x-auto md:scroll-smooth md:px-6 md:pb-4 md:[-ms-overflow-style:none] md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden"
         >
-          {vehicles.map((vehicle, i) => (
+          {vehicles.slice(0, 10).map((vehicle, i) => (
             <div
               key={vehicle.slug}
-              className="w-[80%] shrink-0 snap-start sm:w-[46%] lg:w-[31%]"
+              className="w-full md:w-[46%] md:shrink-0 md:snap-start lg:w-[31%]"
             >
               <VehicleCard vehicle={vehicle} priority={i < 3} />
             </div>
