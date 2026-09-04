@@ -16,11 +16,9 @@ export const revalidate = 300;
 
 export default async function ContactsPage() {
   const { companyName, company } = await getBranding();
-  // Bounding box aproximada à volta das coordenadas do stand para o mapa OSM.
+  // Mapa normal do Google Maps (embed clássico, sem API key).
   const { lat, lng } = company.geo;
-  const d = 0.008;
-  const bbox = `${lng - d}%2C${lat - d}%2C${lng + d}%2C${lat + d}`;
-  const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
+  const mapSrc = `https://maps.google.com/maps?q=${lat},${lng}&z=15&hl=pt-PT&output=embed`;
 
   return (
     <div className="pb-24 pt-32 md:pt-40">
