@@ -98,7 +98,7 @@ export function VehicleCard({
       initial={false}
       whileHover="hover"
       whileFocus="hover"
-      className="group relative"
+      className="group relative rounded-3xl border border-white/10 bg-ink-soft p-3 transition-colors duration-300 hover:border-white/20 hover:bg-white/[0.04]"
     >
       <Link
         href={`/viaturas/${vehicle.slug}`}
@@ -188,7 +188,7 @@ export function VehicleCard({
           </div>
         </Media>
 
-        <div className="mt-5">
+        <div className="mt-4 px-1 pb-1">
           <div className="flex items-start justify-between gap-3">
             <h3 className="text-lg font-semibold text-paper">
               {vehicle.make} {vehicle.model}
