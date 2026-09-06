@@ -14,7 +14,6 @@ import { Specs } from "@/components/vehicle/Specs";
 import { SpecGrid } from "@/components/vehicle/SpecGrid";
 import { DescriptionCard } from "@/components/vehicle/DescriptionCard";
 import { ExtrasGroups } from "@/components/vehicle/ExtrasGroups";
-import { InterestCTA } from "@/components/vehicle/InterestCTA";
 import { TransparencySection } from "@/components/vehicle/TransparencySection";
 import { VehicleActions } from "@/components/vehicle/VehicleActions";
 import { ViewTracker } from "@/components/vehicle/ViewTracker";
@@ -94,11 +93,21 @@ export default async function VehiclePage({ params }: { params: Params }) {
 
       <article className="pt-24 md:pt-28">
         <div className="container-px">
+          {/* Voltar ao stock: seta circular no mobile, texto no desktop. */}
           <Link
             href="/inventario"
-            className="mb-8 inline-flex items-center gap-2 text-sm text-paper/60 transition-colors hover:text-paper"
+            aria-label="Voltar ao stock"
+            className="group mb-6 inline-flex items-center gap-2 text-sm text-paper/60 transition-colors hover:text-paper"
           >
-            <span aria-hidden>←</span> Voltar ao stock
+            <span
+              aria-hidden
+              className="grid h-10 w-10 place-items-center rounded-full border border-white/15 text-xl leading-none transition-colors group-hover:border-white/50 sm:hidden"
+            >
+              ‹
+            </span>
+            <span className="hidden sm:inline">
+              <span aria-hidden>←</span> Voltar ao stock
+            </span>
           </Link>
 
           {(vehicle.status === "reserved" || vehicle.status === "sold") && (
@@ -187,16 +196,26 @@ export default async function VehiclePage({ params }: { params: Params }) {
                 <DescriptionCard text={vehicle.description} />
               )}
 
-              <ExtrasGroups extras={vehicle.extras} />
+              {/* "Interessado?" logo a seguir à descrição — só em mobile/tablet
+                  (no desktop está no painel lateral fixo à direita). */}
+              <div className="lg:hidden">
+                <VehicleActions
+                  vehicleName={`${vehicle.make} ${vehicle.model}`}
+                  vehicleId={vehicle.id}
+                  price={vehicle.priceOnRequest ? null : vehicle.price}
+                  canReserve={canReserve}
+                  depositAmount={branding.depositAmount}
+                />
+              </div>
 
-              <InterestCTA vehicle={vehicle} company={branding.company} />
+              <ExtrasGroups extras={vehicle.extras} />
 
               <Specs vehicle={vehicle} />
 
               <TransparencySection vehicle={vehicle} />
             </div>
 
-            <div className="space-y-8 lg:sticky lg:top-28 lg:self-start">
+            <div className="hidden space-y-8 lg:block lg:sticky lg:top-28 lg:self-start">
               <VehicleActions
                 vehicleName={`${vehicle.make} ${vehicle.model}`}
                 vehicleId={vehicle.id}
