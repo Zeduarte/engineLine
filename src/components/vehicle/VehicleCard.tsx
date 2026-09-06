@@ -188,21 +188,100 @@ export function VehicleCard({
           </div>
         </Media>
 
-        <div className="mt-5 flex items-start justify-between gap-4">
-          <div>
+        <div className="mt-5">
+          <div className="flex items-start justify-between gap-3">
             <h3 className="text-lg font-semibold text-paper">
               {vehicle.make} {vehicle.model}
             </h3>
-            <p className="mt-1 text-sm font-light text-paper/50">
-              {vehicle.fuel} · {vehicle.transmission} ·{" "}
-              {formatKm(vehicle.mileage)}
+            <p className="whitespace-nowrap text-lg font-semibold text-accent">
+              {priceLabel(vehicle.price, vehicle.priceOnRequest)}
             </p>
           </div>
-          <p className="whitespace-nowrap text-lg font-semibold text-accent">
-            {priceLabel(vehicle.price, vehicle.priceOnRequest)}
-          </p>
+
+          {vehicle.variant && (
+            <p className="mt-0.5 text-sm font-light text-paper/60">
+              {vehicle.variant}
+            </p>
+          )}
+
+          {/* Chips de especificações (ano, km, combustível, caixa). */}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <SpecChip icon={<CalIcon />}>{vehicle.year}</SpecChip>
+            <SpecChip icon={<GaugeIcon />}>{formatKm(vehicle.mileage)}</SpecChip>
+            <SpecChip icon={<FuelIcon />}>{vehicle.fuel}</SpecChip>
+            <SpecChip icon={<GearIcon />}>{vehicle.transmission}</SpecChip>
+          </div>
+
+          {vehicle.warrantyMonths ? (
+            <p className="mt-3 text-sm text-paper/60">
+              Garantia:{" "}
+              <span className="font-semibold text-accent">
+                {vehicle.warrantyMonths} meses
+              </span>
+            </p>
+          ) : null}
         </div>
       </Link>
     </motion.article>
+  );
+}
+
+/** Pílula com ícone + valor para os destaques do card. */
+function SpecChip({
+  icon,
+  children,
+}: {
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-paper/80">
+      <span className="text-paper/60">{icon}</span>
+      {children}
+    </span>
+  );
+}
+
+const ic = {
+  className: "h-3.5 w-3.5",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.6,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  viewBox: "0 0 24 24",
+  "aria-hidden": true,
+};
+function CalIcon() {
+  return (
+    <svg {...ic}>
+      <rect x="3" y="4.5" width="18" height="16" rx="2" />
+      <path d="M3 9h18M8 3v3M16 3v3" />
+    </svg>
+  );
+}
+function GaugeIcon() {
+  return (
+    <svg {...ic}>
+      <path d="M12 13l4-3" />
+      <path d="M4 18a8 8 0 1116 0" />
+    </svg>
+  );
+}
+function FuelIcon() {
+  return (
+    <svg {...ic}>
+      <path d="M5 21V5a2 2 0 012-2h6a2 2 0 012 2v16H5z" />
+      <path d="M15 8h2.5A1.5 1.5 0 0119 9.5V16a1.5 1.5 0 003 0V9l-3-3" />
+      <path d="M7 9h6" />
+    </svg>
+  );
+}
+function GearIcon() {
+  return (
+    <svg {...ic}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" />
+    </svg>
   );
 }

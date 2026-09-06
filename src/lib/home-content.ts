@@ -18,6 +18,13 @@ export interface HeroContent {
   subtitle: string;
   primaryCta: CtaContent;
   secondaryCta: CtaContent;
+  /**
+   * O que mostrar no fundo do hero:
+   *  - "auto"  → deteta pelo ficheiro em public/hero/ (mp4 → vídeo, senão imagem)
+   *  - "video" → força o vídeo (public/hero/hero.mp4)
+   *  - "image" → força a imagem (public/hero/hero.jpg|png|webp|avif)
+   */
+  media: "auto" | "video" | "image";
 }
 
 export interface TrustPillar {
@@ -54,6 +61,7 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
     subtitle: "Uma seleção rigorosa de automóveis premium. Roda para explorar.",
     primaryCta: { label: "Ver stock", href: "/inventario" },
     secondaryCta: { label: "Conhecer o stand", href: "/sobre" },
+    media: "auto",
   },
   brands: [
     "BMW",

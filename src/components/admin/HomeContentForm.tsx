@@ -73,6 +73,26 @@ export function HomeContentForm({ initial }: { initial: HomeContentValues }) {
           <Field label="Subtítulo" error={errors.hero?.subtitle?.message}>
             <textarea rows={2} className="field" {...register("hero.subtitle")} />
           </Field>
+          <Field
+            label="Fundo do topo (vídeo ou imagem)"
+            error={errors.hero?.media?.message}
+          >
+            <select className="field" {...register("hero.media")}>
+              <option value="auto">
+                Automático (deteta o ficheiro em public/hero/)
+              </option>
+              <option value="video">Vídeo (public/hero/hero.mp4)</option>
+              <option value="image">
+                Imagem (public/hero/hero.jpg)
+              </option>
+            </select>
+            <p className="mt-1.5 text-xs text-paper/50">
+              Coloque o ficheiro na pasta <code>public/hero/</code>: vídeo em{" "}
+              <code>hero.mp4</code> ou imagem em <code>hero.jpg</code> (também
+              aceita png/webp/avif). &quot;Automático&quot; escolhe o vídeo se
+              existir, senão a imagem.
+            </p>
+          </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Botão 1 — texto">
               <input className="field" {...register("hero.primaryCta.label")} />

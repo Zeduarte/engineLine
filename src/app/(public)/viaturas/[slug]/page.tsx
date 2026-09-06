@@ -93,23 +93,6 @@ export default async function VehiclePage({ params }: { params: Params }) {
 
       <article className="pt-24 md:pt-28">
         <div className="container-px">
-          {/* Voltar ao stock: seta circular no mobile, texto no desktop. */}
-          <Link
-            href="/inventario"
-            aria-label="Voltar ao stock"
-            className="group mb-6 inline-flex items-center gap-2 text-sm text-paper/60 transition-colors hover:text-paper"
-          >
-            <span
-              aria-hidden
-              className="grid h-10 w-10 place-items-center rounded-full border border-white/15 text-xl leading-none transition-colors group-hover:border-white/50 sm:hidden"
-            >
-              ‹
-            </span>
-            <span className="hidden sm:inline">
-              <span aria-hidden>←</span> Voltar ao stock
-            </span>
-          </Link>
-
           {(vehicle.status === "reserved" || vehicle.status === "sold") && (
             <div
               className={`mb-6 rounded-xl px-4 py-3 text-sm font-medium ${

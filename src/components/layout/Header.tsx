@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
@@ -22,6 +22,10 @@ export function Header({
   branding?: Branding;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  // Numa ficha de viatura (/viaturas/slug, não sub-rotas) mostramos a seta de
+  // voltar ao lado do logótipo — sempre acessível no topo fixo.
+  const onVehiclePage = /^\/viaturas\/[^/]+$/.test(pathname);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const { items: favorites, ready: favReady } = useLocalList(FAVORITES_KEY);
@@ -46,11 +50,22 @@ export function Header({
       }`}
     >
       <nav className="container-px flex h-16 items-center justify-between md:h-20">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-lg font-bold tracking-tight text-paper"
-          aria-label={`${branding.companyName} — página inicial`}
-        >
+        <div className="flex items-center gap-3">
+          {onVehiclePage && (
+            <button
+              type="button"
+              onClick={() => router.back()}
+              aria-label="Voltar"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/15 text-xl leading-none text-paper transition-colors hover:border-white/50"
+            >
+              ‹
+            </button>
+          )}
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-lg font-bold tracking-tight text-paper"
+            aria-label={`${branding.companyName} — página inicial`}
+          >
           {branding.logoUrl ? (
             <Image
               src={branding.logoUrl}
@@ -63,7 +78,8 @@ export function Header({
           ) : (
             <span>{branding.companyName}</span>
           )}
-        </Link>
+          </Link>
+        </div>
 
         <ul className="hidden items-center gap-8 md:flex">
           {NAV.map((item) => {

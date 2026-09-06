@@ -41,7 +41,7 @@ export default async function HomePage() {
     fuel: v.fuel,
   }));
 
-  const heroMedia = getHeroMedia();
+  const heroMedia = getHeroMedia(content.hero.media);
 
   return (
     <>

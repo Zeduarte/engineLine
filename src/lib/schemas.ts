@@ -154,6 +154,7 @@ export const homeContentSchema = z.object({
     subtitle: z.string().trim().max(300),
     primaryCta: cta,
     secondaryCta: cta,
+    media: z.enum(["auto", "video", "image"]).default("auto"),
   }),
   brands: z.array(z.string().trim().min(1)).max(30),
   trust: z.object({

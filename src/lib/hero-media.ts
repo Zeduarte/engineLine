@@ -34,18 +34,40 @@ function firstExisting(names: string[]): string | null {
   return null;
 }
 
-export function getHeroMedia(): HeroMedia {
+const VIDEO: HeroMedia = { type: "video", poster: "/hero/hero-poster.jpg" };
+
+/** Devolve a imagem do hero (com 2ª imagem opcional p/ cross-fade), ou null. */
+function imageMedia(): HeroMedia | null {
+  const src = firstExisting(IMAGE_NAMES);
+  if (!src) return null;
+  const src2 = firstExisting(IMAGE2_NAMES);
+  return src2 ? { type: "image", src, src2 } : { type: "image", src };
+}
+
+/**
+ * Média do hero. `mode` vem da definição do backoffice (Página inicial):
+ *  - "video" → força o vídeo (o poster aparece sempre que o mp4 falhe);
+ *  - "image" → força a imagem (se não existir ficheiro, tenta /hero/hero.jpg);
+ *  - "auto"  → deteta pelo ficheiro (mp4 primeiro, senão imagem, senão vídeo).
+ */
+export function getHeroMedia(
+  mode: "auto" | "video" | "image" = "auto",
+): HeroMedia {
   try {
-    if (fs.existsSync(path.join(HERO_DIR, "hero.mp4"))) {
-      return { type: "video", poster: "/hero/hero-poster.jpg" };
+    if (mode === "video") return VIDEO;
+
+    if (mode === "image") {
+      // Honra a escolha mesmo que o fs não confirme (ex.: Netlify); o dono do
+      // site coloca o ficheiro em public/hero/.
+      return imageMedia() ?? { type: "image", src: "/hero/hero.jpg" };
     }
-    const src = firstExisting(IMAGE_NAMES);
-    if (src) {
-      const src2 = firstExisting(IMAGE2_NAMES);
-      return src2 ? { type: "image", src, src2 } : { type: "image", src };
-    }
+
+    // auto
+    if (fs.existsSync(path.join(HERO_DIR, "hero.mp4"))) return VIDEO;
+    const img = imageMedia();
+    if (img) return img;
   } catch {
     // fs indisponível (ambiente sem acesso ao disco) — usa o vídeo por defeito.
   }
-  return { type: "video", poster: "/hero/hero-poster.jpg" };
+  return VIDEO;
 }
