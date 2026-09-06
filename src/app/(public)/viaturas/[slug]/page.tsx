@@ -14,6 +14,7 @@ import { Specs } from "@/components/vehicle/Specs";
 import { SpecGrid } from "@/components/vehicle/SpecGrid";
 import { DescriptionCard } from "@/components/vehicle/DescriptionCard";
 import { ExtrasGroups } from "@/components/vehicle/ExtrasGroups";
+import { InterestCTA } from "@/components/vehicle/InterestCTA";
 import { TransparencySection } from "@/components/vehicle/TransparencySection";
 import { VehicleActions } from "@/components/vehicle/VehicleActions";
 import { ViewTracker } from "@/components/vehicle/ViewTracker";
@@ -187,6 +188,8 @@ export default async function VehiclePage({ params }: { params: Params }) {
               )}
 
               <ExtrasGroups extras={vehicle.extras} />
+
+              <InterestCTA vehicle={vehicle} company={branding.company} />
 
               <Specs vehicle={vehicle} />
 

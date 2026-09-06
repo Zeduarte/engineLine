@@ -19,6 +19,7 @@ import { createCar, updateCar } from "@/lib/actions/cars";
 import { Combobox } from "@/components/ui/Combobox";
 import { CAR_BRANDS, CAR_COLORS, COMMON_EXTRAS, yearOptions } from "@/lib/car-brands";
 import { CAR_MODELS } from "@/lib/car-models";
+import { EXTRAS_CATALOG } from "@/lib/extras";
 
 // Lista de anos calculada uma vez (o ano corrente é estável na sessão).
 const YEARS = yearOptions();
@@ -124,6 +125,14 @@ export function CarForm({
   }
   function removeExtra(v: string) {
     const next = extras.filter((e) => e !== v);
+    setExtras(next);
+    setValue("extras", next);
+  }
+  /** Liga/desliga um extra do catálogo (checkbox). */
+  function toggleExtra(v: string) {
+    const next = extras.includes(v)
+      ? extras.filter((e) => e !== v)
+      : [...new Set([...extras, v])];
     setExtras(next);
     setValue("extras", next);
   }
@@ -405,6 +414,39 @@ export function CarForm({
 
           <div>
             <span className="field-label">Extras / equipamento</span>
+
+            {/* Catálogo por categoria — marcar os que a viatura tem. Aparecem
+                no site agrupados exatamente por estas categorias. */}
+            <div className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              {EXTRAS_CATALOG.map((group) => (
+                <div key={group.title}>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-paper/50">
+                    {group.title}
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {group.items.map((item) => (
+                      <label
+                        key={item}
+                        className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-paper/80 transition-colors hover:bg-white/5"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={extras.includes(item)}
+                          onChange={() => toggleExtra(item)}
+                          className="h-4 w-4 shrink-0 accent-accent"
+                        />
+                        {item}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Extra personalizado (texto livre) para o que não está na lista. */}
+            <p className="mb-1.5 mt-4 text-xs text-paper/50">
+              Adicionar outro equipamento (opcional)
+            </p>
             <div className="flex gap-2">
               <div className="flex-1">
                 <Combobox
