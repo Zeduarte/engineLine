@@ -11,6 +11,9 @@ import { VehicleCard } from "@/components/vehicle/VehicleCard";
 import { formatKm, priceLabel } from "@/lib/format";
 import { Gallery } from "@/components/vehicle/Gallery";
 import { Specs } from "@/components/vehicle/Specs";
+import { SpecGrid } from "@/components/vehicle/SpecGrid";
+import { DescriptionCard } from "@/components/vehicle/DescriptionCard";
+import { ExtrasGroups } from "@/components/vehicle/ExtrasGroups";
 import { TransparencySection } from "@/components/vehicle/TransparencySection";
 import { VehicleActions } from "@/components/vehicle/VehicleActions";
 import { ViewTracker } from "@/components/vehicle/ViewTracker";
@@ -20,7 +23,6 @@ import { RecentlyViewed } from "@/components/vehicle/RecentlyViewed";
 import { SellCTA } from "@/components/home/SellCTA";
 import { ContactBar } from "@/components/vehicle/ContactBar";
 import { VehicleJsonLd } from "@/components/seo/VehicleJsonLd";
-import { AnimatedText } from "@/components/ui/AnimatedText";
 
 // ISR: páginas conhecidas são pré-geradas; novas viaturas publicadas depois do
 // build são renderizadas on-demand e cacheadas (dynamicParams = true, default).
@@ -98,45 +100,6 @@ export default async function VehiclePage({ params }: { params: Params }) {
             <span aria-hidden>←</span> Voltar ao stock
           </Link>
 
-          {/* Cabeçalho */}
-          <header className="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
-            <div>
-              <p className="eyebrow mb-3">{vehicle.year} · {vehicle.body}</p>
-              <p className="text-xl font-semibold uppercase tracking-wide text-paper/60">
-                {vehicle.make}
-              </p>
-              <AnimatedText
-                as="h1"
-                className="mt-1 text-headline font-semibold text-paper"
-              >
-                {vehicle.model}
-              </AnimatedText>
-              {vehicle.variant && (
-                <p className="mt-2 text-xl font-light text-paper/60">
-                  {vehicle.variant}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col items-start gap-3 md:items-end">
-              <p className="text-4xl font-bold text-accent">
-                {priceLabel(vehicle.price, vehicle.priceOnRequest)}
-              </p>
-              <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                <FavoriteButton slug={vehicle.slug} variant="inline" />
-                <ShareButton
-                  title={`${vehicle.make} ${vehicle.model} ${vehicle.year}`}
-                  text={`${vehicle.make} ${vehicle.model} ${vehicle.year} · ${priceLabel(vehicle.price, vehicle.priceOnRequest)}`}
-                />
-                <Link
-                  href={`/viaturas/${vehicle.slug}/ficha`}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-medium text-paper/80 transition-colors hover:border-accent hover:text-accent"
-                >
-                  ⤓ Ficha PDF + QR
-                </Link>
-              </div>
-            </div>
-          </header>
-
           {(vehicle.status === "reserved" || vehicle.status === "sold") && (
             <div
               className={`mb-6 rounded-xl px-4 py-3 text-sm font-medium ${
@@ -157,35 +120,77 @@ export default async function VehiclePage({ params }: { params: Params }) {
             video={vehicle.video}
           />
 
-          {/* Destaques rápidos */}
-          <ul className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-5">
-            {vehicle.highlights.map((h) => (
-              <li key={h.label} className="bg-ink p-5">
-                <p className="text-xs uppercase tracking-wider text-paper/40">
-                  {h.label}
-                </p>
-                <p className="mt-1 text-lg font-semibold text-paper">
-                  {h.value}
-                </p>
-              </li>
-            ))}
-          </ul>
+          {/* Cabeçalho: garantia + título (variante separada por barra) + ações */}
+          <header className="mt-8">
+            {vehicle.warrantyMonths ? (
+              <p className="mb-3 text-sm font-semibold text-paper/80">
+                Garantia: {vehicle.warrantyMonths} meses
+              </p>
+            ) : null}
 
-          {/* Corpo em duas colunas */}
-          <div className="mt-16 grid gap-12 lg:grid-cols-[1.4fr_1fr] lg:gap-16">
-            <div className="space-y-16">
+            <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="eyebrow mb-2">
+                  {vehicle.year} · {vehicle.body}
+                </p>
+                <h1 className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-headline font-semibold text-paper">
+                  <span>
+                    {vehicle.make} {vehicle.model}
+                  </span>
+                  {vehicle.variant && (
+                    <span className="flex items-baseline gap-3 text-xl font-light text-paper/60">
+                      <span
+                        aria-hidden
+                        className="h-6 w-0.5 self-center bg-accent"
+                      />
+                      {vehicle.variant}
+                    </span>
+                  )}
+                </h1>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <FavoriteButton slug={vehicle.slug} variant="inline" />
+                <ShareButton
+                  title={`${vehicle.make} ${vehicle.model} ${vehicle.year}`}
+                  text={`${vehicle.make} ${vehicle.model} ${vehicle.year} · ${priceLabel(vehicle.price, vehicle.priceOnRequest)}`}
+                />
+                <Link
+                  href={`/viaturas/${vehicle.slug}/ficha`}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-medium text-paper/80 transition-colors hover:border-accent hover:text-accent"
+                >
+                  ⤓ Ficha PDF + QR
+                </Link>
+              </div>
+            </div>
+          </header>
+
+          {/* Corpo em duas colunas (uma só coluna em mobile/tablet) */}
+          <div className="mt-8 grid gap-10 lg:grid-cols-[1.5fr_1fr] lg:gap-14">
+            <div className="space-y-8 lg:space-y-10">
+              {/* Preço em destaque — no desktop vive no painel lateral sticky */}
+              <div className="rounded-3xl bg-ink-soft p-6 lg:hidden">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-lg font-medium text-paper/70">
+                    Preço de venda
+                  </span>
+                  <span className="text-3xl font-bold text-accent">
+                    {priceLabel(vehicle.price, vehicle.priceOnRequest)}
+                  </span>
+                </div>
+              </div>
+
+              <SpecGrid vehicle={vehicle} />
+
+              {vehicle.description && (
+                <DescriptionCard text={vehicle.description} />
+              )}
+
+              <ExtrasGroups extras={vehicle.extras} />
+
               <Specs vehicle={vehicle} />
 
               <TransparencySection vehicle={vehicle} />
-
-              <section>
-                <h2 className="text-2xl font-semibold text-paper">
-                  Sobre esta viatura
-                </h2>
-                <p className="mt-4 max-w-2xl text-lg font-light leading-relaxed text-paper/70">
-                  {vehicle.description}
-                </p>
-              </section>
             </div>
 
             <div className="space-y-8 lg:sticky lg:top-28 lg:self-start">
