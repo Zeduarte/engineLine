@@ -57,9 +57,10 @@ export function getHeroMedia(
     if (mode === "video") return VIDEO;
 
     if (mode === "image") {
-      // Honra a escolha mesmo que o fs não confirme (ex.: Netlify); o dono do
-      // site coloca o ficheiro em public/hero/.
-      return imageMedia() ?? { type: "image", src: "/hero/hero.jpg" };
+      // Se existir imagem, usa-a; senão cai para o vídeo (nunca fica em branco).
+      // A deteção corre no build, onde public/ está disponível — por isso uma
+      // imagem commitada (public/hero/hero.jpg) é sempre encontrada.
+      return imageMedia() ?? VIDEO;
     }
 
     // auto
