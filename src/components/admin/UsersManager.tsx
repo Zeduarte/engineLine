@@ -2,7 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { createUser, deleteUser, updateUserAccess } from "@/lib/actions/users";
+import {
+  createUser,
+  deleteUser,
+  updateUserAccess,
+  resetUserPassword,
+} from "@/lib/actions/users";
 import type { UserRole } from "@/lib/supabase/database.types";
 import {
   assignableRoles,
@@ -165,6 +170,17 @@ export function UsersManager({
                 else toast.error(res.error ?? "Erro.");
               });
             }}
+            onResetPassword={(pw, done) =>
+              startTransition(async () => {
+                const res = await resetUserPassword(u.id, pw);
+                if (res.ok) {
+                  toast.success("Password redefinida. Entregue-a ao utilizador.");
+                  done();
+                } else {
+                  toast.error(res.error ?? "Erro ao redefinir password.");
+                }
+              })
+            }
           />
         ))}
       </div>
@@ -182,6 +198,7 @@ function UserRow({
   pending,
   onSave,
   onDelete,
+  onResetPassword,
 }: {
   user: UserItem;
   isSelf: boolean;
@@ -192,9 +209,12 @@ function UserRow({
   pending: boolean;
   onSave: (role: UserRole, sections: string[]) => void;
   onDelete: () => void;
+  onResetPassword: (password: string, done: () => void) => void;
 }) {
   const [role, setRole] = useState<UserRole>(user.role);
   const [open, setOpen] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
+  const [newPw, setNewPw] = useState("");
   const [secs, setSecs] = useState<Set<string>>(
     () => new Set(effectiveSections(user.role, user.allowed_sections)),
   );
@@ -242,6 +262,15 @@ function UserRow({
               >
                 Separadores
               </button>
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={() => setPwOpen((o) => !o)}
+                  className="rounded-lg border border-white/15 px-2.5 py-1.5 text-xs text-paper/70 hover:border-accent hover:text-accent"
+                >
+                  Password
+                </button>
+              )}
               {canDelete && (
                 <button
                   type="button"
@@ -306,6 +335,38 @@ function UserRow({
           >
             {pending ? "A guardar…" : "Guardar"}
           </button>
+        </div>
+      )}
+
+      {editable && canDelete && pwOpen && (
+        <div className="mt-4 border-t border-white/10 pt-4">
+          <p className="mb-3 text-xs text-paper/50">
+            Define uma <strong>nova password</strong> para este utilizador (a
+            antiga não é recuperável). Depois entrega-lha.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              type="text"
+              value={newPw}
+              onChange={(e) => setNewPw(e.target.value)}
+              placeholder="Nova password (mín. 8)"
+              className="field sm:max-w-xs"
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              disabled={pending || newPw.length < 8}
+              onClick={() =>
+                onResetPassword(newPw, () => {
+                  setNewPw("");
+                  setPwOpen(false);
+                })
+              }
+              className="btn-primary h-auto px-5 py-2 text-sm"
+            >
+              {pending ? "A definir…" : "Definir password"}
+            </button>
+          </div>
         </div>
       )}
     </div>

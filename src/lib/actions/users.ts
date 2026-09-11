@@ -151,6 +151,45 @@ export async function updateUserAccess(
   return { ok: true };
 }
 
+/**
+ * Redefine a password de um utilizador. Não é possível LER a password antiga
+ * (o Supabase guarda só um hash) — define-se uma nova, para depois entregar.
+ * Só quem estiver estritamente acima na hierarquia o pode fazer.
+ */
+export async function resetUserPassword(
+  id: string,
+  password: string,
+): Promise<UserResult> {
+  const me = await getCurrentProfile();
+  if (!me) return { ok: false, error: "Sem permissão." };
+
+  if (typeof password !== "string" || password.length < 8 || password.length > 72) {
+    return { ok: false, error: "A password tem de ter entre 8 e 72 caracteres." };
+  }
+
+  // Sobre si próprio pode sempre; sobre outros só se estiver acima.
+  if (me.id !== id) {
+    const targetRole = await roleOf(id);
+    if (!targetRole || !canManage(me.role, targetRole)) {
+      return { ok: false, error: "Só pode gerir utilizadores de nível inferior." };
+    }
+  }
+
+  const admin = createAdminClient();
+  if (!admin) {
+    return {
+      ok: false,
+      error:
+        "Falta a chave SUPABASE_SERVICE_ROLE_KEY no servidor para redefinir passwords.",
+    };
+  }
+
+  const { error } = await admin.auth.admin.updateUserById(id, { password });
+  if (error) return { ok: false, error: error.message };
+
+  return { ok: true };
+}
+
 /** Apaga um utilizador. Só quem estiver acima na hierarquia. */
 export async function deleteUser(id: string): Promise<UserResult> {
   const me = await getCurrentProfile();
