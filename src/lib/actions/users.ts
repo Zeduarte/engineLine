@@ -1,9 +1,9 @@
 "use server";
 
+import { requireSection } from "@/lib/guard";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getCurrentProfile } from "@/lib/admin-queries";
 import { newUserSchema } from "@/lib/schemas";
 import {
   ALL_SECTIONS,
@@ -52,7 +52,7 @@ function grantableSections(
 
 /** Cria um novo utilizador. Só quem tiver rank acima do papel pedido. */
 export async function createUser(input: unknown): Promise<UserResult> {
-  const me = await getCurrentProfile();
+  const me = await requireSection("utilizadores");
   if (!me) return { ok: false, error: "Sem permissão." };
 
   const parsed = newUserSchema.safeParse(input);
@@ -77,12 +77,10 @@ export async function createUser(input: unknown): Promise<UserResult> {
   }
 
   // Sem secções explícitas → null (usa os defaults do papel). Admin → null.
-  const sections =
-    parsed.data.role === "admin" ||
-    !parsed.data.allowed_sections ||
-    parsed.data.allowed_sections.length === 0
-      ? null
-      : grantableSections(me.role, me.allowed_sections, parsed.data.allowed_sections);
+  const sections = parsed.data.role === "admin" ? null : grantableSections(
+    me.role, me.allowed_sections,
+    parsed.data.allowed_sections?.length ? parsed.data.allowed_sections : effectiveSections(parsed.data.role),
+  );
 
   const { data, error } = await admin.auth.admin.createUser({
     email: parsed.data.email,
@@ -96,14 +94,19 @@ export async function createUser(input: unknown): Promise<UserResult> {
   if (error) return { ok: false, error: error.message };
 
   if (data.user) {
-    await admin
+    const { error: profileError } = await admin
       .from("profiles")
-      .update({
+      .upsert({
+        id: data.user.id,
+        email: parsed.data.email,
         role: parsed.data.role,
         full_name: parsed.data.full_name,
         allowed_sections: sections,
-      })
-      .eq("id", data.user.id);
+      });
+    if (profileError) {
+      await admin.auth.admin.deleteUser(data.user.id);
+      return { ok: false, error: "Não foi possível criar o perfil. Tente novamente." };
+    }
   }
 
   revalidatePath("/admin/utilizadores");
@@ -120,7 +123,7 @@ export async function updateUserAccess(
   role: UserRole,
   sections: string[],
 ): Promise<UserResult> {
-  const me = await getCurrentProfile();
+  const me = await requireSection("utilizadores");
   if (!me) return { ok: false, error: "Sem permissão." };
   if (me.id === id) {
     return { ok: false, error: "Não pode alterar as suas próprias permissões." };
@@ -140,8 +143,9 @@ export async function updateUserAccess(
       ? null
       : grantableSections(me.role, me.allowed_sections, sections);
 
-  const supabase = await createClient();
-  const { error } = await supabase
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "Chave de administração não configurada." };
+  const { error } = await admin
     .from("profiles")
     .update({ role, allowed_sections: allowed })
     .eq("id", id);
@@ -153,7 +157,7 @@ export async function updateUserAccess(
 
 /** Apaga um utilizador. Só quem estiver acima na hierarquia. */
 export async function deleteUser(id: string): Promise<UserResult> {
-  const me = await getCurrentProfile();
+  const me = await requireSection("utilizadores");
   if (!me) return { ok: false, error: "Sem permissão." };
   if (me.id === id) {
     return { ok: false, error: "Não pode apagar a sua própria conta." };

@@ -253,6 +253,7 @@ export function CarForm({
           </Field>
           <Field label="Combustível" error={errors.fuel?.message} required>
             <select className="field" {...register("fuel")}>
+              <option value="">Por confirmar — selecione</option>
               {FUEL_TYPES.map((f) => (
                 <option key={f} value={f}>
                   {f}
@@ -262,6 +263,7 @@ export function CarForm({
           </Field>
           <Field label="Caixa" error={errors.transmission?.message} required>
             <select className="field" {...register("transmission")}>
+              <option value="">Por confirmar — selecione</option>
               {TRANSMISSIONS.map((t) => (
                 <option key={t} value={t}>
                   {t}
@@ -271,6 +273,7 @@ export function CarForm({
           </Field>
           <Field label="Carroçaria" error={errors.body?.message} required>
             <select className="field" {...register("body")}>
+              <option value="">Por confirmar — selecione</option>
               {BODY_TYPES.map((b) => (
                 <option key={b} value={b}>
                   {b}

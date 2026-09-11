@@ -2,67 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { publicSubmissionClient } from "@/lib/public-submissions";
+import { requireSection } from "@/lib/guard";
+import { z } from "zod";
 import { leadSchema } from "@/lib/schemas";
-import type { LeadStatus, LeadKind } from "@/lib/supabase/database.types";
-
-const KIND_LABEL: Record<LeadKind, string> = {
-  contact: "Contacto",
-  test_drive: "Test drive",
-  finance: "Financiamento",
-  trade_in: "Retoma",
-  order: "Encomenda",
-  reservation: "Reserva",
-  offer: "Proposta",
-  alert: "Alerta de stock",
-};
-
-/**
- * Notifica o staff de um novo lead através de um webhook configurável
- * (Slack/Discord/Make/Zapier). Best-effort: lê o URL com a chave de serviço
- * (a RLS bloqueia o utilizador anónimo) e falha em silêncio — nunca afeta a
- * submissão do lead. Envia `text` e `content` para ser compatível com Slack
- * (usa `text`) e Discord (usa `content`).
- */
-async function notifyNewLead(lead: {
-  kind: LeadKind;
-  name: string;
-  email: string;
-  phone: string | null;
-  car_label: string | null;
-  message: string | null;
-}) {
-  try {
-    const admin = createAdminClient();
-    if (!admin) return;
-    const { data } = await admin
-      .from("integration_secrets")
-      .select("data")
-      .eq("id", 1)
-      .maybeSingle();
-    const webhook = (data?.data as Record<string, unknown> | undefined)
-      ?.lead_webhook;
-    if (typeof webhook !== "string" || !webhook.startsWith("http")) return;
-
-    const lines = [
-      `🚗 *Novo lead: ${KIND_LABEL[lead.kind]}*`,
-      `Nome: ${lead.name}`,
-      `Email: ${lead.email}`,
-      lead.phone ? `Telefone: ${lead.phone}` : null,
-      lead.car_label ? `Viatura: ${lead.car_label}` : null,
-      lead.message ? `Mensagem: ${lead.message}` : null,
-    ].filter(Boolean);
-    const body = lines.join("\n");
-
-    await fetch(webhook, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: body, content: body }),
-    });
-  } catch {
-    // Notificação é acessória — nunca bloqueia nem falha a submissão.
-  }
-}
+import type { LeadStatus } from "@/lib/supabase/database.types";
 
 export interface LeadActionState {
   ok: boolean;
@@ -113,11 +57,24 @@ export async function submitLead(
     }
   }
 
-  const supabase = await createClient();
+  let supabase;
+  try { supabase = await publicSubmissionClient("lead", v.email); }
+  catch (e) { return {ok:false,error:e instanceof Error ? e.message : "Tente novamente."}; }
+  let carLabel = v.car_label || null;
+  if (v.car_id) {
+    const {data: car} = await supabase.from("cars").select("make,model,status").eq("id",v.car_id).in("status",["published","reserved"]).maybeSingle();
+    if (!car || (v.kind === "reservation" && car.status !== "published")) return {ok:false,error:"Esta viatura já não está disponível para este pedido."};
+    carLabel = `${car.make} ${car.model}`;
+  }
+  if (v.kind === "reservation") {
+    const {data: settings} = await supabase.from("site_settings").select("reservation_enabled,deposit_amount").eq("id",1).single();
+    if (!settings?.reservation_enabled || !v.car_id) return {ok:false,error:"Reservas indisponíveis."};
+    carDetails = {deposit:settings.deposit_amount};
+  }
   const { error } = await supabase.from("leads").insert({
     kind: v.kind,
     car_id: v.car_id ?? null,
-    car_label: v.car_label || null,
+    car_label: carLabel,
     name: v.name,
     email: v.email,
     phone: v.phone || null,
@@ -131,20 +88,13 @@ export async function submitLead(
     return { ok: false, error: "Não foi possível enviar. Tente novamente." };
   }
 
-  await notifyNewLead({
-    kind: v.kind,
-    name: v.name,
-    email: v.email,
-    phone: v.phone || null,
-    car_label: v.car_label || null,
-    message: v.message || null,
-  });
-
   return { ok: true };
 }
 
 // ---- Gestão (staff) -------------------------------------------------------
 export async function setLeadStatus(id: string, status: LeadStatus) {
+  if (!z.string().uuid().safeParse(id).success || !z.enum(["new","contacted","proposal","closed"]).safeParse(status).success) return {ok:false,error:"Abra o contacto para registar a venda ou o motivo de perda."};
+  await requireSection("leads");
   const supabase = await createClient();
   const { error } = await supabase
     .from("leads")
@@ -157,6 +107,7 @@ export async function setLeadStatus(id: string, status: LeadStatus) {
 }
 
 export async function deleteLead(id: string) {
+  await requireSection("leads");
   const supabase = await createClient();
   const { error } = await supabase.from("leads").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
@@ -165,6 +116,7 @@ export async function deleteLead(id: string) {
 }
 
 export async function saveLeadNotes(id: string, notes: string) {
+  await requireSection("leads");
   const supabase = await createClient();
   const { error } = await supabase
     .from("leads")

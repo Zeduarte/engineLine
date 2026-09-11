@@ -22,7 +22,8 @@ export type Section =
   | "integracoes"
   | "utilizadores"
   | "definicoes"
-  | "oficina";
+  | "oficina"
+  | "financeiro";
 
 export const ROLE_RANK: Record<Role, number> = {
   admin: 3,
@@ -54,6 +55,7 @@ export const SECTIONS: {
   { key: "integracoes", label: "Integrações", href: "/admin/integracoes", exact: false },
   { key: "utilizadores", label: "Utilizadores", href: "/admin/utilizadores", exact: false },
   { key: "definicoes", label: "Definições", href: "/admin/definicoes", exact: false },
+  { key: "financeiro", label: "Custos e margens", href: "/admin/financeiro", exact: false },
   { key: "oficina", label: "Oficina", href: "/admin/oficina", exact: false },
 ];
 
@@ -62,7 +64,7 @@ export const ALL_SECTIONS: Section[] = SECTIONS.map((s) => s.key);
 /** Acessos por defeito de cada papel (quando `allowed_sections` está vazio). */
 export const DEFAULT_SECTIONS: Record<Role, Section[]> = {
   admin: ALL_SECTIONS,
-  chefe: ["dashboard", "carros", "pagina-inicial", "leads", "testemunhos"],
+  chefe: ["dashboard", "carros", "pagina-inicial", "leads", "testemunhos", "financeiro"],
   vendedor: ["dashboard", "carros", "leads"],
   // O mecânico só tem a Oficina — nada de dashboard/leads/etc.
   mecanico: ["oficina"],
@@ -104,6 +106,7 @@ export function canAccess(
 
 /** `manager` pode gerir (editar) `target`? (rank estritamente superior). */
 export function canManage(managerRole: string, targetRole: string): boolean {
+  if (targetRole === "mecanico" && managerRole !== "admin") return false;
   const m = isRole(managerRole) ? ROLE_RANK[managerRole] : 0;
   const t = isRole(targetRole) ? ROLE_RANK[targetRole] : 0;
   return m > t;

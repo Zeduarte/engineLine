@@ -30,11 +30,11 @@ export function VehicleActions({
   const [mode, setMode] = useState<Mode | null>(null);
 
   const actions: { id: Mode; label: string; icon: string; primary?: boolean }[] = [
-    { id: "offer", label: "Fazer uma proposta", icon: "€", primary: true },
-    { id: "info", label: "Pedir mais informações", icon: "?" },
+    { id: "info", label: "Pedir mais informações", icon: "?", primary: true },
+    { id: "offer", label: "Fazer uma proposta", icon: "€" },
     { id: "testdrive", label: "Marcar test drive", icon: "▷" },
     ...(canReserve
-      ? [{ id: "reserve" as Mode, label: "Reservar viatura", icon: "★" }]
+      ? [{ id: "reserve" as Mode, label: "Pedir reserva", icon: "★" }]
       : []),
   ];
 

@@ -55,7 +55,7 @@ export interface WorkshopVehicleDetail {
   make: string;
   model: string;
   variant: string | null;
-  year: number;
+  year: number | null;
   plate: string | null;
   status: string;
   photos: { src: string; alt: string }[];
@@ -83,7 +83,8 @@ export async function getWorkshopVehicle(
   const logs = (logRows ?? []) as VehicleTaskRow[];
 
   // O registo mais recente (lista já ordenada) dá o "último fim" para prefill.
-  const lastWithEnd = logs.find((l) => l.end_time);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Lisbon" }).format(new Date());
+  const lastWithEnd = logs.find((l) => l.end_time && l.work_date === today);
   const lastEnd = lastWithEnd?.end_time ? lastWithEnd.end_time.slice(0, 5) : null;
 
   const photos = (c.car_media ?? [])

@@ -1,5 +1,7 @@
 "use server";
 
+import { publicSubmissionClient } from "@/lib/public-submissions";
+import { requireSection } from "@/lib/guard";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { publicTestimonialSchema } from "@/lib/schemas";
@@ -24,7 +26,9 @@ export async function submitPublicTestimonial(input: unknown): Promise<TResult> 
   }
   const { name, rating, role, body } = parsed.data;
 
-  const supabase = await createClient();
+  let supabase;
+  try { supabase = await publicSubmissionClient("testimonial", `${name}:${body}`); }
+  catch (e) { return {ok:false,error:e instanceof Error ? e.message : "Tente novamente."}; }
   const { error } = await supabase.from("testimonials").insert({
     name,
     rating,
@@ -56,6 +60,7 @@ export async function createTestimonial(input: {
   const rating = Math.min(5, Math.max(1, Number(input.rating) || 5));
   if (!name || !body) return { ok: false, error: "Nome e texto obrigatórios." };
 
+  await requireSection("testemunhos");
   const supabase = await createClient();
   const { error } = await supabase.from("testimonials").insert({
     name,
@@ -72,6 +77,7 @@ export async function setTestimonialPublished(
   id: string,
   published: boolean,
 ): Promise<TResult> {
+  await requireSection("testemunhos");
   const supabase = await createClient();
   const { error } = await supabase
     .from("testimonials")
@@ -83,6 +89,7 @@ export async function setTestimonialPublished(
 }
 
 export async function deleteTestimonial(id: string): Promise<TResult> {
+  await requireSection("testemunhos");
   const supabase = await createClient();
   const { error } = await supabase.from("testimonials").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };

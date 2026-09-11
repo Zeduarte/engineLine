@@ -52,10 +52,9 @@ export function ReserveForm({
   const content = (
     <>
       <p className="mb-2 text-sm text-paper/60">
-        Garanta o {vehicleName} com um sinal de{" "}
+        Peça a reserva do {vehicleName}. O sinal previsto é de{" "}
         <strong className="text-accent">{formatPrice(depositAmount)}</strong>. A
-        reserva retira a viatura do mercado enquanto tratamos de tudo consigo. O
-        sinal é dedutível no valor final.
+        viatura só fica reservada após confirmação pela equipa. Este pedido não cobra qualquer valor.
       </p>
 
       <AnimatePresence mode="wait">
@@ -67,7 +66,7 @@ export function ReserveForm({
             className="mt-6 rounded-2xl border border-accent/30 bg-accent/10 p-6 text-center"
           >
             <p className="text-lg font-semibold text-paper">
-              Reserva registada
+              Pedido de reserva recebido
             </p>
             <p className="mt-1 text-sm text-paper/60">
               Vamos contactá-lo para confirmar o pagamento do sinal e os
@@ -120,7 +119,7 @@ export function ReserveForm({
               disabled={pending}
               className="mt-2 rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-ink transition-transform duration-300 ease-premium hover:scale-[1.02] disabled:opacity-60"
             >
-              {pending ? "A registar…" : `Reservar com ${formatPrice(depositAmount)}`}
+              {pending ? "A registar…" : "Pedir reserva"}
             </button>
           </motion.form>
         )}
@@ -150,10 +149,10 @@ export function ReserveForm({
       className="rounded-3xl border border-accent/40 bg-accent/5 p-6 md:p-8"
     >
       <span className="inline-block rounded-full bg-accent/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent">
-        Reservar online
+        Pedir reserva
       </span>
       <h2 id="reserve-title" className="mt-3 text-2xl font-semibold text-paper">
-        Reserve já esta viatura
+        Peça a reserva desta viatura
       </h2>
       {content}
     </section>

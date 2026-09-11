@@ -1,5 +1,7 @@
 "use server";
 
+import { requireSection } from "@/lib/guard";
+
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { MEDIA_BUCKET } from "@/lib/storage";
@@ -40,6 +42,7 @@ export async function registerMedia(
   carId: string,
   items: NewMedia[],
 ): Promise<MediaResult> {
+  await requireSection("carros");
   if (!items.length) return { ok: true };
   const supabase = await createClient();
 
@@ -82,10 +85,11 @@ export async function reorderMedia(
   carId: string,
   orderedIds: string[],
 ): Promise<MediaResult> {
+  await requireSection("carros");
   const supabase = await createClient();
   const updates = await Promise.all(
     orderedIds.map((id, i) =>
-      supabase.from("car_media").update({ position: i }).eq("id", id),
+      supabase.from("car_media").update({ position: i }).eq("id", id).eq("car_id", carId),
     ),
   );
   const failed = updates.find((u) => u.error);
@@ -99,6 +103,7 @@ export async function setCover(
   carId: string,
   mediaId: string,
 ): Promise<MediaResult> {
+  await requireSection("carros");
   const supabase = await createClient();
   const { error: clearErr } = await supabase
     .from("car_media")
@@ -110,7 +115,7 @@ export async function setCover(
   const { error } = await supabase
     .from("car_media")
     .update({ is_cover: true })
-    .eq("id", mediaId);
+    .eq("id", mediaId).eq("car_id", carId);
   if (error) return { ok: false, error: error.message };
   await revalidateCar(carId);
   return { ok: true };
@@ -120,6 +125,7 @@ export async function updateMediaAlt(
   mediaId: string,
   alt: string,
 ): Promise<MediaResult> {
+  await requireSection("carros");
   const supabase = await createClient();
   const { error } = await supabase
     .from("car_media")
@@ -134,19 +140,23 @@ export async function deleteMedia(
   carId: string,
   mediaId: string,
 ): Promise<MediaResult> {
+  await requireSection("carros");
   const supabase = await createClient();
   const { data: row } = await supabase
     .from("car_media")
     .select("storage_path, is_cover, kind")
     .eq("id", mediaId)
+    .eq("car_id", carId)
     .maybeSingle();
 
-  if (row && !/^https?:\/\//i.test(row.storage_path)) {
-    await supabase.storage.from(MEDIA_BUCKET).remove([row.storage_path]);
-  }
-
-  const { error } = await supabase.from("car_media").delete().eq("id", mediaId);
+  if (!row) return {ok:false,error:"Imagem não encontrada nesta viatura."};
+  const { error } = await supabase.from("car_media").delete().eq("id", mediaId).eq("car_id", carId);
   if (error) return { ok: false, error: error.message };
+
+  if (!/^https?:\/\//i.test(row.storage_path)) {
+    const {error: cleanupError} = await supabase.storage.from(MEDIA_BUCKET).remove([row.storage_path]);
+    if (cleanupError) console.error("Media cleanup:",cleanupError.message);
+  }
 
   // Se apagámos a capa, promove a primeira imagem restante.
   if (row?.is_cover) {

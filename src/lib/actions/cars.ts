@@ -1,5 +1,7 @@
 "use server";
 
+import { requireSection } from "@/lib/guard";
+
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { carFormSchema } from "@/lib/schemas";
@@ -20,6 +22,9 @@ function revalidatePublic(slug?: string) {
   revalidatePath("/");
   revalidatePath("/inventario");
   revalidatePath("/sitemap.xml");
+  revalidatePath("/vendidos");
+  revalidatePath("/viaturas/[slug]", "page");
+  revalidatePath("/api/feeds/[platform]", "page");
   if (slug) revalidatePath(`/viaturas/${slug}`);
   revalidatePath("/admin/carros");
   revalidatePath("/admin");
@@ -83,6 +88,7 @@ function toRow(values: ReturnType<typeof carFormSchema.parse>): Omit<
 }
 
 export async function createCar(input: unknown): Promise<SaveResult> {
+  await requireSection("carros");
   const parsed = carFormSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "Dados inválidos.", fieldErrors: flatten(parsed) };
@@ -119,6 +125,7 @@ export async function updateCar(
   id: string,
   input: unknown,
 ): Promise<SaveResult> {
+  await requireSection("carros");
   const parsed = carFormSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "Dados inválidos.", fieldErrors: flatten(parsed) };
@@ -145,6 +152,7 @@ export async function setCarStatus(
   id: string,
   status: CarStatus,
 ): Promise<SaveResult> {
+  await requireSection("carros");
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("cars")
@@ -161,6 +169,7 @@ export async function toggleFeatured(
   id: string,
   featured: boolean,
 ): Promise<SaveResult> {
+  await requireSection("carros");
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("cars")
@@ -175,6 +184,7 @@ export async function toggleFeatured(
 
 /** Duplica um carro como rascunho (sem media, sem destaque). */
 export async function duplicateCar(id: string): Promise<SaveResult> {
+  await requireSection("carros");
   const supabase = await createClient();
   const { data: src, error: readErr } = await supabase
     .from("cars")
@@ -183,7 +193,7 @@ export async function duplicateCar(id: string): Promise<SaveResult> {
     .single();
   if (readErr || !src) return { ok: false, error: "Viatura não encontrada." };
 
-  const base = vehicleSlug(src.make, `${src.model} copia`, src.year);
+  const base = vehicleSlug(src.make, `${src.model} copia`, src.year ?? new Date().getFullYear());
   const slug = await uniqueSlug(supabase, base);
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -216,6 +226,7 @@ export async function duplicateCar(id: string): Promise<SaveResult> {
 
 /** Apaga um carro e a sua media (BD + objetos no Storage). */
 export async function deleteCar(id: string): Promise<SaveResult> {
+  await requireSection("carros");
   const supabase = await createClient();
 
   const { data: media } = await supabase
@@ -226,12 +237,12 @@ export async function deleteCar(id: string): Promise<SaveResult> {
   const paths = (media ?? [])
     .map((m) => m.storage_path)
     .filter((p) => !/^https?:\/\//i.test(p));
-  if (paths.length) {
-    await supabase.storage.from(MEDIA_BUCKET).remove(paths);
-  }
-
   const { error } = await supabase.from("cars").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
+  if (paths.length) {
+    const {error: cleanupError} = await supabase.storage.from(MEDIA_BUCKET).remove(paths);
+    if (cleanupError) console.error("Car media cleanup:", cleanupError.message);
+  }
 
   revalidatePublic();
   return { ok: true };
@@ -242,6 +253,7 @@ export async function bulkSetStatus(
   ids: string[],
   status: CarStatus,
 ): Promise<SaveResult> {
+  await requireSection("carros");
   if (!ids.length) return { ok: true };
   const supabase = await createClient();
   const { error } = await supabase
@@ -254,6 +266,7 @@ export async function bulkSetStatus(
 }
 
 export async function bulkDelete(ids: string[]): Promise<SaveResult> {
+  await requireSection("carros");
   if (!ids.length) return { ok: true };
   const supabase = await createClient();
 
@@ -264,10 +277,12 @@ export async function bulkDelete(ids: string[]): Promise<SaveResult> {
   const paths = (media ?? [])
     .map((m) => m.storage_path)
     .filter((p) => !/^https?:\/\//i.test(p));
-  if (paths.length) await supabase.storage.from(MEDIA_BUCKET).remove(paths);
-
   const { error } = await supabase.from("cars").delete().in("id", ids);
   if (error) return { ok: false, error: error.message };
+  if (paths.length) {
+    const {error: cleanupError} = await supabase.storage.from(MEDIA_BUCKET).remove(paths);
+    if (cleanupError) console.error("Car media cleanup:", cleanupError.message);
+  }
   revalidatePublic();
   return { ok: true };
 }

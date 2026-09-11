@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireSection } from "@/lib/guard";
-import { slugify } from "@/lib/slug";
 
 export interface ActionResult {
   ok: boolean;
@@ -12,7 +11,7 @@ export interface ActionResult {
   id?: string;
 }
 
-const HHMM = /^\d{2}:\d{2}$/;
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const logSchema = z.object({
   car_id: z.string().uuid(),
@@ -106,7 +105,7 @@ const newVehicleSchema = z.object({
 export async function createWorkshopVehicle(
   formData: FormData,
 ): Promise<ActionResult> {
-  const profile = await requireSection("oficina");
+  await requireSection("oficina");
   const parsed = newVehicleSchema.safeParse({
     name: formData.get("name"),
     plate: formData.get("plate"),
@@ -114,45 +113,12 @@ export async function createWorkshopVehicle(
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
   }
-  const { name, plate } = parsed.data;
-  const plateNorm = plate.toUpperCase().replace(/\s+/g, "");
-
   const supabase = await createClient();
-
-  // Slug único: base a partir do nome + matrícula; acrescenta sufixo se colidir.
-  const base = slugify(`${name}-${plateNorm}`) || `viatura-${Date.now()}`;
-  let slug = base;
-  for (let i = 0; i < 5; i++) {
-    const { data: exists } = await supabase
-      .from("cars")
-      .select("id")
-      .eq("slug", slug)
-      .maybeSingle();
-    if (!exists) break;
-    slug = `${base}-${i + 2}`;
-  }
-
-  const { data, error } = await supabase
-    .from("cars")
-    .insert({
-      slug,
-      make: name,
-      model: "—",
-      year: new Date().getFullYear(),
-      license_plate: plateNorm,
-      fuel: "Gasolina",
-      transmission: "Manual",
-      body: "Berlina",
-      status: "draft",
-      created_by: profile.id,
-    })
-    .select("id")
-    .maybeSingle();
-
-  if (error || !data) {
-    console.error("createWorkshopVehicle:", error?.message);
-    return { ok: false, error: "Não foi possível criar a viatura." };
-  }
+  const { data, error } = await supabase.rpc("create_workshop_intake", {
+    vehicle_name: parsed.data.name,
+    plate: parsed.data.plate.toUpperCase().replace(/\s+/g, ""),
+  });
+  if (error || !data) return { ok: false, error: "Não foi possível criar a viatura." };
   revalidatePath("/admin/oficina");
-  return { ok: true, id: data.id };
+  return { ok: true, id: data };
 }

@@ -1,3 +1,7 @@
+import { requireSection } from "@/lib/guard";
+import { PreparationPanel } from "@/components/admin/PreparationPanel";
+import { AuditHistory } from "@/components/admin/AuditHistory";
+import { canAccess } from "@/lib/permissions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAdminCarById } from "@/lib/admin-queries";
@@ -11,6 +15,7 @@ export const dynamic = "force-dynamic";
 type Params = Promise<{ id: string }>;
 
 export default async function EditCarPage({ params }: { params: Params }) {
+  const profile = await requireSection("carros");
   const { id } = await params;
   const car = await getAdminCarById(id);
   if (!car) notFound();
@@ -19,12 +24,12 @@ export default async function EditCarPage({ params }: { params: Params }) {
     make: car.make,
     model: car.model,
     variant: car.variant ?? "",
-    year: car.year,
+    year: car.year ?? undefined,
     license_plate: car.license_plate ?? "",
     mileage: car.mileage,
-    fuel: car.fuel,
-    transmission: car.transmission,
-    body: car.body,
+    fuel: car.fuel ?? undefined,
+    transmission: car.transmission ?? undefined,
+    body: car.body ?? undefined,
     power: car.power,
     displacement: car.displacement,
     color: car.color ?? "",
@@ -88,6 +93,9 @@ export default async function EditCarPage({ params }: { params: Params }) {
       <div className="space-y-6">
         <MediaManager carId={car.id} initial={media} />
         <CarForm carId={car.id} defaults={defaults} />
+        {canAccess(profile.role,profile.allowed_sections,"financeiro") && <Link className="btn-ghost" href={`/admin/financeiro/${car.id}`}>Custos e margens desta viatura →</Link>}
+        <PreparationPanel carId={car.id}/>
+        <AuditHistory entity="cars" id={car.id}/>
       </div>
     </>
   );
