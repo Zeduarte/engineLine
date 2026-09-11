@@ -5,6 +5,7 @@ import type {
   CarRow,
   LeadRow,
   ProfileRow,
+  ChannelListingRow,
 } from "@/lib/supabase/database.types";
 import { DEFAULT_COMPANY } from "@/lib/branding";
 import { CAR_BRANDS } from "@/lib/car-brands";
@@ -387,6 +388,23 @@ export async function getIntegrations(): Promise<Record<string, unknown>> {
     .eq("id", 1)
     .maybeSingle();
   return (data?.data as Record<string, unknown>) ?? {};
+}
+
+/** Estado de publicação de uma viatura em cada canal (backoffice). */
+export async function getCarListings(
+  carId: string,
+): Promise<ChannelListingRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("channel_listings")
+    .select("*")
+    .eq("car_id", carId);
+  if (error) {
+    // Tabela pode ainda não existir (migração 0013 por aplicar) — não bloqueia.
+    console.error("getCarListings:", error.message);
+    return [];
+  }
+  return data as ChannelListingRow[];
 }
 
 /** Todos os perfis (só admin, via RLS). */

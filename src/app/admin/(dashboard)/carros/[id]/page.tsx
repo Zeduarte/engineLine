@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAdminCarById } from "@/lib/admin-queries";
+import { getAdminCarById, getCarListings } from "@/lib/admin-queries";
 import { CarForm } from "@/components/admin/CarForm";
 import { MediaManager, type MediaItem } from "@/components/admin/MediaManager";
+import { ChannelListings } from "@/components/admin/ChannelListings";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import type { CarFormValues } from "@/lib/schemas";
 
@@ -14,6 +15,8 @@ export default async function EditCarPage({ params }: { params: Params }) {
   const { id } = await params;
   const car = await getAdminCarById(id);
   if (!car) notFound();
+
+  const listings = await getCarListings(car.id);
 
   const defaults: Partial<CarFormValues> = {
     make: car.make,
@@ -88,6 +91,11 @@ export default async function EditCarPage({ params }: { params: Params }) {
       <div className="space-y-6">
         <MediaManager carId={car.id} initial={media} />
         <CarForm carId={car.id} defaults={defaults} />
+        <ChannelListings
+          carId={car.id}
+          channels={car.channels ?? []}
+          listings={listings}
+        />
       </div>
     </>
   );

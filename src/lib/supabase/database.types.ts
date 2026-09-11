@@ -351,6 +351,39 @@ type VehicleTasksInsert = {
 };
 type VehicleTasksUpdate = Partial<VehicleTasksInsert>;
 
+// ---- channel_listings (estado de publicação por portal) --------------------
+export type ChannelListingStatus =
+  | "pending"
+  | "published"
+  | "removed"
+  | "error";
+
+type ChannelListingsRow = {
+  id: string;
+  car_id: string;
+  channel: string;
+  status: ChannelListingStatus;
+  external_url: string | null;
+  external_id: string | null;
+  published_at: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+type ChannelListingsInsert = {
+  id?: string;
+  car_id: string;
+  channel: string;
+  status?: ChannelListingStatus;
+  external_url?: string | null;
+  external_id?: string | null;
+  published_at?: string | null;
+  notes?: string | null;
+  created_by?: string | null;
+};
+type ChannelListingsUpdate = Partial<ChannelListingsInsert>;
+
 export type Database = {
   public: {
     Tables: {
@@ -414,6 +447,12 @@ export type Database = {
         Update: VehicleTasksUpdate;
         Relationships: [];
       };
+      channel_listings: {
+        Row: ChannelListingsRow;
+        Insert: ChannelListingsInsert;
+        Update: ChannelListingsUpdate;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -441,6 +480,8 @@ export type CarMediaRow = CarMediaRowT;
 export type LeadRow = LeadsRow;
 export type ProfileRow = ProfilesRow;
 export type VehicleTaskRow = VehicleTasksRow;
+export type ChannelListingRow = ChannelListingsRow;
+export type ChannelListingInsert = ChannelListingsInsert;
 
 /** Carro com a sua media (join usado nas queries). */
 export type CarWithMedia = CarRow & { car_media: CarMediaRow[] };
