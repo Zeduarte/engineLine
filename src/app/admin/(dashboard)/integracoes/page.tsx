@@ -1,3 +1,4 @@
+import { NotificationStatus } from "@/components/admin/NotificationStatus";
 import { getSiteSettings, getIntegrations } from "@/lib/admin-queries";
 import { requireSection } from "@/lib/guard";
 import { MarketingForm } from "@/components/admin/MarketingForm";
@@ -41,6 +42,7 @@ export default async function IntegrationsPage() {
         />
         <IntegrationsForm initial={integrations as IntegrationsInitial} />
         <FeedUrls baseUrl={baseUrl} />
+        <NotificationStatus />
       </div>
     </>
   );

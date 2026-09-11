@@ -1,5 +1,6 @@
 "use client";
 
+import { csvCell } from "@/lib/operations";
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -81,10 +82,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
       "Mensagem",
       "Notas",
     ];
-    const esc = (v: unknown) => {
-      const s = String(v ?? "").replace(/"/g, '""');
-      return `"${s}"`;
-    };
+    const esc = csvCell;
     const rows = filtered.map((l) =>
       [
         new Date(l.created_at).toLocaleString("pt-PT"),

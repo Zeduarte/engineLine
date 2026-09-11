@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionForm, Field } from "./ActionForm";
+import { finishWorklog } from "@/lib/actions/operations";
 import { useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -55,6 +57,7 @@ export function TaskManager({
   }
 
   function remove(id: string) {
+    if (!confirm("Apagar este registo de horas?")) return;
     startTransition(async () => {
       const res = await deleteWorklog(id);
       if (res.ok) {
@@ -163,6 +166,7 @@ export function TaskManager({
                   <p className="mt-1 text-sm text-paper/60">{t.description}</p>
                 )}
               </div>
+              {!t.end_time && <ActionForm action={finishWorklog} label="Terminar" className="space-y-2"><input type="hidden" name="id" value={t.id}/><Field label="Hora de fim"><input className="field" type="time" name="end_time" defaultValue={nowHM()} required/></Field></ActionForm>}
               <button
                 type="button"
                 disabled={pending}

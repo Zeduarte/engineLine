@@ -1,3 +1,5 @@
+import { createClient } from "@/lib/supabase/server";
+import { OperationalDashboard } from "@/components/admin/OperationalDashboard";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -41,6 +43,10 @@ export default async function DashboardPage() {
   const profile = await getCurrentProfile();
   if (profile?.role === "mecanico") redirect("/admin/oficina");
 
+  const db = await createClient();
+  const {error: schemaError} = await db.rpc("has_section",{section:"dashboard"});
+  if (schemaError) return null; // The layout displays the activation/service notice.
+
   const [stats, cars] = await Promise.all([
     getDashboardStats(),
     getAdminCars(),
@@ -50,6 +56,7 @@ export default async function DashboardPage() {
     return (
       <>
         <Header />
+        <OperationalDashboard />
         <EmptyState />
       </>
     );
@@ -61,6 +68,7 @@ export default async function DashboardPage() {
     <>
       <Header />
 
+      <OperationalDashboard />
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi
           label="Total de viaturas"
@@ -98,7 +106,7 @@ export default async function DashboardPage() {
         <Kpi
           label="Taxa de contacto"
           value={`${stats.contactRate}%`}
-          hint={`${stats.totalLeads} leads / ${stats.totalViews} visitas`}
+          hint="Contactos associados a viaturas / visitas às fichas"
           accent={stats.contactRate > 0}
         />
       </section>

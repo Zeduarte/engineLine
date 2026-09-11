@@ -1,3 +1,4 @@
+import { PreparationPanel } from "@/components/admin/PreparationPanel";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -64,6 +65,7 @@ export default async function OficinaVehiclePage({
         </div>
       )}
 
+      <div className="mb-8"><PreparationPanel carId={vehicle.id}/></div>
       <TaskManager
         carId={vehicle.id}
         initial={vehicle.logs}

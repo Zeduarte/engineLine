@@ -80,7 +80,7 @@ export async function saveListing(input: ListingInput): Promise<ListingResult> {
 
   if (error) {
     const hint = /relation .*channel_listings.* does not exist/i.test(error.message)
-      ? "A tabela channel_listings não existe. Aplique a migração 0013_channel_listings.sql no Supabase."
+      ? "A tabela channel_listings não existe. Aplique a migração 0014_channel_listings.sql no Supabase."
       : error.message;
     return { ok: false, error: hint };
   }

@@ -26,12 +26,13 @@ export interface CarListItem {
   make: string;
   model: string;
   variant: string | null;
-  year: number;
+  year: number | null;
+  plate: string | null;
   price: number | null;
   priceOnRequest: boolean;
   mileage: number;
-  fuel: FuelType;
-  transmission: Transmission;
+  fuel: FuelType | null;
+  transmission: Transmission | null;
   status: CarStatus;
   featured: boolean;
   slug: string;
@@ -64,7 +65,7 @@ export function CarsTable({ items }: { items: CarListItem[] }) {
       if (make && i.make !== make) return false;
       if (
         term &&
-        !`${i.make} ${i.model} ${i.variant ?? ""} ${i.year}`
+        !`${i.make} ${i.model} ${i.variant ?? ""} ${i.year} ${i.plate ?? ""}`
           .toLowerCase()
           .includes(term)
       )
@@ -75,7 +76,7 @@ export function CarsTable({ items }: { items: CarListItem[] }) {
       recent: (a, b) => b.updatedAt.localeCompare(a.updatedAt),
       "price-desc": (a, b) => (b.price ?? 0) - (a.price ?? 0),
       "price-asc": (a, b) => (a.price ?? 0) - (b.price ?? 0),
-      "year-desc": (a, b) => b.year - a.year,
+      "year-desc": (a, b) => (b.year ?? 0) - (a.year ?? 0),
     };
     return [...list].sort(sorters[sort]);
   }, [items, q, status, fuel, make, sort]);

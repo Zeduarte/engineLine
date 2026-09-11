@@ -1,9 +1,9 @@
 import "server-only";
+import { allRows } from "@/lib/pagination";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CarWithMedia,
   CarRow,
-  LeadRow,
   ProfileRow,
   ChannelListingRow,
 } from "@/lib/supabase/database.types";
@@ -50,15 +50,7 @@ export async function getCurrentProfile(): Promise<ProfileRow | null> {
 /** Todos os carros (staff) com a sua media — para a listagem do backoffice. */
 export async function getAdminCars(): Promise<CarWithMedia[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("cars")
-    .select("*, car_media(*)")
-    .order("updated_at", { ascending: false });
-  if (error) {
-    console.error("getAdminCars:", error.message);
-    return [];
-  }
-  return data as unknown as CarWithMedia[];
+  return await allRows((a,b) => supabase.from("cars").select("*, car_media(*)").order("updated_at", {ascending:false}).order("id").range(a,b)) as unknown as CarWithMedia[];
 }
 
 /** Um carro por id, com media ordenada. */
@@ -130,36 +122,15 @@ const MONTHS_PT = [
 /** Agrega KPIs e séries para os gráficos da dashboard. */
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = await createClient();
-  const monthStartIso = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    1,
-  ).toISOString();
-  const [
-    { data: cars },
-    { count: leadCount },
-    { count: totalLeads },
-    { data: views },
-    { count: viewsThisMonth },
-    { data: leadCars },
-  ] = await Promise.all([
-    supabase
-      .from("cars")
-      .select(
-        "id, slug, make, model, fuel, price, price_on_request, status, created_at, sold_at",
-      ),
-    supabase
-      .from("leads")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "new"),
-    supabase.from("leads").select("id", { count: "exact", head: true }),
-    supabase.from("car_views").select("car_id, slug"),
-    supabase
-      .from("car_views")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", monthStartIso),
-    supabase.from("leads").select("car_id"),
+  const [cars, summary] = await Promise.all([
+    allRows((a,b) => supabase.from("cars").select("id, slug, make, model, fuel, price, price_on_request, status, created_at, sold_at").order("id").range(a,b)),
+    supabase.rpc("analytics_summary"),
   ]);
+  if (summary.error || !summary.data) throw new Error("Não foi possível carregar os indicadores.");
+  const analytics = summary.data;
+  const leadCount = analytics.new_leads;
+  const totalLeads = analytics.leads;
+  const viewsThisMonth = analytics.month_views;
 
   const list = (cars ?? []) as Pick<
     CarRow,
@@ -176,12 +147,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   >[];
 
   // Visitas por viatura → top 5 mais vistas.
-  const viewRows = (views ?? []) as { car_id: string | null; slug: string | null }[];
-  const totalViews = viewRows.length;
-  const viewsByCar = new Map<string, number>();
-  for (const v of viewRows) {
-    if (v.car_id) viewsByCar.set(v.car_id, (viewsByCar.get(v.car_id) ?? 0) + 1);
-  }
+  const totalViews = analytics.views;
+  const viewsByCar = new Map(analytics.by_car.filter(c => c.views > 0).map(c => [c.id,c.views]));
   const topViewed = [...viewsByCar.entries()]
     .map(([id, count]) => {
       const car = list.find((c) => c.id === id);
@@ -195,10 +162,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .slice(0, 5);
 
   // Leads por viatura (para o funil de conversão por viatura).
-  const leadsByCar = new Map<string, number>();
-  for (const l of (leadCars ?? []) as { car_id: string | null }[]) {
-    if (l.car_id) leadsByCar.set(l.car_id, (leadsByCar.get(l.car_id) ?? 0) + 1);
-  }
+  const leadsByCar = new Map(analytics.by_car.map(c => [c.id,c.leads]));
 
   // Conversão viatura a viatura: visitas → leads. Ordena pelas mais vistas e
   // mostra as 8 com mais tração — ajuda a detetar preços mal calibrados
@@ -277,9 +241,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     viewsThisMonth: viewsThisMonth ?? 0,
     totalLeads: totalLeads ?? 0,
     contactRate: totalViews
-      ? Math.round(((totalLeads ?? 0) / totalViews) * 1000) / 10
+      ? Math.round((analytics.by_car.reduce((n,c) => n+c.leads,0) / totalViews) * 1000) / 10
       : 0,
-    byFuel: tally((c) => c.fuel),
+    byFuel: tally((c) => c.fuel ?? "Por confirmar"),
     byMake: tallyBrands(list.map((c) => c.make)).slice(0, 6),
     byPriceBand,
     salesByMonth,
@@ -419,19 +383,4 @@ export async function getProfiles(): Promise<ProfileRow[]> {
     return [];
   }
   return data as ProfileRow[];
-}
-
-/** Leads mais recentes para gestão. */
-export async function getLeads(): Promise<LeadRow[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("leads")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(200);
-  if (error) {
-    console.error("getLeads:", error.message);
-    return [];
-  }
-  return data as LeadRow[];
 }

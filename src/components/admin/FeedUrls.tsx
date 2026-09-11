@@ -25,8 +25,9 @@ export function FeedUrls({ baseUrl }: { baseUrl: string }) {
           Links dos feeds de exportação
         </h2>
         <p className="mt-1 text-xs text-paper/40">
-          Forneça o link a cada plataforma que suporte importação por feed. Só
-          inclui viaturas publicadas com esse canal selecionado.
+          Feeds disponíveis para validação com cada plataforma. A publicação automática
+          ainda depende da aprovação do formato pelo portal. Incluem apenas viaturas
+          publicadas com esse canal selecionado.
         </p>
       </div>
       <ul className="space-y-2">
@@ -38,7 +39,7 @@ export function FeedUrls({ baseUrl }: { baseUrl: string }) {
               className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 p-2.5"
             >
               <span className="w-28 shrink-0 text-sm font-medium text-paper">
-                {c.label}
+                {c.label}<span className="block text-xs text-amber-300">Por validar no portal</span>
               </span>
               <code className="min-w-0 flex-1 truncate text-xs text-paper/50">
                 {url}

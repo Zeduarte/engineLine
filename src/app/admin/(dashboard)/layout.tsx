@@ -18,6 +18,12 @@ export default async function DashboardLayout({
   if (!profile) redirect("/admin/login");
 
   const supabase = await createClient();
+  const { error: schemaError } = await supabase.rpc("has_section", {section:"dashboard"});
+  if (schemaError) return <main className="mx-auto max-w-xl space-y-4 px-6 py-16 text-paper">
+    <h1 className="text-2xl font-bold">{schemaError.code === "PGRST202" ? "Atualização do backoffice pendente" : "Backoffice temporariamente indisponível"}</h1>
+    <p>{schemaError.code === "PGRST202" ? "Esta versão precisa da atualização da base de dados antes de poder ser utilizada. Peça ao responsável técnico para concluir a ativação." : "Não foi possível verificar a ligação ao serviço. Tente novamente dentro de momentos."}</p>
+    <p className="text-sm text-paper/60">Os dados existentes permanecem guardados.</p>
+  </main>;
   const [{ count }, settings] = await Promise.all([
     supabase
       .from("leads")
@@ -39,30 +45,10 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-dvh bg-ink text-paper">
-      {/* Desktop */}
-      <div className="hidden md:grid md:grid-cols-[248px_1fr]">
-        <div className="sticky top-0 h-dvh">
-          <Sidebar
-            user={user}
-            sections={sections}
-            companyName={companyName}
-            newLeads={count ?? 0}
-          />
-        </div>
-        <div className="min-w-0">
-          <div className="mx-auto max-w-6xl px-6 py-8 lg:px-10">{children}</div>
-        </div>
-      </div>
-
-      {/* Mobile / tablet */}
-      <div className="md:hidden">
-        <MobileNav
-          user={user}
-          sections={sections}
-          companyName={companyName}
-          newLeads={count ?? 0}
-        />
-        <div className="px-4 py-6">{children}</div>
+      <div className="md:hidden"><MobileNav user={user} sections={sections} companyName={companyName} newLeads={count ?? 0}/></div>
+      <div className="md:grid md:grid-cols-[248px_1fr]">
+        <div className="sticky top-0 hidden h-dvh md:block"><Sidebar user={user} sections={sections} companyName={companyName} newLeads={count ?? 0}/></div>
+        <main className="min-w-0"><div className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8 lg:px-10">{children}</div></main>
       </div>
     </div>
   );

@@ -25,6 +25,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Regression tests
+        run: npm test
+
       - name: Build
         # Valores placeholder — o build não contacta o Supabase (as leituras
         # tratam falhas de rede e devolvem vazio). Em produção, as variáveis

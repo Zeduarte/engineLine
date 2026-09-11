@@ -1,5 +1,7 @@
 "use server";
 
+import { requireSection } from "@/lib/guard";
+
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { homeContentSchema } from "@/lib/schemas";
@@ -11,6 +13,7 @@ export interface ContentResult {
 
 /** Guarda o conteúdo da página inicial (site_content key='home'). */
 export async function saveHomeContent(input: unknown): Promise<ContentResult> {
+  await requireSection("pagina-inicial");
   const parsed = homeContentSchema.safeParse(input);
   if (!parsed.success) {
     return {

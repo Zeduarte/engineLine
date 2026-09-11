@@ -1,3 +1,5 @@
+import type { Activity, Financials, VehicleCost, PreparationTask, Reservation, AuditEntry, NotificationJob, AnalyticsSummary, StaffMember } from "../operations-types";
+type Table<Row, Required extends keyof Row = never> = { Row: Row; Insert: Partial<Row> & Pick<Row, Required>; Update: Partial<Row>; Relationships: [] };
 /**
  * Tipos da base de dados.
  *
@@ -83,12 +85,12 @@ type CarsRow = {
   make: string;
   model: string;
   variant: string | null;
-  year: number;
+  year: number | null;
   license_plate: string | null;
   mileage: number;
-  fuel: FuelType;
-  transmission: Transmission;
-  body: BodyType;
+  fuel: FuelType | null;
+  transmission: Transmission | null;
+  body: BodyType | null;
   power: number;
   displacement: number;
   color: string | null;
@@ -123,12 +125,12 @@ type CarsInsert = {
   make: string;
   model: string;
   variant?: string | null;
-  year: number;
+  year: number | null;
   license_plate?: string | null;
   mileage?: number;
-  fuel: FuelType;
-  transmission: Transmission;
-  body: BodyType;
+  fuel: FuelType | null;
+  transmission: Transmission | null;
+  body: BodyType | null;
   power?: number;
   displacement?: number;
   color?: string | null;
@@ -183,6 +185,11 @@ type CarMediaUpdate = Partial<CarMediaInsert>;
 
 // ---- leads -----------------------------------------------------------------
 type LeadsRow = {
+  assigned_to: string | null;
+  next_action: string | null;
+  next_action_at: string | null;
+  loss_reason: string | null;
+  first_contacted_at: string | null;
   id: string;
   car_id: string | null;
   car_label: string | null;
@@ -199,6 +206,11 @@ type LeadsRow = {
   updated_at: string;
 }
 type LeadsInsert = {
+  assigned_to?: string | null;
+  next_action?: string | null;
+  next_action_at?: string | null;
+  loss_reason?: string | null;
+  first_contacted_at?: string | null;
   id?: string;
   car_id?: string | null;
   car_label?: string | null;
@@ -387,6 +399,13 @@ type ChannelListingsUpdate = Partial<ChannelListingsInsert>;
 export type Database = {
   public: {
     Tables: {
+      lead_activities: Table<Activity, "lead_id" | "kind" | "body">;
+      vehicle_financials: Table<Financials, "car_id">;
+      vehicle_costs: Table<VehicleCost, "car_id" | "category" | "description" | "amount">;
+      preparation_tasks: Table<PreparationTask, "car_id" | "title">;
+      reservations: Table<Reservation, "car_id" | "lead_id" | "expires_at">;
+      audit_log: Table<AuditEntry>;
+      notification_jobs: Table<NotificationJob, "lead_id">;
       profiles: {
         Row: ProfilesRow;
         Insert: ProfilesInsert;
@@ -456,13 +475,25 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      claim_notification_jobs: {Args: Record<string, never>; Returns: NotificationJob[]};
+      prune_submission_limits: {Args: Record<string, never>; Returns: undefined};
+      has_section: { Args: {section: string}; Returns: boolean };
+      consume_submission: { Args: {key_value: string; max_hits: number; window_seconds: number}; Returns: boolean };
+      create_workshop_intake: { Args: {vehicle_name: string; plate: string}; Returns: string };
+      reserve_vehicle: { Args: {lead: string; expiry: string; deposit: number}; Returns: string };
+      release_reservation: { Args: {reservation_id: string}; Returns: undefined };
+      confirm_reservation_deposit: { Args: {reservation_id: string}; Returns: undefined };
+      expire_reservations: { Args: Record<string, never>; Returns: number };
+      close_vehicle_sale: { Args: {lead: string; amount: number; sale_date: string}; Returns: undefined };
+      staff_directory: { Args: Record<string, never>; Returns: StaffMember[] };
+      analytics_summary: { Args: Record<string, never>; Returns: AnalyticsSummary };
       is_staff: { Args: Record<string, never>; Returns: boolean };
       is_admin: { Args: Record<string, never>; Returns: boolean };
     };
     Enums: {
       user_role: UserRole;
       fuel_type: FuelType;
-      transmission: Transmission;
+      transmission: Transmission | null;
       body_type: BodyType;
       car_status: CarStatus;
       media_kind: MediaKind;

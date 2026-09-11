@@ -186,3 +186,19 @@ push/PR.
 Mantidas do projeto original: loop único Lenis × GSAP, hero 360º em `<canvas>`,
 SplitText manual (`AnimatedText`), respeito por `prefers-reduced-motion`, e
 JSON-LD por viatura. Ver histórico para detalhes.
+
+## Versão operacional — migração 0013
+
+CRM com responsáveis e próximas ações, reservas transacionais, custos e margens,
+preparação/entrega, auditoria e permissões na base de dados. Consulte
+[Ativação e validação operacional](docs/OPERATIONS.md) **antes de publicar esta versão**.
+A migração 0013 substitui o comportamento de criação automática de perfis e de
+inserção anónima descrito no setup original: a chave de serviço passa a ser
+necessária no servidor também para os formulários públicos.
+
+```bash
+npm test           # regressões SQL/RLS, domínio e renderização dos ecrãs
+npm run typecheck
+npm run lint
+npm run build
+```

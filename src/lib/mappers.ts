@@ -51,8 +51,8 @@ function deriveHighlights(car: CarRow): VehicleSpec[] {
   const specs: VehicleSpec[] = [
     { label: "Ano", value: String(car.year) },
     { label: "Quilómetros", value: formatKm(car.mileage) },
-    { label: "Combustível", value: car.fuel },
-    { label: "Caixa", value: car.transmission },
+    { label: "Combustível", value: car.fuel ?? "Por confirmar" },
+    { label: "Caixa", value: car.transmission ?? "Por confirmar" },
   ];
   if (car.power > 0) specs.splice(2, 0, { label: "Potência", value: `${car.power} cv` });
   return specs.slice(0, 5);
@@ -83,13 +83,13 @@ export function toVehicle(car: CarWithMedia): Vehicle {
     make: car.make,
     model: car.model,
     variant: car.variant ?? undefined,
-    year: car.year,
+    year: car.year!,
     price: car.price ?? 0,
     priceOnRequest: car.price_on_request,
     mileage: car.mileage,
-    fuel: car.fuel,
-    transmission: car.transmission,
-    body: car.body,
+    fuel: car.fuel!,
+    transmission: car.transmission!,
+    body: car.body!,
     power: car.power,
     displacement: car.displacement,
     color: car.color ?? "",

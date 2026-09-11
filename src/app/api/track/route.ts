@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
-import { supabasePublic } from "@/lib/supabase/public";
+import { publicSubmissionClient } from "@/lib/public-submissions";
+import { z } from "zod";
 
 export const runtime = "nodejs";
 
@@ -33,9 +34,15 @@ export async function POST(request: Request) {
     .digest("hex")
     .slice(0, 32);
 
-  const { error } = await supabasePublic.from("car_views").insert({
-    car_id: carId,
-    slug,
+  if (carId && !z.string().uuid().safeParse(carId).success) return NextResponse.json({ok:false},{status:400});
+  let db;
+  try { db = await publicSubmissionClient("view"); } catch { return NextResponse.json({ok:false},{status:429}); }
+  const query = db.from("cars").select("id,slug").in("status",["published","reserved","sold"]);
+  const {data:car} = await (carId ? query.eq("id",carId) : query.eq("slug",slug!)).maybeSingle();
+  if (!car) return NextResponse.json({ok:false},{status:404});
+  const { error } = await db.from("car_views").insert({
+    car_id: car.id,
+    slug: car.slug,
     session,
   });
 
