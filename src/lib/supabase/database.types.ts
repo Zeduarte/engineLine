@@ -261,6 +261,7 @@ type SiteSettingsRow = {
   hours: string | null;
   geo_lat: number | null;
   geo_lng: number | null;
+  workshop_hourly_rate: number;
   updated_at: string;
 };
 type SiteSettingsInsert = {
@@ -285,6 +286,7 @@ type SiteSettingsInsert = {
   hours?: string | null;
   geo_lat?: number | null;
   geo_lng?: number | null;
+  workshop_hourly_rate?: number;
 };
 type SiteSettingsUpdate = Partial<SiteSettingsInsert>;
 

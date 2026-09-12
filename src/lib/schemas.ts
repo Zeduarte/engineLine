@@ -244,6 +244,16 @@ export const marketingSchema = z.object({
 });
 export type MarketingValues = z.infer<typeof marketingSchema>;
 
+// ---- Oficina (admin) ------------------------------------------------------
+export const workshopSchema = z.object({
+  workshop_hourly_rate: z.coerce
+    .number()
+    .min(0, "Valor inválido")
+    .max(1000, "Valor demasiado alto")
+    .default(0),
+});
+export type WorkshopValues = z.infer<typeof workshopSchema>;
+
 // ---- Integrações / credenciais das plataformas (admin) --------------------
 const channelCred = z
   .object({

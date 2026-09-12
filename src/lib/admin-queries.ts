@@ -299,6 +299,17 @@ export async function getSiteSettings(): Promise<{
   };
 }
 
+/** Valor/hora da mão de obra da oficina (€). 0 se ainda não definido. */
+export async function getWorkshopRate(): Promise<number> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("site_settings")
+    .select("workshop_hourly_rate")
+    .eq("id", 1)
+    .maybeSingle();
+  return Number(data?.workshop_hourly_rate ?? 0) || 0;
+}
+
 /**
  * Dados de contacto/empresa (admin) para o formulário. Cai nos defaults de
  * `site.ts` quando ainda não foram definidos.

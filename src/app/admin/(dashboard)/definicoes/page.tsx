@@ -1,16 +1,22 @@
-import { getSiteSettings, getCompanySettings } from "@/lib/admin-queries";
+import {
+  getSiteSettings,
+  getCompanySettings,
+  getWorkshopRate,
+} from "@/lib/admin-queries";
 import { requireSection } from "@/lib/guard";
 import { BrandingForm } from "@/components/admin/BrandingForm";
 import { CompanyForm } from "@/components/admin/CompanyForm";
+import { WorkshopSettingsForm } from "@/components/admin/WorkshopSettingsForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   await requireSection("definicoes");
 
-  const [settings, company] = await Promise.all([
+  const [settings, company, workshopRate] = await Promise.all([
     getSiteSettings(),
     getCompanySettings(),
+    getWorkshopRate(),
   ]);
 
   return (
@@ -33,6 +39,16 @@ export default async function SettingsPage() {
       </div>
 
       <CompanyForm initial={company} />
+
+      <div className="mt-10 mb-6 border-t border-white/10 pt-8">
+        <h2 className="text-lg font-semibold text-paper">Oficina</h2>
+        <p className="mt-1 text-sm text-paper/50">
+          Valor/hora da mão de obra — converte as horas da Oficina em custo nas
+          margens.
+        </p>
+      </div>
+
+      <WorkshopSettingsForm initialRate={workshopRate} />
     </>
   );
 }

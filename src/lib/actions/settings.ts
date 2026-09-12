@@ -8,6 +8,7 @@ import {
   marketingSchema,
   integrationsSchema,
   companySchema,
+  workshopSchema,
 } from "@/lib/schemas";
 
 export interface SettingsResult {
@@ -18,6 +19,34 @@ export interface SettingsResult {
 async function requireAdmin(): Promise<boolean> {
   const profile = await getCurrentProfile();
   return profile?.role === "admin";
+}
+
+/** Guarda o valor/hora da mão de obra da oficina. Apenas admin. */
+export async function saveWorkshopRate(input: unknown): Promise<SettingsResult> {
+  if (!(await requireAdmin())) {
+    return { ok: false, error: "Sem permissão. Apenas administradores." };
+  }
+  const parsed = workshopSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_settings").upsert(
+    { id: 1, workshop_hourly_rate: parsed.data.workshop_hourly_rate },
+    { onConflict: "id" },
+  );
+  if (error) {
+    const hint = /workshop_hourly_rate/.test(error.message)
+      ? "Aplique a migração 0016_workshop_rate.sql no Supabase."
+      : error.message;
+    return { ok: false, error: hint };
+  }
+  revalidatePath("/admin/definicoes");
+  revalidatePath("/admin/financeiro");
+  return { ok: true };
 }
 
 /** Guarda a marca do site (nome + logótipo). Apenas admin. */
