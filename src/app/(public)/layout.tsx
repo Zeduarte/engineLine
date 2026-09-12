@@ -8,6 +8,7 @@ import { CompareProvider } from "@/components/inventory/CompareContext";
 import { CompareBar } from "@/components/inventory/CompareBar";
 import { DealerJsonLd } from "@/components/seo/DealerJsonLd";
 import { getBranding } from "@/lib/queries";
+import { WorldEntrance } from "@/components/site/WorldEntrance";
 
 /**
  * Chrome do site PÚBLICO: smooth scroll (Lenis), barra de progresso, grão,
@@ -22,6 +23,7 @@ export default async function PublicLayout({
   return (
     <LenisProvider>
       <CompareProvider>
+        <WorldEntrance name={branding.companyName} />
         {/* Salto para conteúdo — acessibilidade por teclado. */}
         <a
           href="#conteudo"
