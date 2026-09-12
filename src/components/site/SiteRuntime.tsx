@@ -70,22 +70,20 @@ export function SiteRuntime({
 }) {
   const [decision, setDecision] = useState<string | null>("pending");
 
-  // Service Worker: só em produção. Em desenvolvimento o SW faz cache dos
-  // chunks (_next/static) e serve versões antigas — que apontam para IDs de
-  // Server Actions já inexistentes ("Server Action not found"). Por isso, em
-  // dev, desregistamo-lo e limpamos as caches, para nunca atrapalhar.
+  // Service Worker REMOVIDO: causava "Server Action not found" ao servir chunks
+  // antigos em cache. Já não o registamos; e desregistamos qualquer SW que ainda
+  // exista + limpamos as caches, para os browsers ficarem limpos sozinhos.
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
-    if (process.env.NODE_ENV === "production") {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
-    } else {
-      navigator.serviceWorker
-        .getRegistrations()
-        .then((regs) => regs.forEach((r) => r.unregister()))
+    navigator.serviceWorker
+      .getRegistrations()
+      .then((regs) => regs.forEach((r) => r.unregister()))
+      .catch(() => {});
+    if ("caches" in window) {
+      caches
+        .keys()
+        .then((keys) => keys.forEach((k) => caches.delete(k)))
         .catch(() => {});
-      if ("caches" in window) {
-        caches.keys().then((keys) => keys.forEach((k) => caches.delete(k))).catch(() => {});
-      }
     }
   }, []);
 
