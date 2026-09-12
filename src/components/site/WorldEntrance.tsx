@@ -65,7 +65,7 @@ export function WorldEntrance({ name }: { name: string }) {
       return;
     }
     setLeaving(choice);
-    exitTimer.current = setTimeout(finish, 1300);
+    exitTimer.current = setTimeout(finish, 1500);
   }
 
   if (entered) return null;
