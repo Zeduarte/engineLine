@@ -51,6 +51,35 @@ export async function saveFinancials(data: FormData) {
   const {error} = await db.from("vehicle_financials").upsert({...parsed.data, updated_at: new Date().toISOString()});
   refresh(); return result(error);
 }
+/**
+ * Valor/hora só para esta viatura. Se a caixa "alterar" vier desligada, grava
+ * NULL — e a viatura volta a usar o valor por defeito de Custos e margens.
+ */
+export async function saveVehicleRate(data: FormData) {
+  await requireSection("financeiro");
+  const parsed = z.object({
+    car_id: uuid,
+    override: z.union([z.literal("on"), z.literal("")]).optional(),
+    hourly_rate_override: z.union([z.string(), z.literal("")]).optional(),
+  }).safeParse(Object.fromEntries(data));
+  if (!parsed.success) return {ok:false,error:"Verifique o valor por hora."};
+
+  let value: number | null = null;
+  if (parsed.data.override === "on") {
+    const n = Number(parsed.data.hourly_rate_override);
+    if (!Number.isFinite(n) || n < 0 || n > 1000) {
+      return {ok:false,error:"Indique um valor por hora entre 0 e 1000 €."};
+    }
+    value = Math.round(n * 100) / 100;
+  }
+
+  const db = await createClient();
+  const {error} = await db.from("vehicle_financials").upsert({
+    car_id: parsed.data.car_id, hourly_rate_override: value,
+    updated_at: new Date().toISOString(),
+  });
+  refresh(); return result(error);
+}
 export async function addVehicleCost(data: FormData) {
   const me = await requireSection("financeiro");
   const parsed = z.object({car_id: uuid, category: z.enum(["transport","parts","labour","preparation","other"]), description: z.string().trim().min(1).max(500), amount: z.coerce.number().positive().max(9999999999), incurred_on: z.string().date()}).safeParse(Object.fromEntries(data));

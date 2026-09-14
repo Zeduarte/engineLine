@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { requireSection } from "@/lib/guard";
-import { getWorkshopVehicle } from "@/lib/workshop";
+import { getWorkshopVehicle, getWorkshopCosts } from "@/lib/workshop";
 import { TaskManager } from "@/components/admin/TaskManager";
+import { WorkshopCostsPanel } from "@/components/admin/WorkshopCostsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export default async function OficinaVehiclePage({
   const { id } = await params;
   const vehicle = await getWorkshopVehicle(id);
   if (!vehicle) notFound();
+  const costs = await getWorkshopCosts(id);
 
   return (
     <>
@@ -71,6 +73,10 @@ export default async function OficinaVehiclePage({
         initial={vehicle.logs}
         lastEnd={vehicle.lastEnd}
       />
+
+      <div className="mt-8">
+        <WorkshopCostsPanel carId={vehicle.id} initial={costs} />
+      </div>
     </>
   );
 }

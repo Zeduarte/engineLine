@@ -92,6 +92,65 @@ export async function deleteWorklog(id: string): Promise<ActionResult> {
   return { ok: true };
 }
 
+/**
+ * Custos lançados pela oficina (peças/material). Vão para a mesma tabela dos
+ * custos, por isso aparecem logo em Custos e margens. O mecânico só pode as
+ * categorias de material — nunca mão de obra (essa vem das horas).
+ */
+const workshopCostSchema = z.object({
+  car_id: z.string().uuid(),
+  category: z.enum(["parts", "other"]).default("parts"),
+  description: z.string().trim().min(1, "Descreva o material").max(500),
+  amount: z.coerce.number().positive("Indique um valor maior que zero").max(9999999),
+  incurred_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
+});
+
+export async function addWorkshopCost(formData: FormData): Promise<ActionResult> {
+  const profile = await requireSection("oficina");
+  const parsed = workshopCostSchema.safeParse({
+    car_id: formData.get("car_id"),
+    category: formData.get("category") || "parts",
+    description: formData.get("description"),
+    amount: formData.get("amount"),
+    incurred_on: formData.get("incurred_on"),
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("vehicle_costs")
+    .insert({ ...parsed.data, created_by: profile.id });
+  if (error) {
+    const hint = /row-level security|permission/i.test(error.message)
+      ? "Sem permissão para registar custos. Aplique a migração 0017 no Supabase."
+      : `Não foi possível registar: ${error.message}`;
+    return { ok: false, error: hint };
+  }
+  revalidatePath(`/admin/oficina/${parsed.data.car_id}`);
+  revalidatePath(`/admin/financeiro/${parsed.data.car_id}`);
+  revalidatePath("/admin/financeiro");
+  return { ok: true };
+}
+
+/** Apaga um custo lançado pela oficina (a RLS só deixa apagar os próprios). */
+export async function deleteWorkshopCost(id: string): Promise<ActionResult> {
+  await requireSection("oficina");
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("vehicle_costs")
+    .delete()
+    .eq("id", id)
+    .select("car_id")
+    .maybeSingle();
+  if (error) return { ok: false, error: "Não foi possível apagar." };
+  if (!data) return { ok: false, error: "Só pode apagar custos que você registou." };
+  revalidatePath(`/admin/oficina/${data.car_id}`);
+  revalidatePath("/admin/financeiro");
+  return { ok: true };
+}
+
 const newVehicleSchema = z.object({
   name: z.string().trim().min(1, "Indique o nome/viatura").max(120),
   plate: z.string().trim().min(2, "Indique a matrícula").max(20),

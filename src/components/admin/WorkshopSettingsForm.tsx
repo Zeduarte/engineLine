@@ -24,11 +24,11 @@ export function WorkshopSettingsForm({ initialRate }: { initialRate: number }) {
   return (
     <form onSubmit={save} className="card p-5">
       <h2 className="text-sm font-semibold uppercase tracking-wider text-paper/50">
-        Oficina — mão de obra
+        Mão de obra — valor por defeito
       </h2>
       <p className="mt-1 text-sm text-paper/50">
-        Valor por hora usado para calcular o custo da mão de obra a partir das
-        horas registadas na Oficina. Aparece automaticamente em Custos e margens.
+        Valor por hora aplicado a todas as viaturas. Cada viatura pode ter um
+        valor diferente na sua ficha. Converte as horas da Oficina em custo.
       </p>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
         <label className="block">

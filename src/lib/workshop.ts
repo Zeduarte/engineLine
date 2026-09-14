@@ -50,6 +50,32 @@ export async function getWorkshopVehicles(): Promise<WorkshopVehicle[]> {
   }));
 }
 
+/** Custo (peça/material) lançado numa viatura. */
+export interface WorkshopCost {
+  id: string;
+  category: string;
+  description: string;
+  amount: number;
+  incurred_on: string;
+  created_by: string | null;
+}
+
+/** Custos de material da viatura (para o mecânico ver o que já lançou). */
+export async function getWorkshopCosts(carId: string): Promise<WorkshopCost[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("vehicle_costs")
+    .select("id, category, description, amount, incurred_on, created_by")
+    .eq("car_id", carId)
+    .order("incurred_on", { ascending: false });
+  if (error) {
+    // Migração 0017 por aplicar / sem permissão — não bloqueia a página.
+    console.error("getWorkshopCosts:", error.message);
+    return [];
+  }
+  return (data ?? []) as WorkshopCost[];
+}
+
 export interface WorkshopVehicleDetail {
   id: string;
   make: string;
