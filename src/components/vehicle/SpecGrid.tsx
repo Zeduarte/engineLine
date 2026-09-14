@@ -37,7 +37,9 @@ export function SpecGrid({ vehicle }: { vehicle: Vehicle }) {
 
   return (
     <section aria-label="Especificações">
-      <div className="grid grid-cols-2 gap-x-6 gap-y-7">
+      {/* max-w evita que as duas colunas se afastem até às margens em ecrãs
+          largos (ficava um vazio enorme entre elas). */}
+      <div className="grid max-w-2xl grid-cols-2 gap-x-8 gap-y-7">
         {items.map((it) => (
           <div key={it.label} className="flex items-center gap-3">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/5 text-paper/80">

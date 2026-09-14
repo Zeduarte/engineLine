@@ -107,9 +107,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
             </div>
           )}
 
-          {/* Cabeçalho primeiro (título + slogan + ações); a galeria vem depois
-              das especificações — quem abre a ficha quer saber o que é a
-              viatura antes de ver mais fotos. */}
+          {/* Cabeçalho: identificação da viatura antes de qualquer foto. */}
           <header>
             {vehicle.warrantyMonths ? (
               <p className="mb-3 text-sm font-semibold text-paper/80">
@@ -161,11 +159,12 @@ export default async function VehiclePage({ params }: { params: Params }) {
             </div>
           </header>
 
-          {/* Corpo em duas colunas (uma só coluna em mobile/tablet) */}
-          <div className="mt-8 grid gap-10 lg:grid-cols-[1.5fr_1fr] lg:gap-14">
-            <div className="space-y-8 lg:space-y-10">
-              {/* Preço em destaque — no desktop vive no painel lateral sticky */}
-              <div className="rounded-3xl bg-ink-soft p-6 lg:hidden">
+          {/* Imagem e informação LADO A LADO no desktop (foto à esquerda,
+              preço + especificações à direita). Em mobile a informação vem
+              primeiro e a galeria logo a seguir — por isso o `order`. */}
+          <div className="mt-8 grid gap-8 min-[900px]:grid-cols-[1.35fr_1fr] min-[900px]:items-start min-[900px]:gap-12">
+            <div className="space-y-8 min-[900px]:order-2">
+              <div className="rounded-3xl bg-ink-soft p-6">
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-lg font-medium text-paper/70">
                     Preço de venda
@@ -177,14 +176,20 @@ export default async function VehiclePage({ params }: { params: Params }) {
               </div>
 
               <SpecGrid vehicle={vehicle} />
+            </div>
 
-              {/* Galeria: depois de se saber o que é a viatura. */}
+            <div className="min-[900px]:order-1">
               <Gallery
                 slug={vehicle.slug}
                 images={vehicle.images}
                 video={vehicle.video}
               />
+            </div>
+          </div>
 
+          {/* Resto do conteúdo, com o painel de contacto fixo à direita */}
+          <div className="mt-12 grid gap-10 lg:grid-cols-[1.5fr_1fr] lg:gap-14">
+            <div className="space-y-8 lg:space-y-10">
               {vehicle.description && (
                 <DescriptionCard text={vehicle.description} />
               )}
