@@ -107,14 +107,10 @@ export default async function VehiclePage({ params }: { params: Params }) {
             </div>
           )}
 
-          <Gallery
-            slug={vehicle.slug}
-            images={vehicle.images}
-            video={vehicle.video}
-          />
-
-          {/* Cabeçalho: garantia + título (variante separada por barra) + ações */}
-          <header className="mt-8">
+          {/* Cabeçalho primeiro (título + slogan + ações); a galeria vem depois
+              das especificações — quem abre a ficha quer saber o que é a
+              viatura antes de ver mais fotos. */}
+          <header>
             {vehicle.warrantyMonths ? (
               <p className="mb-3 text-sm font-semibold text-paper/80">
                 Garantia: {vehicle.warrantyMonths} meses
@@ -140,6 +136,13 @@ export default async function VehiclePage({ params }: { params: Params }) {
                     </span>
                   )}
                 </h1>
+
+                {/* Descrição breve (slogan definido no backoffice). */}
+                {vehicle.tagline && (
+                  <p className="mt-3 max-w-xl text-lg font-light leading-relaxed text-paper/70">
+                    {vehicle.tagline}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -174,6 +177,13 @@ export default async function VehiclePage({ params }: { params: Params }) {
               </div>
 
               <SpecGrid vehicle={vehicle} />
+
+              {/* Galeria: depois de se saber o que é a viatura. */}
+              <Gallery
+                slug={vehicle.slug}
+                images={vehicle.images}
+                video={vehicle.video}
+              />
 
               {vehicle.description && (
                 <DescriptionCard text={vehicle.description} />
