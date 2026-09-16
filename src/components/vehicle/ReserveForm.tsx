@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { PrivacyNotice } from "@/components/forms/PrivacyNotice";
 import { submitLead, type LeadActionState } from "@/lib/actions/leads";
 import { formatPrice } from "@/lib/format";
 
@@ -36,9 +37,10 @@ export function ReserveForm({
   }, [state.ok]);
 
   function validate(e: React.FormEvent<HTMLFormElement>) {
-    const data = Object.fromEntries(
-      new FormData(e.currentTarget),
-    ) as Record<string, string>;
+    const data = Object.fromEntries(new FormData(e.currentTarget)) as Record<
+      string,
+      string
+    >;
     const next: Record<string, string> = {};
     if (!data.name?.trim()) next.name = "Indique o seu nome.";
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.email ?? ""))
@@ -54,7 +56,8 @@ export function ReserveForm({
       <p className="mb-2 text-sm text-paper/60">
         Peça a reserva do {vehicleName}. O sinal previsto é de{" "}
         <strong className="text-accent">{formatPrice(depositAmount)}</strong>. A
-        viatura só fica reservada após confirmação pela equipa. Este pedido não cobra qualquer valor.
+        viatura só fica reservada após confirmação pela equipa. Este pedido não
+        cobra qualquer valor.
       </p>
 
       <AnimatePresence mode="wait">
@@ -79,13 +82,14 @@ export function ReserveForm({
             ref={formRef}
             action={formAction}
             onSubmit={validate}
-            noValidate
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="mt-6 grid gap-4"
           >
             <input type="hidden" name="kind" value="reservation" />
-            {vehicleId && <input type="hidden" name="car_id" value={vehicleId} />}
+            {vehicleId && (
+              <input type="hidden" name="car_id" value={vehicleId} />
+            )}
             <input type="hidden" name="car_label" value={vehicleName} />
             <input
               type="hidden"
@@ -94,18 +98,41 @@ export function ReserveForm({
             />
 
             <Field id="name" label="Nome" error={errors.name}>
-              <input id="name" name="name" type="text" autoComplete="name" className="rinput" />
+              <input
+                id="name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                className="rinput"
+              />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field id="email" label="Email" error={errors.email}>
-                <input id="email" name="email" type="email" autoComplete="email" className="rinput" />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  className="rinput"
+                />
               </Field>
               <Field id="phone" label="Telefone" error={errors.phone}>
-                <input id="phone" name="phone" type="tel" autoComplete="tel" className="rinput" />
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  className="rinput"
+                />
               </Field>
             </div>
             <Field id="message" label="Mensagem (opcional)">
-              <textarea id="message" name="message" rows={2} className="rinput" />
+              <textarea
+                id="message"
+                name="message"
+                rows={2}
+                className="rinput"
+              />
             </Field>
 
             {state.error && (
@@ -114,6 +141,7 @@ export function ReserveForm({
               </p>
             )}
 
+            <PrivacyNotice />
             <button
               type="submit"
               disabled={pending}
@@ -172,7 +200,10 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-paper">
+      <label
+        htmlFor={id}
+        className="mb-1.5 block text-sm font-medium text-paper"
+      >
         {label}
       </label>
       {children}

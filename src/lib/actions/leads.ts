@@ -23,6 +23,11 @@ export async function submitLead(
   _prev: LeadActionState,
   formData: FormData,
 ): Promise<LeadActionState> {
+  if (formData.get("privacy_acknowledged") !== "yes")
+    return {
+      ok: false,
+      error: "Confirme que leu a informação de privacidade antes de enviar.",
+    };
   const parsed = leadSchema.safeParse({
     kind: formData.get("kind") ?? "contact",
     car_id: (formData.get("car_id") as string) || null,
@@ -58,18 +63,38 @@ export async function submitLead(
   }
 
   let supabase;
-  try { supabase = await publicSubmissionClient("lead", v.email); }
-  catch (e) { return {ok:false,error:e instanceof Error ? e.message : "Tente novamente."}; }
+  try {
+    supabase = await publicSubmissionClient("lead", v.email);
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Tente novamente.",
+    };
+  }
   let carLabel = v.car_label || null;
   if (v.car_id) {
-    const {data: car} = await supabase.from("cars").select("make,model,status").eq("id",v.car_id).in("status",["published","reserved"]).maybeSingle();
-    if (!car || (v.kind === "reservation" && car.status !== "published")) return {ok:false,error:"Esta viatura já não está disponível para este pedido."};
+    const { data: car } = await supabase
+      .from("cars")
+      .select("make,model,status")
+      .eq("id", v.car_id)
+      .in("status", ["published", "reserved"])
+      .maybeSingle();
+    if (!car || (v.kind === "reservation" && car.status !== "published"))
+      return {
+        ok: false,
+        error: "Esta viatura já não está disponível para este pedido.",
+      };
     carLabel = `${car.make} ${car.model}`;
   }
   if (v.kind === "reservation") {
-    const {data: settings} = await supabase.from("site_settings").select("reservation_enabled,deposit_amount").eq("id",1).single();
-    if (!settings?.reservation_enabled || !v.car_id) return {ok:false,error:"Reservas indisponíveis."};
-    carDetails = {deposit:settings.deposit_amount};
+    const { data: settings } = await supabase
+      .from("site_settings")
+      .select("reservation_enabled,deposit_amount")
+      .eq("id", 1)
+      .single();
+    if (!settings?.reservation_enabled || !v.car_id)
+      return { ok: false, error: "Reservas indisponíveis." };
+    carDetails = { deposit: settings.deposit_amount };
   }
   const { error } = await supabase.from("leads").insert({
     kind: v.kind,
@@ -80,7 +105,11 @@ export async function submitLead(
     phone: v.phone || null,
     message: v.message || null,
     preferred_date: v.preferred_date || null,
-    car_details: carDetails,
+    car_details: {
+      ...carDetails,
+      privacy_acknowledged_at: new Date().toISOString(),
+      privacy_notice_version: "2026-09-16",
+    },
   });
 
   if (error) {
@@ -93,7 +122,15 @@ export async function submitLead(
 
 // ---- Gestão (staff) -------------------------------------------------------
 export async function setLeadStatus(id: string, status: LeadStatus) {
-  if (!z.string().uuid().safeParse(id).success || !z.enum(["new","contacted","proposal","closed"]).safeParse(status).success) return {ok:false,error:"Abra o contacto para registar a venda ou o motivo de perda."};
+  if (
+    !z.string().uuid().safeParse(id).success ||
+    !z.enum(["new", "contacted", "proposal", "closed"]).safeParse(status)
+      .success
+  )
+    return {
+      ok: false,
+      error: "Abra o contacto para registar a venda ou o motivo de perda.",
+    };
   await requireSection("leads");
   const supabase = await createClient();
   const { error } = await supabase

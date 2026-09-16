@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { PrivacyNotice } from "@/components/forms/PrivacyNotice";
 import { submitLead, type LeadActionState } from "@/lib/actions/leads";
 
 /**
@@ -15,10 +16,10 @@ export function InfoForm({
   vehicleName: string;
   vehicleId?: string;
 }) {
-  const [state, formAction, pending] = useActionState<LeadActionState, FormData>(
-    submitLead,
-    { ok: false },
-  );
+  const [state, formAction, pending] = useActionState<
+    LeadActionState,
+    FormData
+  >(submitLead, { ok: false });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -62,7 +63,6 @@ export function InfoForm({
       ref={formRef}
       action={formAction}
       onSubmit={validate}
-      noValidate
       className="grid gap-4"
     >
       <input type="hidden" name="kind" value="contact" />
@@ -70,15 +70,33 @@ export function InfoForm({
       <input type="hidden" name="car_label" value={vehicleName} />
 
       <Field id="name" label="Nome" error={errors.name}>
-        <input id="name" name="name" type="text" autoComplete="name" className="field" />
+        <input
+          id="name"
+          name="name"
+          type="text"
+          autoComplete="name"
+          className="field"
+        />
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field id="email" label="Email" error={errors.email}>
-          <input id="email" name="email" type="email" autoComplete="email" className="field" />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            className="field"
+          />
         </Field>
         <Field id="phone" label="Telefone" error={errors.phone}>
-          <input id="phone" name="phone" type="tel" autoComplete="tel" className="field" />
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            autoComplete="tel"
+            className="field"
+          />
         </Field>
       </div>
 
@@ -98,6 +116,7 @@ export function InfoForm({
         </p>
       )}
 
+      <PrivacyNotice />
       <button
         type="submit"
         disabled={pending}
@@ -122,7 +141,10 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-paper">
+      <label
+        htmlFor={id}
+        className="mb-1.5 block text-sm font-medium text-paper"
+      >
         {label}
       </label>
       {children}

@@ -1,3 +1,4 @@
+import { registrationLabel } from "@/lib/vehicle-categories";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -38,7 +39,11 @@ export default async function FichaPage({ params }: { params: Params }) {
 
   const specs: [string, string][] = [
     ["Preço", priceLabel(vehicle.price, vehicle.priceOnRequest)],
-    ["Ano", String(vehicle.year)],
+    [
+      "Primeira matrícula",
+      registrationLabel(vehicle.year, vehicle.registrationMonth),
+    ],
+    ["Localização", vehicle.location || "—"],
     ["Quilómetros", formatKm(vehicle.mileage)],
     ["Combustível", vehicle.fuel],
     ["Caixa", vehicle.transmission],
@@ -72,7 +77,10 @@ export default async function FichaPage({ params }: { params: Params }) {
       `}</style>
 
       <div className="no-print mb-6 flex items-center justify-between">
-        <Link href={`/viaturas/${vehicle.slug}`} className="text-sm text-paper/60 hover:text-paper">
+        <Link
+          href={`/viaturas/${vehicle.slug}`}
+          className="text-sm text-paper/60 hover:text-paper"
+        >
           ← Voltar à viatura
         </Link>
         <PrintButton />
@@ -88,7 +96,9 @@ export default async function FichaPage({ params }: { params: Params }) {
               {vehicle.make} {vehicle.model}
             </h1>
             {vehicle.variant && (
-              <p className="text-paper/60 print:text-black/60">{vehicle.variant}</p>
+              <p className="text-paper/60 print:text-black/60">
+                {vehicle.variant}
+              </p>
             )}
             <p className="mt-2 text-2xl font-bold text-accent">
               {priceLabel(vehicle.price, vehicle.priceOnRequest)}
@@ -123,7 +133,10 @@ export default async function FichaPage({ params }: { params: Params }) {
 
         <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3">
           {specs.map(([k, v]) => (
-            <div key={k} className="border-b border-white/5 pb-2 print:border-black/10">
+            <div
+              key={k}
+              className="border-b border-white/5 pb-2 print:border-black/10"
+            >
               <dt className="text-[11px] uppercase tracking-wider text-paper/40 print:text-black/50">
                 {k}
               </dt>
@@ -144,8 +157,9 @@ export default async function FichaPage({ params }: { params: Params }) {
         )}
 
         <div className="mt-8 border-t border-white/10 pt-4 text-xs text-paper/50 print:border-black/10 print:text-black/60">
-          {branding.companyName} · {branding.company.phone} · {branding.company.email} ·{" "}
-          {branding.company.address.street}, {branding.company.address.city}
+          {branding.companyName} · {branding.company.phone} ·{" "}
+          {branding.company.email} · {branding.company.address.street},{" "}
+          {branding.company.address.city}
         </div>
       </div>
     </div>

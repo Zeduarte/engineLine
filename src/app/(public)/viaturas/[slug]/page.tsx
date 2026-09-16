@@ -1,3 +1,7 @@
+import { Locations } from "@/components/showroom/Locations";
+import { getShowroomContent } from "@/lib/showroom-queries";
+import { VehiclePrice } from "@/components/vehicle/VehiclePrice";
+import { registrationLabel } from "@/lib/vehicle-categories";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -118,7 +122,8 @@ export default async function VehiclePage({ params }: { params: Params }) {
             <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="eyebrow mb-2">
-                  {vehicle.year} · {vehicle.body}
+                  {registrationLabel(vehicle.year, vehicle.registrationMonth)} ·{" "}
+                  {vehicle.body}
                 </p>
                 <h1 className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-headline font-semibold text-paper">
                   <span>
@@ -170,7 +175,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
                     Preço de venda
                   </span>
                   <span className="text-3xl font-bold text-accent">
-                    {priceLabel(vehicle.price, vehicle.priceOnRequest)}
+                    {<VehiclePrice vehicle={vehicle} />}
                   </span>
                 </div>
               </div>
@@ -224,6 +229,11 @@ export default async function VehiclePage({ params }: { params: Params }) {
             </div>
           </div>
 
+          <Locations
+            items={(await getShowroomContent()).locations.filter(
+              (p) => p.id === vehicle.pointOfSaleId,
+            )}
+          />
           {/* Viaturas relacionadas */}
           {related.length > 0 && (
             <section className="mt-24">

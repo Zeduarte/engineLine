@@ -1,3 +1,7 @@
+import { getShowroomContent } from "@/lib/showroom-queries";
+import { FaqSection } from "@/components/showroom/FaqSection";
+import { ServiceCards } from "@/components/showroom/ServiceCards";
+import { GoogleReviews } from "@/components/showroom/GoogleReviews";
 import { Hero } from "@/components/hero/Hero";
 import { BrandMarquee } from "@/components/home/BrandMarquee";
 import { QuickSearch } from "@/components/home/QuickSearch";
@@ -24,6 +28,7 @@ export const revalidate = 60;
 // Server Component: os dados (destaques + conteúdo editável) são obtidos no
 // servidor e passados às ilhas cliente. Zero JS de dados enviado para o browser.
 export default async function HomePage() {
+  const showroom = await getShowroomContent();
   const [recent, content, testimonials, branding, allVehicles, sold] =
     await Promise.all([
       getRecentVehicles(),
@@ -58,6 +63,13 @@ export default async function HomePage() {
       <SellCTA />
       <PinnedTrust content={content.trust} />
       <SoldShowcase vehicles={sold} />
+      <div className="container-px">
+        <ServiceCards items={showroom.services} />
+        <GoogleReviews config={showroom.google} />
+        <FaqSection
+          items={showroom.faqs.filter((f) => f.category === "geral")}
+        />
+      </div>
       <Testimonials items={testimonials} />
       <ContactCTA content={content.cta} company={branding.company} />
     </>

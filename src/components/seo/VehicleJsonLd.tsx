@@ -22,7 +22,9 @@ export function VehicleJsonLd({
     brand: { "@type": "Brand", name: vehicle.make },
     model: vehicle.model,
     vehicleModelDate: String(vehicle.year),
-    productionDate: String(vehicle.year),
+    dateVehicleFirstRegistered: vehicle.registrationMonth
+      ? `${vehicle.year}-${String(vehicle.registrationMonth).padStart(2, "0")}`
+      : String(vehicle.year),
     description: vehicle.description,
     image: vehicle.images.map((i) => i.src),
     bodyType: vehicle.body,

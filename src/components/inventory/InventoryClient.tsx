@@ -39,10 +39,25 @@ export function InventoryClient({
 
   const options = useMemo(
     () => ({
+      locations: Array.from(
+        new Map(
+          vehicles
+            .filter((v) => v.pointOfSaleId || v.location)
+            .map((v) => [
+              v.pointOfSaleId || v.location!,
+              {
+                value: v.pointOfSaleId || v.location!,
+                label: v.location || "Ponto de venda",
+              },
+            ]),
+        ).values(),
+      ),
       makes: distinctValues(vehicles, "make") as string[],
       // Os modelos acompanham a marca selecionada, se houver.
       models: distinctValues(
-        filters.make ? vehicles.filter((v) => v.make === filters.make) : vehicles,
+        filters.make
+          ? vehicles.filter((v) => v.make === filters.make)
+          : vehicles,
         "model",
       ) as string[],
       fuels: distinctValues(vehicles, "fuel"),

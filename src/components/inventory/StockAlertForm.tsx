@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { PrivacyNotice } from "@/components/forms/PrivacyNotice";
 import { submitLead, type LeadActionState } from "@/lib/actions/leads";
 
 /**
@@ -10,11 +11,15 @@ import { submitLead, type LeadActionState } from "@/lib/actions/leads";
  * contactar assim que entrar algo compatível. Zero fricção: marca/modelo,
  * email e (opcional) telefone.
  */
-export function StockAlertForm({ defaultQuery = "" }: { defaultQuery?: string }) {
-  const [state, formAction, pending] = useActionState<LeadActionState, FormData>(
-    submitLead,
-    { ok: false },
-  );
+export function StockAlertForm({
+  defaultQuery = "",
+}: {
+  defaultQuery?: string;
+}) {
+  const [state, formAction, pending] = useActionState<
+    LeadActionState,
+    FormData
+  >(submitLead, { ok: false });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -67,7 +72,6 @@ export function StockAlertForm({ defaultQuery = "" }: { defaultQuery?: string })
         ref={formRef}
         action={formAction}
         onSubmit={validate}
-        noValidate
         className="mt-6 grid gap-4 sm:grid-cols-2"
       >
         <input type="hidden" name="kind" value="alert" />
@@ -135,6 +139,7 @@ export function StockAlertForm({ defaultQuery = "" }: { defaultQuery?: string })
           <p className="text-sm text-rose-400 sm:col-span-2">{state.error}</p>
         )}
 
+        <PrivacyNotice />
         <button
           type="submit"
           disabled={pending}

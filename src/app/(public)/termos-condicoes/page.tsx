@@ -86,8 +86,22 @@ export default async function TermsPage() {
       <h2>7. Lei aplicável</h2>
       <p>
         Estes termos regem-se pela lei portuguesa. Para mais informações,
-        contacte-nos por{" "}
-        <a href={`mailto:${company.email}`}>{company.email}</a>.
+        contacte-nos por <a href={`mailto:${company.email}`}>{company.email}</a>
+        .
+      </p>
+      <h2>Google Maps e avaliações</h2>
+      <p>
+        Quando disponíveis, as avaliações são obtidas do Google Maps após
+        selecionar “Mostrar avaliações”. As fotografias dos autores e as
+        ligações externas podem contactar serviços Google. Consulte os{" "}
+        <a href="https://www.google.com/intl/pt-PT/help/terms_maps/">
+          Termos do Google Maps
+        </a>{" "}
+        e a{" "}
+        <a href="https://policies.google.com/privacy?hl=pt-PT">
+          Política de Privacidade da Google
+        </a>
+        .
       </p>
     </LegalPage>
   );

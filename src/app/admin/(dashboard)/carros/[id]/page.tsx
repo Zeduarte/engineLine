@@ -1,3 +1,4 @@
+import { getShowroomContent } from "@/lib/showroom-queries";
 import { requireSection } from "@/lib/guard";
 import { PreparationPanel } from "@/components/admin/PreparationPanel";
 import { AuditHistory } from "@/components/admin/AuditHistory";
@@ -23,7 +24,11 @@ export default async function EditCarPage({ params }: { params: Params }) {
 
   const listings = await getCarListings(car.id);
 
+  const showroom = await getShowroomContent();
   const defaults: Partial<CarFormValues> = {
+    vehicle_type: car.vehicle_type ?? "car",
+    registration_month: car.registration_month ?? null,
+    point_of_sale_id: car.point_of_sale_id ?? "",
     make: car.make,
     model: car.model,
     variant: car.variant ?? "",
@@ -95,7 +100,11 @@ export default async function EditCarPage({ params }: { params: Params }) {
 
       <div className="space-y-6">
         <MediaManager carId={car.id} initial={media} />
-        <CarForm carId={car.id} defaults={defaults} />
+        <CarForm
+          locations={showroom.locations}
+          carId={car.id}
+          defaults={defaults}
+        />
         <ChannelListings
           carId={car.id}
           channels={car.channels ?? []}

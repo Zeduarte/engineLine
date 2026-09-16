@@ -1,3 +1,5 @@
+import { Locations } from "@/components/showroom/Locations";
+import { getShowroomContent } from "@/lib/showroom-queries";
 import type { Metadata } from "next";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { Reveal } from "@/components/ui/Reveal";
@@ -33,6 +35,9 @@ export default async function ContactsPage() {
         </AnimatedText>
       </section>
 
+      <div className="container-px">
+        <Locations items={(await getShowroomContent()).locations} />
+      </div>
       {/* Banner com parallax subtil. A foto (public/images/contactos.jpg) é
           opcional: se faltar, fica o gradiente por baixo — nunca dá imagem
           partida. Basta colocar o ficheiro para aparecer automaticamente. */}
@@ -53,7 +58,8 @@ export default async function ContactsPage() {
           <ContactBlock label="Morada">
             {company.address.street}
             <br />
-            {company.address.postalCode} {company.address.city}, {company.address.country}
+            {company.address.postalCode} {company.address.city},{" "}
+            {company.address.country}
           </ContactBlock>
 
           <ContactBlock label="Horário">{company.hours}</ContactBlock>
@@ -72,7 +78,10 @@ export default async function ContactsPage() {
 
           <div className="flex flex-wrap gap-3 pt-2">
             <a
-              href={waHref(company.whatsapp, "Olá! Gostava de mais informações.")}
+              href={waHref(
+                company.whatsapp,
+                "Olá! Gostava de mais informações.",
+              )}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-full bg-accent px-7 py-3 text-sm font-semibold text-ink transition-transform hover:scale-[1.03]"

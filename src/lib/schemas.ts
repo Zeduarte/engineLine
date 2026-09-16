@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MOTORCYCLE_BODIES, isMotorcycleBody } from "./vehicle-categories";
 
 /**
  * Esquemas de validação partilhados (cliente + servidor).
@@ -26,6 +27,7 @@ export const BODY_TYPES = [
   "Citadino",
   "Descapotável",
   "Monovolume",
+  ...MOTORCYCLE_BODIES,
 ] as const;
 
 export const CAR_STATUSES = ["draft", "published", "reserved", "sold"] as const;
@@ -47,6 +49,14 @@ export type ChannelId = (typeof CHANNELS)[number]["id"];
 
 export const carFormSchema = z
   .object({
+    vehicle_type: z.enum(["car", "motorcycle"]).default("car"),
+    registration_month: z
+      .preprocess(
+        (v) => (v === "" || v == null ? null : v),
+        z.coerce.number().int().min(1).max(12).nullable(),
+      )
+      .optional(),
+    point_of_sale_id: z.string().trim().max(80).nullable().optional(),
     make: z.string().trim().min(1, "Indique a marca"),
     model: z.string().trim().min(1, "Indique o modelo"),
     variant: z.string().trim().max(80).optional().or(z.literal("")),
@@ -64,7 +74,7 @@ export const carFormSchema = z
     power: z.coerce.number().int().min(0).default(0),
     displacement: z.coerce.number().int().min(0).default(0),
     color: z.string().trim().max(60).optional().or(z.literal("")),
-    doors: z.coerce.number().int().min(1).max(9).default(5),
+    doors: z.coerce.number().int().min(0).max(9).default(5),
     seats: z.coerce.number().int().min(1).max(9).default(5),
 
     price_on_request: z.boolean().default(false),
@@ -83,7 +93,13 @@ export const carFormSchema = z
     owners: z.coerce.number().int().min(0).max(20).nullable().optional(),
     first_owner: z.boolean().default(false),
     service_book: z.boolean().default(false),
-    warranty_months: z.coerce.number().int().min(0).max(120).nullable().optional(),
+    warranty_months: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(120)
+      .nullable()
+      .optional(),
     last_inspection: z.string().optional().or(z.literal("")),
 
     // Exportação multi-canal (portais externos onde publicar)
@@ -92,6 +108,26 @@ export const carFormSchema = z
   .refine((v) => v.price_on_request || (v.price != null && v.price > 0), {
     message: "Indique um preço ou marque 'sob consulta'",
     path: ["price"],
+  })
+  .superRefine((v, ctx) => {
+    if ((v.vehicle_type === "motorcycle") !== isMotorcycleBody(v.body))
+      ctx.addIssue({
+        code: "custom",
+        path: ["body"],
+        message: "Escolha um segmento adequado ao tipo de viatura.",
+      });
+    if (v.vehicle_type === "car" && v.doors < 1)
+      ctx.addIssue({
+        code: "custom",
+        path: ["doors"],
+        message: "Indique o número de portas.",
+      });
+    if (v.vehicle_type === "motorcycle" && v.doors !== 0)
+      ctx.addIssue({
+        code: "custom",
+        path: ["doors"],
+        message: "Uma mota deve ter 0 portas.",
+      });
   });
 
 export type CarFormValues = z.infer<typeof carFormSchema>;
@@ -130,6 +166,11 @@ export type LeadValues = z.infer<typeof leadSchema>;
 
 /** Testemunho submetido publicamente por um visitante (entra por aprovar). */
 export const publicTestimonialSchema = z.object({
+  privacyAcknowledged: z.literal(true, {
+    errorMap: () => ({
+      message: "Confirme a leitura da Política de Privacidade.",
+    }),
+  }),
   name: z.string().trim().min(2, "Indique o seu nome").max(80),
   rating: z.coerce.number().int().min(1).max(5).default(5),
   role: z.string().trim().max(80).optional().or(z.literal("")),

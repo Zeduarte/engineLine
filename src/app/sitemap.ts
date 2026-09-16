@@ -1,3 +1,4 @@
+import { getShowroomContent } from "@/lib/showroom-queries";
 import type { MetadataRoute } from "next";
 import { getAllSlugs } from "@/lib/queries";
 import { site } from "@/lib/site";
@@ -12,20 +13,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes = [
     "",
     "/inventario",
+    "/servicos",
+    ...(await getShowroomContent()).services
+      .filter((s) => s.enabled)
+      .map((s) => `/servicos/${s.id}`),
     "/vender",
     "/sobre",
     "/contactos",
     "/politica-de-privacidade",
     "/politica-de-cookies",
     "/termos-condicoes",
-  ].map(
-    (path) => ({
-      url: `${site.url}${path}`,
-      lastModified: now,
-      changeFrequency: "weekly" as const,
-      priority: path === "" ? 1 : 0.8,
-    }),
-  );
+  ].map((path) => ({
+    url: `${site.url}${path}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: path === "" ? 1 : 0.8,
+  }));
 
   const vehicleRoutes = slugs.map((slug) => ({
     url: `${site.url}/viaturas/${slug}`,

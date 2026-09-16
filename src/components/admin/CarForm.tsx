@@ -1,5 +1,7 @@
 "use client";
 
+import { CAR_BODIES, MOTORCYCLE_BODIES } from "@/lib/vehicle-categories";
+import type { PointOfSale } from "@/lib/showroom";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -10,14 +12,18 @@ import {
   type CarFormValues,
   FUEL_TYPES,
   TRANSMISSIONS,
-  BODY_TYPES,
   CAR_STATUSES,
   CHANNELS,
 } from "@/lib/schemas";
 import { CAR_STATUS_LABEL } from "./StatusBadge";
 import { createCar, updateCar } from "@/lib/actions/cars";
 import { Combobox } from "@/components/ui/Combobox";
-import { CAR_BRANDS, CAR_COLORS, COMMON_EXTRAS, yearOptions } from "@/lib/car-brands";
+import {
+  CAR_BRANDS,
+  CAR_COLORS,
+  COMMON_EXTRAS,
+  yearOptions,
+} from "@/lib/car-brands";
 import { CAR_MODELS } from "@/lib/car-models";
 import { EXTRAS_CATALOG } from "@/lib/extras";
 
@@ -25,8 +31,8 @@ import { EXTRAS_CATALOG } from "@/lib/extras";
 const YEARS = yearOptions();
 
 // Opções fixas para portas e lugares.
-const DOOR_OPTIONS = [2, 3, 4, 5];
-const SEAT_OPTIONS = [2, 4, 5, 6, 7, 8, 9];
+const DOOR_OPTIONS = [0, 2, 3, 4, 5];
+const SEAT_OPTIONS = [1, 2, 4, 5, 6, 7, 8, 9];
 
 /**
  * Formata a matrícula em grupos de 2 separados por hífen (ex.: "44vs23" →
@@ -48,7 +54,9 @@ const selectOnFocus = (e: React.FocusEvent<HTMLInputElement>) =>
 export function CarForm({
   carId,
   defaults,
+  locations = [],
 }: {
+  locations?: PointOfSale[];
   carId?: string;
   defaults?: Partial<CarFormValues>;
 }) {
@@ -72,6 +80,9 @@ export function CarForm({
   } = useForm<CarFormValues>({
     resolver: zodResolver(carFormSchema),
     defaultValues: {
+      vehicle_type: "car",
+      registration_month: null,
+      point_of_sale_id: "",
       make: "",
       model: "",
       variant: "",
@@ -106,6 +117,7 @@ export function CarForm({
     },
   });
 
+  const vehicleType = watch("vehicle_type");
   const onRequest = watch("price_on_request");
   const make = watch("make") ?? "";
   const modelOptions = CAR_MODELS[make] ?? [];
@@ -157,19 +169,77 @@ export function CarForm({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="space-y-6"
-      noValidate
-    >
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
       {/* Identificação */}
       <Section title="Identificação">
         <Grid>
+          <Field label="Tipo de viatura">
+            <select
+              className="field"
+              {...register("vehicle_type")}
+              onChange={(e) => {
+                const kind = e.target.value as "car" | "motorcycle";
+                setValue("vehicle_type", kind, { shouldDirty: true });
+                setValue("body", kind === "motorcycle" ? "Naked" : "Berlina", {
+                  shouldDirty: true,
+                });
+                setValue("doors", kind === "motorcycle" ? 0 : 5, {
+                  shouldDirty: true,
+                });
+                setValue("seats", kind === "motorcycle" ? 2 : 5, {
+                  shouldDirty: true,
+                });
+              }}
+            >
+              <option value="car">Automóvel</option>
+              <option value="motorcycle">Mota</option>
+            </select>
+          </Field>
+          <Field
+            label="Mês da primeira matrícula"
+            error={errors.registration_month?.message}
+          >
+            <select className="field" {...register("registration_month")}>
+              <option value="">Não indicado</option>
+              {Array.from({ length: 12 }, (_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {String(i + 1).padStart(2, "0")}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field
+            label="Ponto de venda"
+            error={errors.point_of_sale_id?.message}
+          >
+            <select
+              className="field"
+              {...register("point_of_sale_id")}
+              onChange={(e) => {
+                setValue("point_of_sale_id", e.target.value, {
+                  shouldDirty: true,
+                });
+                const point = locations.find((l) => l.id === e.target.value);
+                if (point)
+                  setValue("location", point.name, { shouldDirty: true });
+              }}
+            >
+              <option value="">Sem associação</option>
+              {locations.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field label="Marca" error={errors.make?.message} required>
             <Combobox
               value={make}
               onChange={(v) => {
-                setValue("make", v, { shouldValidate: true, shouldDirty: true });
+                setValue("make", v, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                });
                 // Mudar de marca invalida o modelo anterior.
                 if (v !== make) {
                   setValue("model", "", { shouldDirty: true });
@@ -183,7 +253,10 @@ export function CarForm({
             <Combobox
               value={watch("model") ?? ""}
               onChange={(v) =>
-                setValue("model", v, { shouldValidate: true, shouldDirty: true })
+                setValue("model", v, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
               }
               options={modelOptions}
               disabled={!make}
@@ -197,7 +270,11 @@ export function CarForm({
             />
           </Field>
           <Field label="Versão" error={errors.variant?.message}>
-            <input className="field" {...register("variant")} placeholder="Competition, AMG Line…" />
+            <input
+              className="field"
+              {...register("variant")}
+              placeholder="Competition, AMG Line…"
+            />
           </Field>
           <Field label="Ano" error={errors.year?.message} required>
             <Combobox
@@ -231,7 +308,10 @@ export function CarForm({
             <Combobox
               value={watch("color") ?? ""}
               onChange={(v) =>
-                setValue("color", v, { shouldValidate: true, shouldDirty: true })
+                setValue("color", v, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
               }
               options={CAR_COLORS}
               placeholder="Ex.: Preto"
@@ -274,7 +354,10 @@ export function CarForm({
           <Field label="Carroçaria" error={errors.body?.message} required>
             <select className="field" {...register("body")}>
               <option value="">Por confirmar — selecione</option>
-              {BODY_TYPES.map((b) => (
+              {(vehicleType === "motorcycle"
+                ? MOTORCYCLE_BODIES
+                : CAR_BODIES
+              ).map((b) => (
                 <option key={b} value={b}>
                   {b}
                 </option>
@@ -369,32 +452,63 @@ export function CarForm({
       <Section title="Transparência & destaques">
         <Grid>
           <Field label="Preço anterior (€) — mostra «Baixa de preço»">
-            <input type="number" className="field" onFocus={selectOnFocus} {...register("previous_price")} />
+            <input
+              type="number"
+              className="field"
+              onFocus={selectOnFocus}
+              {...register("previous_price")}
+            />
           </Field>
           <Field label="Nº de donos">
-            <input type="number" className="field" onFocus={selectOnFocus} {...register("owners")} />
+            <input
+              type="number"
+              className="field"
+              onFocus={selectOnFocus}
+              {...register("owners")}
+            />
           </Field>
           <Field label="Garantia (meses)">
-            <input type="number" className="field" onFocus={selectOnFocus} {...register("warranty_months")} />
+            <input
+              type="number"
+              className="field"
+              onFocus={selectOnFocus}
+              {...register("warranty_months")}
+            />
           </Field>
           <Field label="Última inspeção">
-            <input type="date" className="field" {...register("last_inspection")} />
+            <input
+              type="date"
+              className="field"
+              {...register("last_inspection")}
+            />
           </Field>
           <div className="flex items-end pb-2.5">
             <label className="flex cursor-pointer items-center gap-2 text-sm text-paper/80">
-              <input type="checkbox" className="accent-[color:var(--accent)]" {...register("national")} />
+              <input
+                type="checkbox"
+                className="accent-[color:var(--accent)]"
+                {...register("national")}
+              />
               Viatura nacional (badge «Nacional»)
             </label>
           </div>
           <div className="flex items-end pb-2.5">
             <label className="flex cursor-pointer items-center gap-2 text-sm text-paper/80">
-              <input type="checkbox" className="accent-[color:var(--accent)]" {...register("first_owner")} />
+              <input
+                type="checkbox"
+                className="accent-[color:var(--accent)]"
+                {...register("first_owner")}
+              />
               Primeiro dono
             </label>
           </div>
           <div className="flex items-end pb-2.5">
             <label className="flex cursor-pointer items-center gap-2 text-sm text-paper/80">
-              <input type="checkbox" className="accent-[color:var(--accent)]" {...register("service_book")} />
+              <input
+                type="checkbox"
+                className="accent-[color:var(--accent)]"
+                {...register("service_book")}
+              />
               Livro de revisões completo
             </label>
           </div>

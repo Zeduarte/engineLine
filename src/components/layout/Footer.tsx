@@ -7,7 +7,11 @@ import { LEGAL_NAME, NIF } from "@/lib/legal";
 // Links obrigatórios do rodapé. As políticas são páginas internas do site; o
 // Livro de Reclamações é o portal oficial (externo).
 const LEGAL_LINKS: { label: string; href: string; external?: boolean }[] = [
-  { label: "Livro de Reclamações", href: "https://www.livroreclamacoes.pt/Inicio/", external: true },
+  {
+    label: "Livro de Reclamações",
+    href: "https://www.livroreclamacoes.pt/Inicio/",
+    external: true,
+  },
   { label: "Política de Privacidade", href: "/politica-de-privacidade" },
   { label: "Política de Cookies", href: "/politica-de-cookies" },
   { label: "Termos de Condições", href: "/termos-condicoes" },
@@ -58,17 +62,31 @@ export function Footer({
           </h2>
           <ul className="mt-4 space-y-3 text-sm">
             <li>
-              <Link href="/inventario" className="font-medium text-paper transition-colors hover:text-accent">
+              <Link
+                href="/inventario"
+                className="font-medium text-paper transition-colors hover:text-accent"
+              >
                 Stock
               </Link>
             </li>
             <li>
-              <Link href="/sobre" className="font-medium text-paper transition-colors hover:text-accent">
+              <Link href="/servicos" className="text-paper/60 hover:text-paper">
+                Serviços
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/sobre"
+                className="font-medium text-paper transition-colors hover:text-accent"
+              >
                 Sobre
               </Link>
             </li>
             <li>
-              <Link href="/contactos" className="font-medium text-paper transition-colors hover:text-accent">
+              <Link
+                href="/contactos"
+                className="font-medium text-paper transition-colors hover:text-accent"
+              >
                 Contactos
               </Link>
             </li>

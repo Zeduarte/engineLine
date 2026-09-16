@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { PrivacyNotice } from "@/components/forms/PrivacyNotice";
 import { submitLead, type LeadActionState } from "@/lib/actions/leads";
 
 /**
@@ -107,10 +108,20 @@ export function OrderCarForm() {
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Email" error={errors.email}>
-                <input name="email" type="email" autoComplete="email" className="field" />
+                <input
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  className="field"
+                />
               </Field>
               <Field label="Telefone">
-                <input name="phone" type="tel" autoComplete="tel" className="field" />
+                <input
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  className="field"
+                />
               </Field>
             </div>
 
@@ -119,7 +130,12 @@ export function OrderCarForm() {
                 {state.error}
               </p>
             )}
-            <button type="submit" disabled={pending} className="btn-primary mt-1">
+            <PrivacyNotice />
+            <button
+              type="submit"
+              disabled={pending}
+              className="btn-primary mt-1"
+            >
               {pending ? "A enviar…" : "Enviar pedido"}
             </button>
           </motion.form>

@@ -13,6 +13,7 @@ interface FiltersProps {
   filters: VehicleFilters;
   sort: SortKey;
   options: {
+    locations: { value: string; label: string }[];
     makes: string[];
     models: string[];
     fuels: FuelType[];
@@ -139,10 +140,60 @@ export function Filters({
           </div>
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <Field label="Tipo de viatura">
+              <Select
+                value={filters.vehicleType ?? ""}
+                onChange={(v) =>
+                  onChange({
+                    vehicleType: (v || null) as VehicleFilters["vehicleType"],
+                    body: null,
+                  })
+                }
+              >
+                <option value="">Todos</option>
+                <option value="car">Automóveis</option>
+                <option value="motorcycle">Motas</option>
+              </Select>
+            </Field>
+            <Field label="Ponto de venda">
+              <Select
+                value={filters.location ?? ""}
+                onChange={(v) => onChange({ location: v || null })}
+              >
+                <option value="">Todos</option>
+                {options.locations.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Ano até">
+              <NumberInput
+                value={filters.maxYear}
+                onChange={(v) => onChange({ maxYear: v })}
+              />
+            </Field>
+            <Field label="Km desde">
+              <NumberInput
+                value={filters.minMileage}
+                onChange={(v) => onChange({ minMileage: v })}
+              />
+            </Field>
+            <label className="flex items-center gap-2 text-sm text-paper">
+              <input
+                type="checkbox"
+                checked={filters.campaignOnly}
+                onChange={(e) => onChange({ campaignOnly: e.target.checked })}
+              />
+              Apenas em campanha
+            </label>
             <Field label="Combustível">
               <Select
                 value={filters.fuel ?? ""}
-                onChange={(v) => onChange({ fuel: (v || null) as FuelType | null })}
+                onChange={(v) =>
+                  onChange({ fuel: (v || null) as FuelType | null })
+                }
               >
                 <option value="">Todos</option>
                 {options.fuels.map((f) => (
@@ -172,7 +223,9 @@ export function Filters({
             <Field label="Carroçaria">
               <Select
                 value={filters.body ?? ""}
-                onChange={(v) => onChange({ body: (v || null) as BodyType | null })}
+                onChange={(v) =>
+                  onChange({ body: (v || null) as BodyType | null })
+                }
               >
                 <option value="">Todas</option>
                 {options.bodies.map((b) => (
@@ -306,7 +359,9 @@ function NumberInput({
       min={0}
       value={value ?? ""}
       placeholder={placeholder}
-      onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
+      onChange={(e) =>
+        onChange(e.target.value === "" ? null : Number(e.target.value))
+      }
       className="w-full rounded-lg border border-white/10 bg-ink px-3 py-2 text-sm text-paper transition-colors focus:border-accent"
     />
   );

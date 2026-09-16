@@ -1,3 +1,4 @@
+import { registrationLabel } from "@/lib/vehicle-categories";
 import type { Vehicle } from "@/types/vehicle";
 import { formatKm, formatNumber } from "@/lib/format";
 import { Reveal } from "@/components/ui/Reveal";
@@ -8,14 +9,22 @@ export function Specs({ vehicle }: { vehicle: Vehicle }) {
     { label: "Marca", value: vehicle.make },
     { label: "Modelo", value: vehicle.model },
     ...(vehicle.variant ? [{ label: "Versão", value: vehicle.variant }] : []),
-    { label: "Ano", value: String(vehicle.year) },
+    {
+      label: "Primeira matrícula",
+      value: registrationLabel(vehicle.year, vehicle.registrationMonth),
+    },
     { label: "Quilómetros", value: formatKm(vehicle.mileage) },
     { label: "Combustível", value: vehicle.fuel },
     { label: "Caixa", value: vehicle.transmission },
     { label: "Carroçaria", value: vehicle.body },
     { label: "Potência", value: `${vehicle.power} cv` },
     ...(vehicle.displacement > 0
-      ? [{ label: "Cilindrada", value: `${formatNumber(vehicle.displacement)} cm³` }]
+      ? [
+          {
+            label: "Cilindrada",
+            value: `${formatNumber(vehicle.displacement)} cm³`,
+          },
+        ]
       : []),
     { label: "Cor", value: vehicle.color },
     { label: "Portas", value: String(vehicle.doors) },

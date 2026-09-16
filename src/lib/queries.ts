@@ -1,13 +1,11 @@
 import "server-only";
+import { getShowroomContent } from "./showroom-queries";
 import { unstable_cache } from "next/cache";
 import { supabasePublic } from "@/lib/supabase/public";
 import { toVehicle } from "@/lib/mappers";
 import type { CarWithMedia } from "@/lib/supabase/database.types";
 import type { Vehicle } from "@/types/vehicle";
-import {
-  mergeHomeContent,
-  type HomeContent,
-} from "@/lib/home-content";
+import { mergeHomeContent, type HomeContent } from "@/lib/home-content";
 import {
   DEFAULT_BRANDING,
   DEFAULT_COMPANY,
@@ -24,6 +22,15 @@ import { publicMediaUrl } from "@/lib/storage";
  * devolvidas ao público — sem filtros manuais frágeis.
  */
 
+async function mapPublicCars(rows: CarWithMedia[]): Promise<Vehicle[]> {
+  const { locations } = await getShowroomContent();
+  return rows.map((row) => {
+    const v = toVehicle(row);
+    const p = locations.find((l) => l.id === v.pointOfSaleId);
+    return p ? { ...v, location: p.name } : v;
+  });
+}
+
 const CAR_SELECT = "*, car_media(*)";
 
 export async function getVehicles(): Promise<Vehicle[]> {
@@ -31,7 +38,7 @@ export async function getVehicles(): Promise<Vehicle[]> {
   const { data, error } = await supabase
     .from("cars")
     .select(CAR_SELECT)
-    .in("status", ["published","reserved"])
+    .in("status", ["published", "reserved"])
     .order("featured", { ascending: false })
     .order("published_at", { ascending: false, nullsFirst: false });
 
@@ -39,7 +46,7 @@ export async function getVehicles(): Promise<Vehicle[]> {
     console.error("getVehicles:", error.message);
     return [];
   }
-  return (data as unknown as CarWithMedia[]).map(toVehicle);
+  return mapPublicCars(data as unknown as CarWithMedia[]);
 }
 
 export async function getFeaturedVehicles(limit = 3): Promise<Vehicle[]> {
@@ -47,7 +54,7 @@ export async function getFeaturedVehicles(limit = 3): Promise<Vehicle[]> {
   const { data, error } = await supabase
     .from("cars")
     .select(CAR_SELECT)
-    .in("status", ["published","reserved"])
+    .in("status", ["published", "reserved"])
     .eq("featured", true)
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(limit);
@@ -56,7 +63,7 @@ export async function getFeaturedVehicles(limit = 3): Promise<Vehicle[]> {
     console.error("getFeaturedVehicles:", error.message);
     return [];
   }
-  return (data as unknown as CarWithMedia[]).map(toVehicle);
+  return mapPublicCars(data as unknown as CarWithMedia[]);
 }
 
 /** Viaturas publicadas mais recentes (para o carrossel da homepage). */
@@ -64,7 +71,7 @@ export async function getRecentVehicles(limit = 12): Promise<Vehicle[]> {
   const { data, error } = await supabasePublic
     .from("cars")
     .select(CAR_SELECT)
-    .in("status", ["published","reserved"])
+    .in("status", ["published", "reserved"])
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -73,7 +80,7 @@ export async function getRecentVehicles(limit = 12): Promise<Vehicle[]> {
     console.error("getRecentVehicles:", error.message);
     return [];
   }
-  return (data as unknown as CarWithMedia[]).map(toVehicle);
+  return mapPublicCars(data as unknown as CarWithMedia[]);
 }
 
 /**
@@ -95,7 +102,7 @@ export async function getSoldVehicles(limit?: number): Promise<Vehicle[]> {
     console.error("getSoldVehicles:", error.message);
     return [];
   }
-  return (data as unknown as CarWithMedia[]).map(toVehicle);
+  return mapPublicCars(data as unknown as CarWithMedia[]);
 }
 
 export async function getVehicleBySlug(
@@ -113,7 +120,9 @@ export async function getVehicleBySlug(
     console.error("getVehicleBySlug:", error.message);
     return undefined;
   }
-  return data ? toVehicle(data as unknown as CarWithMedia) : undefined;
+  return data
+    ? (await mapPublicCars([data as unknown as CarWithMedia]))[0]
+    : undefined;
 }
 
 /**
@@ -232,7 +241,7 @@ export async function getChannelVehicles(channel: string): Promise<Vehicle[]> {
     console.error("getChannelVehicles:", error.message);
     return [];
   }
-  return (data as unknown as CarWithMedia[]).map(toVehicle);
+  return mapPublicCars(data as unknown as CarWithMedia[]);
 }
 
 export async function getAllSlugs(): Promise<string[]> {
@@ -240,7 +249,7 @@ export async function getAllSlugs(): Promise<string[]> {
   const { data, error } = await supabase
     .from("cars")
     .select("slug")
-    .in("status", ["published","reserved"]);
+    .in("status", ["published", "reserved"]);
 
   if (error) {
     console.error("getAllSlugs:", error.message);

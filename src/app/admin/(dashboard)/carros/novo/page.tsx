@@ -1,9 +1,11 @@
+import { getShowroomContent } from "@/lib/showroom-queries";
 import Link from "next/link";
 import { CarForm } from "@/components/admin/CarForm";
 
 export const dynamic = "force-dynamic";
 
-export default function NewCarPage() {
+export default async function NewCarPage() {
+  const showroom = await getShowroomContent();
   return (
     <>
       <div className="mb-6">
@@ -19,7 +21,7 @@ export default function NewCarPage() {
           vídeo.
         </p>
       </div>
-      <CarForm />
+      <CarForm locations={showroom.locations} />
     </>
   );
 }

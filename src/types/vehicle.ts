@@ -23,7 +23,14 @@ export type BodyType =
   | "Carrinha"
   | "Citadino"
   | "Descapotável"
-  | "Monovolume";
+  | "Monovolume"
+  | "Scooter"
+  | "Naked"
+  | "Desportiva"
+  | "Trail"
+  | "Touring"
+  | "Chopper/Cruiser"
+  | "Enduro";
 
 export type VehicleStatus = "draft" | "published" | "reserved" | "sold";
 
@@ -58,6 +65,9 @@ export interface Vehicle {
   /** Nível de acabamento / versão, ex. "Competition", "S line". */
   variant?: string;
   year: number;
+  registrationMonth?: number | null;
+  vehicleType?: "car" | "motorcycle";
+  pointOfSaleId?: string | null;
   /** Preço em euros (inteiro, sem casas decimais). */
   price: number;
   mileage: number;
@@ -119,6 +129,11 @@ export interface VehicleFilters {
   maxPrice: number | null;
   minYear: number | null;
   maxMileage: number | null;
+  minMileage: number | null;
+  maxYear: number | null;
+  location: string | null;
+  vehicleType: "car" | "motorcycle" | null;
+  campaignOnly: boolean;
 }
 
 export type SortKey =

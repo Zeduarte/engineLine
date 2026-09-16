@@ -1,5 +1,20 @@
-import type { Activity, Financials, VehicleCost, PreparationTask, Reservation, AuditEntry, NotificationJob, AnalyticsSummary, StaffMember } from "../operations-types";
-type Table<Row, Required extends keyof Row = never> = { Row: Row; Insert: Partial<Row> & Pick<Row, Required>; Update: Partial<Row>; Relationships: [] };
+import type {
+  Activity,
+  Financials,
+  VehicleCost,
+  PreparationTask,
+  Reservation,
+  AuditEntry,
+  NotificationJob,
+  AnalyticsSummary,
+  StaffMember,
+} from "../operations-types";
+type Table<Row, Required extends keyof Row = never> = {
+  Row: Row;
+  Insert: Partial<Row> & Pick<Row, Required>;
+  Update: Partial<Row>;
+  Relationships: [];
+};
 /**
  * Tipos da base de dados.
  *
@@ -28,7 +43,14 @@ export type BodyType =
   | "Carrinha"
   | "Citadino"
   | "Descapotável"
-  | "Monovolume";
+  | "Monovolume"
+  | "Scooter"
+  | "Naked"
+  | "Desportiva"
+  | "Trail"
+  | "Touring"
+  | "Chopper/Cruiser"
+  | "Enduro";
 export type CarStatus = "draft" | "published" | "reserved" | "sold";
 export type MediaKind = "image" | "video";
 export type LeadKind =
@@ -51,7 +73,7 @@ export type LeadStatus =
 export type HighlightJson = {
   label: string;
   value: string;
-}
+};
 
 // ---- profiles --------------------------------------------------------------
 type ProfilesRow = {
@@ -62,21 +84,21 @@ type ProfilesRow = {
   allowed_sections: string[] | null;
   created_at: string;
   updated_at: string;
-}
+};
 type ProfilesInsert = {
   id: string;
   email?: string | null;
   full_name?: string | null;
   role?: UserRole;
   allowed_sections?: string[] | null;
-}
+};
 type ProfilesUpdate = {
   id?: string;
   email?: string | null;
   full_name?: string | null;
   role?: UserRole;
   allowed_sections?: string[] | null;
-}
+};
 
 // ---- cars ------------------------------------------------------------------
 type CarsRow = {
@@ -86,6 +108,9 @@ type CarsRow = {
   model: string;
   variant: string | null;
   year: number | null;
+  registration_month?: number | null;
+  vehicle_type?: "car" | "motorcycle";
+  point_of_sale_id?: string | null;
   license_plate: string | null;
   mileage: number;
   fuel: FuelType | null;
@@ -118,7 +143,7 @@ type CarsRow = {
   sold_at: string | null;
   created_at: string;
   updated_at: string;
-}
+};
 type CarsInsert = {
   id?: string;
   slug: string;
@@ -126,6 +151,9 @@ type CarsInsert = {
   model: string;
   variant?: string | null;
   year: number | null;
+  registration_month?: number | null;
+  vehicle_type?: "car" | "motorcycle";
+  point_of_sale_id?: string | null;
   license_plate?: string | null;
   mileage?: number;
   fuel: FuelType | null;
@@ -154,7 +182,7 @@ type CarsInsert = {
   last_inspection?: string | null;
   channels?: string[];
   created_by?: string | null;
-}
+};
 type CarsUpdate = Partial<CarsInsert>;
 
 // ---- car_media -------------------------------------------------------------
@@ -169,7 +197,7 @@ type CarMediaRowT = {
   width: number | null;
   height: number | null;
   created_at: string;
-}
+};
 type CarMediaInsert = {
   id?: string;
   car_id: string;
@@ -180,7 +208,7 @@ type CarMediaInsert = {
   is_cover?: boolean;
   width?: number | null;
   height?: number | null;
-}
+};
 type CarMediaUpdate = Partial<CarMediaInsert>;
 
 // ---- leads -----------------------------------------------------------------
@@ -204,7 +232,7 @@ type LeadsRow = {
   car_details: Record<string, unknown>;
   created_at: string;
   updated_at: string;
-}
+};
 type LeadsInsert = {
   assigned_to?: string | null;
   next_action?: string | null;
@@ -223,7 +251,7 @@ type LeadsInsert = {
   preferred_date?: string | null;
   notes?: string | null;
   car_details?: Record<string, unknown>;
-}
+};
 type LeadsUpdate = Partial<LeadsInsert>;
 
 // ---- site_content ----------------------------------------------------------
@@ -403,7 +431,10 @@ export type Database = {
     Tables: {
       lead_activities: Table<Activity, "lead_id" | "kind" | "body">;
       vehicle_financials: Table<Financials, "car_id">;
-      vehicle_costs: Table<VehicleCost, "car_id" | "category" | "description" | "amount">;
+      vehicle_costs: Table<
+        VehicleCost,
+        "car_id" | "category" | "description" | "amount"
+      >;
       preparation_tasks: Table<PreparationTask, "car_id" | "title">;
       reservations: Table<Reservation, "car_id" | "lead_id" | "expires_at">;
       audit_log: Table<AuditEntry>;
@@ -477,18 +508,45 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
-      claim_notification_jobs: {Args: Record<string, never>; Returns: NotificationJob[]};
-      prune_submission_limits: {Args: Record<string, never>; Returns: undefined};
-      has_section: { Args: {section: string}; Returns: boolean };
-      consume_submission: { Args: {key_value: string; max_hits: number; window_seconds: number}; Returns: boolean };
-      create_workshop_intake: { Args: {vehicle_name: string; plate: string}; Returns: string };
-      reserve_vehicle: { Args: {lead: string; expiry: string; deposit: number}; Returns: string };
-      release_reservation: { Args: {reservation_id: string}; Returns: undefined };
-      confirm_reservation_deposit: { Args: {reservation_id: string}; Returns: undefined };
+      claim_notification_jobs: {
+        Args: Record<string, never>;
+        Returns: NotificationJob[];
+      };
+      prune_submission_limits: {
+        Args: Record<string, never>;
+        Returns: undefined;
+      };
+      has_section: { Args: { section: string }; Returns: boolean };
+      consume_submission: {
+        Args: { key_value: string; max_hits: number; window_seconds: number };
+        Returns: boolean;
+      };
+      create_workshop_intake: {
+        Args: { vehicle_name: string; plate: string };
+        Returns: string;
+      };
+      reserve_vehicle: {
+        Args: { lead: string; expiry: string; deposit: number };
+        Returns: string;
+      };
+      release_reservation: {
+        Args: { reservation_id: string };
+        Returns: undefined;
+      };
+      confirm_reservation_deposit: {
+        Args: { reservation_id: string };
+        Returns: undefined;
+      };
       expire_reservations: { Args: Record<string, never>; Returns: number };
-      close_vehicle_sale: { Args: {lead: string; amount: number; sale_date: string}; Returns: undefined };
+      close_vehicle_sale: {
+        Args: { lead: string; amount: number; sale_date: string };
+        Returns: undefined;
+      };
       staff_directory: { Args: Record<string, never>; Returns: StaffMember[] };
-      analytics_summary: { Args: Record<string, never>; Returns: AnalyticsSummary };
+      analytics_summary: {
+        Args: Record<string, never>;
+        Returns: AnalyticsSummary;
+      };
       is_staff: { Args: Record<string, never>; Returns: boolean };
       is_admin: { Args: Record<string, never>; Returns: boolean };
     };
@@ -504,7 +562,7 @@ export type Database = {
     };
     CompositeTypes: Record<string, never>;
   };
-}
+};
 
 export type CarRow = CarsRow;
 export type CarInsert = CarsInsert;

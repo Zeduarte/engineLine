@@ -1,3 +1,4 @@
+import { isCampaign } from "./vehicle-categories";
 import type { Vehicle, VehicleFilters, SortKey } from "@/types/vehicle";
 
 /**
@@ -29,6 +30,11 @@ const EMPTY_FILTERS: VehicleFilters = {
   maxPrice: null,
   minYear: null,
   maxMileage: null,
+  minMileage: null,
+  maxYear: null,
+  location: null,
+  vehicleType: null,
+  campaignOnly: false,
 };
 
 export function emptyFilters(): VehicleFilters {
@@ -53,6 +59,22 @@ export function applyFilters(
     if (filters.transmission && v.transmission !== filters.transmission)
       return false;
     if (filters.body && v.body !== filters.body) return false;
+    if (
+      filters.location &&
+      (v.pointOfSaleId || v.location) !== filters.location
+    )
+      return false;
+    if (filters.vehicleType && (v.vehicleType ?? "car") !== filters.vehicleType)
+      return false;
+    if (filters.campaignOnly && !isCampaign(v)) return false;
+    if (filters.maxYear != null && v.year > filters.maxYear) return false;
+    if (filters.minMileage != null && v.mileage < filters.minMileage)
+      return false;
+    if (
+      v.priceOnRequest &&
+      (filters.minPrice != null || filters.maxPrice != null)
+    )
+      return false;
     if (filters.minPrice != null && v.price < filters.minPrice) return false;
     if (filters.maxPrice != null && v.price > filters.maxPrice) return false;
     if (filters.minYear != null && v.year < filters.minYear) return false;
@@ -63,7 +85,8 @@ export function applyFilters(
 }
 
 const SORTERS: Record<SortKey, (a: Vehicle, b: Vehicle) => number> = {
-  relevance: (a, b) => Number(b.featured) - Number(a.featured) || b.year - a.year,
+  relevance: (a, b) =>
+    Number(b.featured) - Number(a.featured) || b.year - a.year,
   "price-asc": (a, b) => a.price - b.price,
   "price-desc": (a, b) => b.price - a.price,
   "year-desc": (a, b) => b.year - a.year,

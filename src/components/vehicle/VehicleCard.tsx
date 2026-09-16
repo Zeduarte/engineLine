@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { VehiclePrice } from "@/components/vehicle/VehiclePrice";
+import { registrationLabel } from "@/lib/vehicle-categories";
 import type { Vehicle } from "@/types/vehicle";
 import { formatKm, priceLabel } from "@/lib/format";
 import { CompareButton } from "@/components/inventory/CompareButton";
@@ -54,7 +56,8 @@ function vehicleBadges(vehicle: Vehicle): { label: string; tone: string }[] {
   if (vehicle.createdAt) {
     const days =
       (Date.now() - new Date(vehicle.createdAt).getTime()) / 86_400_000;
-    if (days <= 14) badges.push({ label: "Novidade", tone: "bg-accent text-ink" });
+    if (days <= 14)
+      badges.push({ label: "Novidade", tone: "bg-accent text-ink" });
   }
   if (vehicle.mileage > 0 && vehicle.mileage < 30_000) {
     badges.push({ label: "Poucos km", tone: "bg-emerald-500 text-ink" });
@@ -194,7 +197,7 @@ export function VehicleCard({
               {vehicle.make} {vehicle.model}
             </h3>
             <p className="whitespace-nowrap text-lg font-semibold text-accent">
-              {priceLabel(vehicle.price, vehicle.priceOnRequest)}
+              {<VehiclePrice vehicle={vehicle} />}
             </p>
           </div>
 
@@ -206,12 +209,21 @@ export function VehicleCard({
 
           {/* Chips de especificações (ano, km, combustível, caixa). */}
           <div className="mt-3 flex flex-wrap gap-2">
-            <SpecChip icon={<CalIcon />}>{vehicle.year}</SpecChip>
-            <SpecChip icon={<GaugeIcon />}>{formatKm(vehicle.mileage)}</SpecChip>
+            <SpecChip icon={<CalIcon />}>
+              {registrationLabel(vehicle.year, vehicle.registrationMonth)}
+            </SpecChip>
+            <SpecChip icon={<GaugeIcon />}>
+              {formatKm(vehicle.mileage)}
+            </SpecChip>
             <SpecChip icon={<FuelIcon />}>{vehicle.fuel}</SpecChip>
             <SpecChip icon={<GearIcon />}>{vehicle.transmission}</SpecChip>
           </div>
 
+          {vehicle.location && (
+            <p className="mt-3 text-xs text-paper/60">
+              Ponto de venda: {vehicle.location}
+            </p>
+          )}
           {vehicle.warrantyMonths ? (
             <p className="mt-3 text-sm text-paper/60">
               Garantia:{" "}

@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { PrivacyNotice } from "@/components/forms/PrivacyNotice";
 import { submitLead, type LeadActionState } from "@/lib/actions/leads";
 
 /**
@@ -34,9 +35,10 @@ export function TestDriveForm({
   }, [state.ok]);
 
   function validate(e: React.FormEvent<HTMLFormElement>) {
-    const data = Object.fromEntries(
-      new FormData(e.currentTarget),
-    ) as Record<string, string>;
+    const data = Object.fromEntries(new FormData(e.currentTarget)) as Record<
+      string,
+      string
+    >;
     const next: Record<string, string> = {};
     if (!data.name?.trim()) next.name = "Indique o seu nome.";
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.email ?? ""))
@@ -69,13 +71,14 @@ export function TestDriveForm({
             ref={formRef}
             action={formAction}
             onSubmit={validate}
-            noValidate
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="mt-6 grid gap-4"
           >
             <input type="hidden" name="kind" value="test_drive" />
-            {vehicleId && <input type="hidden" name="car_id" value={vehicleId} />}
+            {vehicleId && (
+              <input type="hidden" name="car_id" value={vehicleId} />
+            )}
             <input type="hidden" name="car_label" value={vehicleName} />
 
             <FormField id="name" label="Nome" error={errors.name}>
@@ -133,7 +136,12 @@ export function TestDriveForm({
             </FormField>
 
             <FormField id="message" label="Mensagem (opcional)">
-              <textarea id="message" name="message" rows={3} className="input" />
+              <textarea
+                id="message"
+                name="message"
+                rows={3}
+                className="input"
+              />
             </FormField>
 
             {state.error && (
@@ -142,6 +150,7 @@ export function TestDriveForm({
               </p>
             )}
 
+            <PrivacyNotice />
             <button
               type="submit"
               disabled={pending}
@@ -201,12 +210,19 @@ function FormField({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-paper">
+      <label
+        htmlFor={id}
+        className="mb-1.5 block text-sm font-medium text-paper"
+      >
         {label}
       </label>
       {children}
       {error && (
-        <p id={`${id}-error`} className="mt-1 text-xs text-red-400" role="alert">
+        <p
+          id={`${id}-error`}
+          className="mt-1 text-xs text-red-400"
+          role="alert"
+        >
           {error}
         </p>
       )}

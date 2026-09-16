@@ -12,6 +12,7 @@ const NAV = [
   { href: "/", label: "Início" },
   { href: "/inventario", label: "Stock" },
   { href: "/quiz", label: "Carro ideal" },
+  { href: "/servicos", label: "Serviços" },
   { href: "/sobre", label: "Sobre" },
   { href: "/contactos", label: "Contactos" },
 ];
@@ -66,18 +67,18 @@ export function Header({
             className="flex items-center gap-2 text-lg font-bold tracking-tight text-paper"
             aria-label={`${branding.companyName} — página inicial`}
           >
-          {branding.logoUrl ? (
-            <Image
-              src={branding.logoUrl}
-              alt={branding.companyName}
-              width={160}
-              height={40}
-              className="h-8 w-auto object-contain"
-              priority
-            />
-          ) : (
-            <span>{branding.companyName}</span>
-          )}
+            {branding.logoUrl ? (
+              <Image
+                src={branding.logoUrl}
+                alt={branding.companyName}
+                width={160}
+                height={40}
+                className="h-8 w-auto object-contain"
+                priority
+              />
+            ) : (
+              <span>{branding.companyName}</span>
+            )}
           </Link>
         </div>
 

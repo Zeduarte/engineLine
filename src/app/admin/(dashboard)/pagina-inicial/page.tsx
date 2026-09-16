@@ -1,3 +1,5 @@
+import { ShowroomForm } from "@/components/admin/ShowroomForm";
+import { getShowroomContent } from "@/lib/showroom-queries";
 import Link from "next/link";
 import { getHomeContent } from "@/lib/queries";
 import { requireSection } from "@/lib/guard";
@@ -25,6 +27,10 @@ export default async function HomeContentPage() {
       </div>
 
       <HomeContentForm initial={content} />
+      <ShowroomForm
+        initial={await getShowroomContent()}
+        googleConfigured={Boolean(process.env.GOOGLE_PLACES_API_KEY)}
+      />
     </>
   );
 }

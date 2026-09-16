@@ -49,15 +49,17 @@ async function uniqueSlug(
   }
 }
 
-function toRow(values: ReturnType<typeof carFormSchema.parse>): Omit<
-  CarInsert,
-  "slug"
-> {
+function toRow(
+  values: ReturnType<typeof carFormSchema.parse>,
+): Omit<CarInsert, "slug"> {
   return {
     make: values.make,
     model: values.model,
     variant: values.variant || null,
     year: values.year,
+    registration_month: values.registration_month ?? null,
+    vehicle_type: values.vehicle_type,
+    point_of_sale_id: values.point_of_sale_id || null,
     license_plate: values.license_plate || null,
     mileage: values.mileage,
     fuel: values.fuel,
@@ -91,7 +93,11 @@ export async function createCar(input: unknown): Promise<SaveResult> {
   await requireSection("carros");
   const parsed = carFormSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: "Dados inválidos.", fieldErrors: flatten(parsed) };
+    return {
+      ok: false,
+      error: "Dados inválidos.",
+      fieldErrors: flatten(parsed),
+    };
   }
 
   const supabase = await createClient();
@@ -128,7 +134,11 @@ export async function updateCar(
   await requireSection("carros");
   const parsed = carFormSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: "Dados inválidos.", fieldErrors: flatten(parsed) };
+    return {
+      ok: false,
+      error: "Dados inválidos.",
+      fieldErrors: flatten(parsed),
+    };
   }
 
   const supabase = await createClient();
@@ -193,7 +203,11 @@ export async function duplicateCar(id: string): Promise<SaveResult> {
     .single();
   if (readErr || !src) return { ok: false, error: "Viatura não encontrada." };
 
-  const base = vehicleSlug(src.make, `${src.model} copia`, src.year ?? new Date().getFullYear());
+  const base = vehicleSlug(
+    src.make,
+    `${src.model} copia`,
+    src.year ?? new Date().getFullYear(),
+  );
   const slug = await uniqueSlug(supabase, base);
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -240,7 +254,9 @@ export async function deleteCar(id: string): Promise<SaveResult> {
   const { error } = await supabase.from("cars").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
   if (paths.length) {
-    const {error: cleanupError} = await supabase.storage.from(MEDIA_BUCKET).remove(paths);
+    const { error: cleanupError } = await supabase.storage
+      .from(MEDIA_BUCKET)
+      .remove(paths);
     if (cleanupError) console.error("Car media cleanup:", cleanupError.message);
   }
 
@@ -280,7 +296,9 @@ export async function bulkDelete(ids: string[]): Promise<SaveResult> {
   const { error } = await supabase.from("cars").delete().in("id", ids);
   if (error) return { ok: false, error: error.message };
   if (paths.length) {
-    const {error: cleanupError} = await supabase.storage.from(MEDIA_BUCKET).remove(paths);
+    const { error: cleanupError } = await supabase.storage
+      .from(MEDIA_BUCKET)
+      .remove(paths);
     if (cleanupError) console.error("Car media cleanup:", cleanupError.message);
   }
   revalidatePublic();

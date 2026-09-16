@@ -1,5 +1,6 @@
 "use client";
 
+import { PrivacyNotice } from "@/components/forms/PrivacyNotice";
 import { useEffect, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
@@ -31,10 +32,18 @@ export function LeaveTestimonial() {
     };
   }, [open]);
 
-  function submit(e: React.FormEvent) {
+  function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const privacyAcknowledged =
+      new FormData(e.currentTarget).get("privacy_acknowledged") === "yes";
     startTransition(async () => {
-      const res = await submitPublicTestimonial({ name, rating, role, body });
+      const res = await submitPublicTestimonial({
+        name,
+        rating,
+        role,
+        body,
+        privacyAcknowledged,
+      });
       if (res.ok) {
         setDone(true);
         setName("");
@@ -104,7 +113,8 @@ export function LeaveTestimonial() {
                 <div className="rounded-2xl border border-accent/30 bg-accent/10 p-6 text-center">
                   <p className="text-lg font-semibold text-paper">Obrigado!</p>
                   <p className="mt-1 text-sm text-paper/60">
-                    O seu testemunho foi enviado e será publicado após aprovação.
+                    O seu testemunho foi enviado e será publicado após
+                    aprovação.
                   </p>
                   <button
                     type="button"
@@ -146,7 +156,11 @@ export function LeaveTestimonial() {
                     <span className="mb-1.5 block text-sm font-medium text-paper">
                       Classificação
                     </span>
-                    <div className="flex gap-1" role="radiogroup" aria-label="Classificação">
+                    <div
+                      className="flex gap-1"
+                      role="radiogroup"
+                      aria-label="Classificação"
+                    >
                       {[1, 2, 3, 4, 5].map((n) => (
                         <button
                           key={n}
@@ -181,6 +195,7 @@ export function LeaveTestimonial() {
                     />
                   </div>
 
+                  <PrivacyNotice />
                   <button
                     type="submit"
                     disabled={pending}

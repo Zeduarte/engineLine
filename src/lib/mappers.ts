@@ -17,7 +17,8 @@ const PLACEHOLDER: VehicleImage = {
 /** Ordena e separa media: imagens (capa primeiro) vs. primeiro vídeo. */
 function splitMedia(media: CarMediaRow[]) {
   const sorted = [...media].sort(
-    (a, b) => Number(b.is_cover) - Number(a.is_cover) || a.position - b.position,
+    (a, b) =>
+      Number(b.is_cover) - Number(a.is_cover) || a.position - b.position,
   );
   const images = sorted
     .filter((m) => m.kind === "image")
@@ -54,7 +55,8 @@ function deriveHighlights(car: CarRow): VehicleSpec[] {
     { label: "Combustível", value: car.fuel ?? "Por confirmar" },
     { label: "Caixa", value: car.transmission ?? "Por confirmar" },
   ];
-  if (car.power > 0) specs.splice(2, 0, { label: "Potência", value: `${car.power} cv` });
+  if (car.power > 0)
+    specs.splice(2, 0, { label: "Potência", value: `${car.power} cv` });
   return specs.slice(0, 5);
 }
 
@@ -84,6 +86,9 @@ export function toVehicle(car: CarWithMedia): Vehicle {
     model: car.model,
     variant: car.variant ?? undefined,
     year: car.year!,
+    registrationMonth: car.registration_month,
+    vehicleType: car.vehicle_type ?? "car",
+    pointOfSaleId: car.point_of_sale_id,
     price: car.price ?? 0,
     priceOnRequest: car.price_on_request,
     mileage: car.mileage,

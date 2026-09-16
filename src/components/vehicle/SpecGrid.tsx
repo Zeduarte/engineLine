@@ -1,3 +1,4 @@
+import { registrationLabel } from "@/lib/vehicle-categories";
 import type { Vehicle } from "@/types/vehicle";
 import { formatKm, formatNumber } from "@/lib/format";
 
@@ -8,8 +9,16 @@ import { formatKm, formatNumber } from "@/lib/format";
  */
 export function SpecGrid({ vehicle }: { vehicle: Vehicle }) {
   const items: { icon: React.ReactNode; value: string; label: string }[] = [
-    { icon: <CalendarIcon />, value: String(vehicle.year), label: "Ano" },
-    { icon: <GaugeIcon />, value: formatKm(vehicle.mileage), label: "Quilómetros" },
+    {
+      icon: <CalendarIcon />,
+      value: registrationLabel(vehicle.year, vehicle.registrationMonth),
+      label: "Primeira matrícula",
+    },
+    {
+      icon: <GaugeIcon />,
+      value: formatKm(vehicle.mileage),
+      label: "Quilómetros",
+    },
     { icon: <FuelIcon />, value: vehicle.fuel, label: "Combustível" },
     { icon: <GearIcon />, value: vehicle.transmission, label: "Transmissão" },
   ];
@@ -20,7 +29,11 @@ export function SpecGrid({ vehicle }: { vehicle: Vehicle }) {
       label: "Cilindrada",
     });
   if (vehicle.power > 0)
-    items.push({ icon: <PowerIcon />, value: `${vehicle.power} cv`, label: "Potência" });
+    items.push({
+      icon: <PowerIcon />,
+      value: `${vehicle.power} cv`,
+      label: "Potência",
+    });
   if (vehicle.color)
     items.push({ icon: <PaletteIcon />, value: vehicle.color, label: "Cor" });
   items.push({

@@ -127,4 +127,39 @@ await test('cancelled and expired reservations release availability',async()=>{
 await test('sale cannot be attributed to a different contact through a direct update',async()=>asUser(seller,async()=>{
  await assert.rejects(db.query("update leads set status='won' where id=$1",[lead2]),/Conclua a venda/);
 }));
+await test("showroom locations cannot leave dangling vehicle references", async () => {
+  await db.exec(
+    `update site_content set content='{"locations":[{"id":"porto"}]}' where key='showroom'`,
+  );
+  await db.query(
+    "update cars set point_of_sale_id='porto',registration_month=2 where id=$1",
+    [car2],
+  );
+  await assert.rejects(
+    db.query("update cars set point_of_sale_id='missing' where id=$1", [car2]),
+    /inexistente/,
+  );
+  await assert.rejects(
+    db.exec("update site_content set content='{}' where key='showroom'"),
+    /Reatribua/,
+  );
+  await assert.rejects(
+    db.exec("delete from site_content where key='showroom'"),
+    /Reatribua/,
+  );
+  await assert.rejects(
+    db.query("update cars set registration_month=13 where id=$1", [car2]),
+    /check/,
+  );
+  await assert.rejects(
+    db.query("update cars set vehicle_type='motorcycle' where id=$1", [car2]),
+    /check/,
+  );
+  await db.query(
+    "update cars set vehicle_type='motorcycle',body='Scooter',doors=0 where id=$1",
+    [car2],
+  );
+  await db.query("update cars set point_of_sale_id=null where id=$1", [car2]);
+  await db.exec("update site_content set content='{}' where key='showroom'");
+});
 await db.close();
