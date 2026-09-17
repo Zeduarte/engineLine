@@ -46,7 +46,11 @@ export function VehicleActions({
   };
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-ink-soft p-6 md:p-8">
+    // `data-chat-target` — o assistente virtual rola até aqui quando encaminha.
+    <section
+      data-chat-target="interessado"
+      className="rounded-3xl border border-white/10 bg-ink-soft p-6 md:p-8"
+    >
       <AnimatePresence mode="wait">
         {mode === null ? (
           <motion.div

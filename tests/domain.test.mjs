@@ -23,3 +23,18 @@ await test('pagination reads every row and propagates failures',async()=>{
  const rows=Array.from({length:1203},(_,i)=>i);assert.equal((await allRows(async(a,b)=>({data:rows.slice(a,b+1),error:null}))).length,1203);
  await assert.rejects(allRows(async()=>({data:null,error:{message:'offline'}})),/offline/);
 });
+
+const {MarkerBuffer,safeEmitLength}=load('src/lib/chat/stream-marker.ts');
+await test('chat streaming never leaks the action marker to the visitor',()=>{
+ // Entregue aos pedaços, como vem da API: o marcador nunca pode ser mostrado.
+ const buf=new MarkerBuffer();let shown='';
+ for(const d of ['Tem gara','ntia de 18 meses.','\n\n[[','ACOES: inte','ressado, cont','actos]]']) shown+=buf.push(d);
+ assert.equal(shown,'Tem garantia de 18 meses.');
+ assert.ok(buf.raw.includes('[[ACOES:'));
+ // Parênteses retos normais no texto continuam a passar.
+ const plain=new MarkerBuffer();
+ assert.equal(plain.push('Ver [aqui] o stock.')+plain.push(' Obrigado.'),'Ver [aqui] o stock. Obrigado.');
+ // Um "[" final fica retido até se saber que não é um marcador.
+ assert.equal(safeEmitLength('Preço [['),5);
+ assert.equal(safeEmitLength('Preço 10.000 €'),14);
+});

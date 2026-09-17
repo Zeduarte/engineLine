@@ -120,8 +120,10 @@ export function SiteRuntime({
   if (!showBanner) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[60] px-4 pb-4">
-      <div className="mx-auto flex max-w-3xl flex-col gap-4 rounded-2xl border border-white/10 bg-ink-soft/95 p-5 shadow-2xl backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+    // A faixa ocupa a largura toda, mas só o cartão recebe cliques — sem
+    // `pointer-events-none` tapava o botão flutuante no canto inferior direito.
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] px-4 pb-4">
+      <div className="pointer-events-auto mx-auto flex max-w-3xl flex-col gap-4 rounded-2xl border border-white/10 bg-ink-soft/95 p-5 shadow-2xl backdrop-blur sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-paper/70">
           Usamos cookies para analisar o tráfego e melhorar a sua experiência.
           Pode aceitar ou recusar os cookies de análise.

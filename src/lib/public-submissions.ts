@@ -3,9 +3,22 @@ import { headers } from "next/headers";
 import { createHmac } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+type SubmissionKind = "lead" | "testimonial" | "view" | "reviews" | "chat";
+
+/** Tetos por janela de 10 minutos: [global, por IP, por identidade]. */
+const QUOTAS: Record<SubmissionKind, [number, number, number]> = {
+  lead: [100, 10, 5],
+  testimonial: [100, 10, 5],
+  reviews: [100, 10, 5],
+  view: [3000, 120, 30],
+  // O chat custa dinheiro por mensagem — teto mais alto que um formulário,
+  // mas bem abaixo do que seria preciso para inflacionar a fatura.
+  chat: [300, 30, 30],
+};
+
 /** Only the server can write public submissions; RLS denies direct anonymous inserts. */
 export async function publicSubmissionClient(
-  kind: "lead" | "testimonial" | "view" | "reviews",
+  kind: SubmissionKind,
   identity = "",
 ) {
   const db = createAdminClient();
@@ -22,16 +35,13 @@ export async function publicSubmissionClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!;
   const hash = (value: string) =>
     createHmac("sha256", secret).update(value).digest("hex");
-  const keys = [{ value: `${kind}:global`, max: kind === "view" ? 3000 : 100 }];
-  if (ip)
-    keys.push({
-      value: `${kind}:ip:${hash(ip)}`,
-      max: kind === "view" ? 120 : 10,
-    });
+  const [globalMax, ipMax, identityMax] = QUOTAS[kind];
+  const keys = [{ value: `${kind}:global`, max: globalMax }];
+  if (ip) keys.push({ value: `${kind}:ip:${hash(ip)}`, max: ipMax });
   if (identity)
     keys.push({
       value: `${kind}:identity:${hash(identity.toLowerCase())}`,
-      max: kind === "view" ? 30 : 5,
+      max: identityMax,
     });
   for (const key of keys) {
     const { data, error } = await db.rpc("consume_submission", {

@@ -5,7 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { GrainOverlay } from "@/components/ui/GrainOverlay";
-import { ContactFab } from "@/components/layout/ContactFab";
+import { ChatLauncher } from "@/components/chat/ChatLauncher";
 import { CompareProvider } from "@/components/inventory/CompareContext";
 import { CompareBar } from "@/components/inventory/CompareBar";
 import { DealerJsonLd } from "@/components/seo/DealerJsonLd";
@@ -40,10 +40,13 @@ export default async function PublicLayout({
         <Header branding={branding} />
         <main id="conteudo" className="pt-16">{children}</main>
         <Footer branding={branding} />
-        <ContactFab
+        {/* Assistente virtual + canais de contacto no mesmo botão flutuante.
+            Sem chave da Anthropic configurada, fica só o contacto humano. */}
+        <ChatLauncher
           whatsapp={branding.company.whatsapp}
           messenger={branding.company.messenger}
           name={branding.companyName}
+          chatEnabled={!!process.env.ANTHROPIC_API_KEY}
         />
         <CompareBar />
         <GrainOverlay />
