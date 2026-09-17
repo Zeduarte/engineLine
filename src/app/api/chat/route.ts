@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { publicSubmissionClient } from "@/lib/public-submissions";
 import { getBranding, getVehicleBySlug } from "@/lib/queries";
+import { getPublicVehicleType } from "@/lib/vehicle-context";
 import { CHAT_RULES, buildContextBlock } from "@/lib/chat/prompt";
 import { SEARCH_TOOL, SEARCH_TOOL_NAME, SearchInput, runSearch } from "@/lib/chat/tools";
 import { resolveActions, splitActionMarker } from "@/lib/chat/actions";
@@ -76,6 +77,7 @@ export async function POST(request: Request) {
   }
 
   const branding = await getBranding();
+  const world = await getPublicVehicleType();
   const slug = vehicleSlug(pathname);
   const vehicle = slug ? await getVehicleBySlug(slug) : undefined;
 
@@ -98,6 +100,7 @@ export async function POST(request: Request) {
         branding,
         vehicle,
         pageLabel: pageLabel(pathname, slug, !!vehicle),
+        world,
       }),
     },
   ];
@@ -228,6 +231,7 @@ const PAGE_LABELS: Record<string, string> = {
   "/vender": "Página de venda/retoma: o visitante quer vender o carro dele.",
   "/contactos": "Página de contactos, com morada e mapa.",
   "/sobre": "Página sobre o stand.",
+  "/servicos": "Página de serviços do stand.",
   "/favoritos": "Viaturas que o visitante guardou como favoritas.",
   "/comparar": "Comparação lado a lado de viaturas.",
   "/quiz": "Questionário que sugere uma viatura ao visitante.",

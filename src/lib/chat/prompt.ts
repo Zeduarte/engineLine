@@ -19,6 +19,8 @@ export interface ChatContext {
   vehicle?: Vehicle;
   /** Descrição curta da página, para o modelo saber onde o visitante está. */
   pageLabel: string;
+  /** Mundo escolhido pelo visitante — a pesquisa só devolve deste tipo. */
+  world: "car" | "motorcycle";
 }
 
 /**
@@ -68,7 +70,7 @@ Tens a ferramenta \`pesquisar_viaturas\` para consultar o stock disponível. Usa
 
 /** Parte variável: empresa + página + viatura aberta. */
 export function buildContextBlock(ctx: ChatContext): string {
-  const { branding, vehicle, pageLabel } = ctx;
+  const { branding, vehicle, pageLabel, world } = ctx;
   const c = branding.company;
 
   const lines: string[] = [
@@ -89,6 +91,17 @@ export function buildContextBlock(ctx: ChatContext): string {
   } else {
     lines.push("Não há reservas online — as reservas fazem-se com a equipa.");
   }
+
+  // O site tem dois mundos (carros e motas) e o visitante já escolheu um: a
+  // pesquisa só devolve viaturas desse tipo, e o assistente tem de o saber
+  // para não afirmar que o stand não tem o que está no outro mundo.
+  lines.push(
+    "",
+    "## Secção do site",
+    world === "motorcycle"
+      ? "O visitante está na secção de MOTAS. A pesquisa só devolve motas. Se perguntar por carros, diga que o site tem uma secção de carros e encaminhe-o para lá."
+      : "O visitante está na secção de CARROS. A pesquisa só devolve carros. Se perguntar por motas, diga que o site tem uma secção de motas e encaminhe-o para lá.",
+  );
 
   lines.push("", `## Página atual`, pageLabel);
 
