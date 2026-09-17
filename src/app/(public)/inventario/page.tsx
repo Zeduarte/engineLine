@@ -1,4 +1,3 @@
-import { InventoryTypeNav } from "@/components/inventory/InventoryTypeNav";
 import { redirect } from "next/navigation";
 import { getPublicVehicleType, getVehicleSelection } from "@/lib/vehicle-context";
 import { inventoryVehicleType } from "@/lib/vehicle-categories";
@@ -53,7 +52,6 @@ export default async function InventoryPage({
         </p>
       </header>
 
-      <InventoryTypeNav selected={vehicleType} />
       <InventoryClient
         key={JSON.stringify(initialFilters)}
         vehicles={vehicles}

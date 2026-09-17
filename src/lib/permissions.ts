@@ -11,6 +11,8 @@
  *  - Um gestor só pode conceder separadores a que ele próprio tem acesso.
  */
 
+import { VEHICLE_TYPES, type VehicleType } from "@/lib/vehicle-categories";
+
 export type Role = "admin" | "chefe" | "vendedor" | "mecanico";
 
 export type Section =
@@ -102,6 +104,32 @@ export function canAccess(
   section: Section,
 ): boolean {
   return effectiveSections(role, allowed).includes(section);
+}
+
+/**
+ * Tipos de viatura a que um utilizador acede no backoffice.
+ *
+ * `null`/vazio em `allowed` = sem restrição. O admin acede sempre aos dois —
+ * é ele que atribui esta permissão, não faria sentido poder fechar-se fora.
+ */
+export function effectiveVehicleTypes(
+  role: string,
+  allowed?: string[] | null,
+): VehicleType[] {
+  if (role === "admin") return [...VEHICLE_TYPES];
+  const picked = (allowed ?? []).filter((t): t is VehicleType =>
+    (VEHICLE_TYPES as readonly string[]).includes(t),
+  );
+  return picked.length ? picked : [...VEHICLE_TYPES];
+}
+
+/** O utilizador pode trabalhar com este tipo de viatura? */
+export function canAccessVehicleType(
+  role: string,
+  allowed: string[] | null | undefined,
+  type: VehicleType,
+): boolean {
+  return effectiveVehicleTypes(role, allowed).includes(type);
 }
 
 /** `manager` pode gerir (editar) `target`? (rank estritamente superior). */

@@ -82,6 +82,8 @@ type ProfilesRow = {
   full_name: string | null;
   role: UserRole;
   allowed_sections: string[] | null;
+  /** Tipos de viatura acessíveis no backoffice. NULL = ambos. */
+  allowed_vehicle_types: string[] | null;
   created_at: string;
   updated_at: string;
 };
@@ -91,6 +93,7 @@ type ProfilesInsert = {
   full_name?: string | null;
   role?: UserRole;
   allowed_sections?: string[] | null;
+  allowed_vehicle_types?: string[] | null;
 };
 type ProfilesUpdate = {
   id?: string;
@@ -98,6 +101,7 @@ type ProfilesUpdate = {
   full_name?: string | null;
   role?: UserRole;
   allowed_sections?: string[] | null;
+  allowed_vehicle_types?: string[] | null;
 };
 
 // ---- cars ------------------------------------------------------------------

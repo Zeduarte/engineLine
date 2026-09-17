@@ -13,12 +13,14 @@ import {
   assignableRoles,
   canManage,
   effectiveSections,
+  effectiveVehicleTypes,
   ROLE_LABEL,
   SECTIONS,
   ALWAYS,
   type Role,
   type Section,
 } from "@/lib/permissions";
+import type { VehicleType } from "@/lib/vehicle-categories";
 
 export interface UserItem {
   id: string;
@@ -26,7 +28,23 @@ export interface UserItem {
   full_name: string | null;
   role: UserRole;
   allowed_sections: string[] | null;
+  allowed_vehicle_types: string[] | null;
   created_at: string;
+}
+
+/**
+ * Acesso por tipo de viatura. Guardado como lista, mas apresentado como três
+ * escolhas — é assim que o cliente pensa no problema.
+ */
+const TYPE_CHOICES: { value: string; label: string; types: VehicleType[] }[] = [
+  { value: "both", label: "Carros e motas", types: ["car", "motorcycle"] },
+  { value: "car", label: "Só carros", types: ["car"] },
+  { value: "motorcycle", label: "Só motas", types: ["motorcycle"] },
+];
+
+function choiceFor(types: VehicleType[]): string {
+  if (types.length > 1) return "both";
+  return types[0] ?? "both";
 }
 
 const SECTION_LABEL: Record<Section, string> = SECTIONS.reduce(
@@ -155,9 +173,9 @@ export function UsersManager({
             managerSections={managerSections}
             canDelete={canManageAuth}
             pending={pending}
-            onSave={(r, secs) =>
+            onSave={(r, secs, types) =>
               startTransition(async () => {
-                const res = await updateUserAccess(u.id, r, secs);
+                const res = await updateUserAccess(u.id, r, secs, types);
                 if (res.ok) toast.success("Permissões atualizadas.");
                 else toast.error(res.error ?? "Erro.");
               })
@@ -207,7 +225,7 @@ function UserRow({
   managerSections: Section[];
   canDelete: boolean;
   pending: boolean;
-  onSave: (role: UserRole, sections: string[]) => void;
+  onSave: (role: UserRole, sections: string[], vehicleTypes: string[]) => void;
   onDelete: () => void;
   onResetPassword: (password: string, done: () => void) => void;
 }) {
@@ -217,6 +235,9 @@ function UserRow({
   const [newPw, setNewPw] = useState("");
   const [secs, setSecs] = useState<Set<string>>(
     () => new Set(effectiveSections(user.role, user.allowed_sections)),
+  );
+  const [typeChoice, setTypeChoice] = useState(() =>
+    choiceFor(effectiveVehicleTypes(user.role, user.allowed_vehicle_types)),
   );
 
   function toggle(key: Section) {
@@ -293,6 +314,37 @@ function UserRow({
 
       {editable && open && (
         <div className="mt-4 border-t border-white/10 pt-4">
+          {/* Acesso por tipo de viatura — transversal aos separadores. */}
+          <div className="mb-5">
+            <p className="mb-2 text-xs text-paper/50">
+              {role === "admin"
+                ? "Um administrador acede sempre a carros e motas."
+                : "Tipos de viatura que este utilizador pode gerir."}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {TYPE_CHOICES.map((c) => (
+                <label
+                  key={c.value}
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+                    typeChoice === c.value
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "border-white/10 text-paper/70 hover:border-white/20"
+                  } ${role === "admin" ? "pointer-events-none opacity-50" : ""}`}
+                >
+                  <input
+                    type="radio"
+                    name={`vehicle-types-${user.id}`}
+                    className="accent-[color:var(--accent)]"
+                    checked={role === "admin" ? c.value === "both" : typeChoice === c.value}
+                    disabled={role === "admin"}
+                    onChange={() => setTypeChoice(c.value)}
+                  />
+                  {c.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
           {role === "admin" ? (
             <p className="text-xs text-paper/50">
               Um administrador tem acesso a todos os separadores.
@@ -330,7 +382,13 @@ function UserRow({
           <button
             type="button"
             disabled={pending}
-            onClick={() => onSave(role, [...secs])}
+            onClick={() =>
+              onSave(
+                role,
+                [...secs],
+                TYPE_CHOICES.find((c) => c.value === typeChoice)?.types ?? [],
+              )
+            }
             className="btn-primary mt-4 h-auto px-5 py-2 text-sm"
           >
             {pending ? "A guardar…" : "Guardar"}

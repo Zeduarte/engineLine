@@ -9,6 +9,8 @@ const rows = [];
 const leadRows = [];
 let nextId = 1;
 let publicType="car",adminType="car";
+// Perfil do utilizador autenticado do backoffice (acesso aos dois mundos).
+let profile={id:"staff-test",role:"admin",allowed_vehicle_types:null};
 const requestedSections = [];
 function query(table) {
   const conditions = [];
@@ -60,7 +62,9 @@ function query(table) {
       let result =
         table === "cars"
           ? rows.filter((r) => conditions.every((c) => c(r)))
-          : [];
+          : table === "profiles"
+            ? (profile ? [profile] : [])
+            : [];
       if (operation === "insert") {
         result = [
           {
@@ -233,4 +237,33 @@ await test("public enquiries inherit the chosen world and cannot bind to the oth
  assert.equal((await submitLead({ok:false},form(bike.id))).ok,true);
  assert.equal(leadRows.at(-1).car_id,bike.id);
  assert.equal(leadRows.at(-1).vehicle_type,"motorcycle");
+});
+
+await test("per-user vehicle access limits the backoffice world and the switch endpoint",async()=>{
+ const {getAdminVehicleType}=load("src/lib/vehicle-context.ts");
+ const {GET}=load("src/app/api/vehicle-context/route.ts");
+ const {NextRequest}=require("next/server");
+ const url=t=>new NextRequest(`https://example.test/api/vehicle-context?type=${t}&area=admin&target=%2Fadmin%2Fcarros`);
+
+ // Só carros: o cookie a apontar para motas não dá acesso às motas.
+ profile={id:"staff-test",role:"vendedor",allowed_vehicle_types:["car"]};
+ adminType="motorcycle";
+ assert.equal(await getAdminVehicleType(),"car");
+ assert.equal((await GET(url("motorcycle"))).status,403);
+ assert.equal((await GET(url("car"))).status,303);
+
+ // Só motas: o inverso.
+ profile={id:"staff-test",role:"vendedor",allowed_vehicle_types:["motorcycle"]};
+ adminType="car";
+ assert.equal(await getAdminVehicleType(),"motorcycle");
+ assert.equal((await GET(url("car"))).status,403);
+
+ // O admin acede sempre aos dois, mesmo com uma restrição gravada.
+ profile={id:"staff-test",role:"admin",allowed_vehicle_types:["car"]};
+ adminType="motorcycle";
+ assert.equal(await getAdminVehicleType(),"motorcycle");
+ assert.equal((await GET(url("motorcycle"))).status,303);
+
+ profile={id:"staff-test",role:"admin",allowed_vehicle_types:null};
+ adminType="car";
 });

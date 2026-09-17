@@ -15,6 +15,7 @@ export default async function UsersPage() {
     full_name: p.full_name,
     role: p.role,
     allowed_sections: p.allowed_sections,
+    allowed_vehicle_types: p.allowed_vehicle_types,
     created_at: p.created_at,
   }));
 

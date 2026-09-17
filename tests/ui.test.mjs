@@ -9,6 +9,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 const require=createRequire(import.meta.url);
 const car='10000000-0000-4000-8000-000000000001',lead='20000000-0000-4000-8000-000000000001';
 let role='admin';
+let pathname='/inventario';
 const fixtures={
  cars:[{id:car,make:'BMW',model:'320',license_plate:'AA-00-AA',price:25000,status:'published'}],
  profiles:[],
@@ -19,14 +20,14 @@ const fixtures={
  reservations:[],lead_activities:[],audit_log:[],
 };
 function query(table){let single=false;let from=0,to=999;const api=new Proxy({}, {get(_,key){if(key==='then')return(resolve)=>{const rows=(fixtures[table]??[]).slice(from,to+1);return Promise.resolve(resolve({data:single?rows[0]??null:rows,error:null,count:rows.length}));};return(...args)=>{if(key==='single'||key==='maybeSingle')single=true;if(key==='range')[from,to]=args;return api;};}});return api;}
-const db={from:query,rpc:async(name)=>({data:name==='staff_directory'?[{id:'staff1',full_name:'Equipa',role:'vendedor'}]:true,error:null})};
+const db={from:query,auth:{getUser:async()=>({data:{user:{id:'me'}},error:null})},rpc:async(name)=>({data:name==='staff_directory'?[{id:'staff1',full_name:'Equipa',role:'vendedor'}]:true,error:null})};
 const cache=new Map();
 function load(file){file=resolve(file);if(cache.has(file))return cache.get(file);const mod={exports:{}};cache.set(file,mod.exports);
  const source=readFileSync(file,'utf8');const {outputText}=ts.transpileModule(source,{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}});
  const custom=(id)=>{
   if(id==='server-only')return {};
   if(id==='next/headers')return {cookies:async()=>({get:()=>({value:'car'})})};
-  if(id==='next/navigation')return {usePathname:()=>'/inventario',useRouter:()=>({refresh(){}}),notFound(){throw Error('404');}};
+  if(id==='next/navigation')return {usePathname:()=>pathname,useRouter:()=>({refresh(){}}),notFound(){throw Error('404');}};
   if(id==='next/link')return {__esModule:true,default:({href,children,scroll,...props})=>React.createElement('a',{href,...props},children)};
   if(id==='@/lib/supabase/server')return {createClient:async()=>db};
   if(id==='@/lib/guard')return {requireSection:async()=>({id:'me',role,allowed_sections:null})};
@@ -80,10 +81,44 @@ await test('editing a motorcycle restores its type and hides car-specific doors'
  assert.ok(html.includes('type="hidden" name="doors"'));
  assert.ok(!html.includes('<option value="Berlina"'));
 });
-await test('inventory exposes separate shareable car and motorcycle sections',()=>{
- const Nav=load('src/components/inventory/InventoryTypeNav.tsx').InventoryTypeNav;
- const html=renderToStaticMarkup(React.createElement(Nav,{selected:'motorcycle'}));
- assert.ok(html.includes('type=car&amp;target=%2Finventario"'));
- assert.ok(html.includes('type=motorcycle&amp;target=%2Finventario" aria-current="page"'));
- assert.equal((html.match(/aria-current="page"/g)||[]).length,1);
+await test('world switch offers only the other world, and not on shared pages',()=>{
+ const Switch=load('src/components/site/WorldSwitch.tsx').WorldSwitch;
+ pathname='/inventario';
+ const fromCars=renderToStaticMarkup(React.createElement(Switch,{world:'car'}));
+ assert.ok(fromCars.includes('type=motorcycle&amp;target=%2Finventario'),'aponta para as motas');
+ assert.ok(!fromCars.includes('type=car&amp;'),'não repete o mundo atual');
+ assert.ok(fromCars.includes('Ver stock de motas'));
+
+ const fromMotos=renderToStaticMarkup(React.createElement(Switch,{world:'motorcycle'}));
+ assert.ok(fromMotos.includes('type=car&amp;target=%2Finventario'));
+ assert.ok(fromMotos.includes('Ver stock de carros'));
+
+ // Numa ficha, trocar de mundo leva ao stock — o slug é do mundo antigo.
+ pathname='/viaturas/bmw-116d';
+ assert.ok(renderToStaticMarkup(React.createElement(Switch,{world:'car'}))
+   .includes('target=%2Finventario'));
+
+ // Páginas comuns aos dois mundos não mostram o seletor.
+ for(const common of ['/sobre','/servicos','/contactos','/politica-de-cookies']){
+  pathname=common;
+  assert.equal(renderToStaticMarkup(React.createElement(Switch,{world:'car'})),'',common);
+ }
+ pathname='/inventario';
+});
+
+await test('admin world bar hides on shared sections and without access to the other type',()=>{
+ const Bar=load('src/components/admin/AdminWorldBar.tsx').AdminWorldBar;
+ pathname='/admin/carros';
+ const both=renderToStaticMarkup(React.createElement(Bar,{world:'car',allowed:['car','motorcycle']}));
+ assert.ok(both.includes('Passar para motas'));
+
+ const onlyCars=renderToStaticMarkup(React.createElement(Bar,{world:'car',allowed:['car']}));
+ assert.ok(onlyCars.includes('A gerir'),'continua a dizer onde está');
+ assert.ok(!onlyCars.includes('Passar para'),'sem passagem para o que não pode ver');
+
+ for(const shared of ['/admin/utilizadores','/admin/testemunhos','/admin/definicoes','/admin/integracoes']){
+  pathname=shared;
+  assert.equal(renderToStaticMarkup(React.createElement(Bar,{world:'car',allowed:['car','motorcycle']})),'',shared);
+ }
+ pathname='/inventario';
 });

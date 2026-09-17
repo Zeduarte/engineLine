@@ -1,10 +1,21 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import ts from 'typescript';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 const require=createRequire(import.meta.url);
-function load(path){const source=readFileSync(path,'utf8');const {outputText}=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}});const mod={exports:{}};new Function('module','exports','require',outputText)(mod,mod.exports,require);return mod.exports;}
+// Resolve o alias `@/` como o tsconfig, para os módulos poderem importar-se
+// entre si (ex.: permissions.ts -> vehicle-categories.ts).
+const cache=new Map();
+function resolveAlias(id){const base=`src/${id.slice(2)}`;for(const ext of ['.ts','.tsx','/index.ts'])if(existsSync(base+ext))return base+ext;throw new Error(`não resolvido: ${id}`);}
+function load(path){
+ if(cache.has(path))return cache.get(path);
+ const source=readFileSync(path,'utf8');
+ const {outputText}=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}});
+ const mod={exports:{}};cache.set(path,mod.exports);
+ const localRequire=(id)=>id.startsWith('@/')?load(resolveAlias(id)):require(id);
+ new Function('module','exports','require',outputText)(mod,mod.exports,localRequire);
+ cache.set(path,mod.exports);return mod.exports;}
 const {margin,daysInStock,preparationLabel,csvCell}=load('src/lib/operations.ts');
 const {canAccess,canManage}=load('src/lib/permissions.ts');
 const {allRows}=load('src/lib/pagination.ts');

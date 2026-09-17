@@ -1,6 +1,6 @@
 "use client";
 import { useVehicleWorld } from "@/components/site/VehicleWorld";
-import { InventoryTypeNav } from "@/components/inventory/InventoryTypeNav";
+import { WorldSwitch } from "@/components/site/WorldSwitch";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -114,6 +114,8 @@ export function Header({
         </ul>
 
         <div className="hidden items-center gap-3 md:flex">
+          {/* Passagem discreta para o outro mundo — só onde o tipo importa. */}
+          <WorldSwitch world={world} />
           <Link
             href="/favoritos"
             aria-label={`Favoritos${favCount ? ` (${favCount})` : ""}`}
@@ -147,11 +149,15 @@ export function Header({
           </a>
         </div>
 
+        {/* Em mobile só há espaço para a versão curta, ao lado do menu. */}
+        <div className="flex items-center gap-2 md:hidden">
+          <WorldSwitch world={world} compact />
+
         {/* Botão mobile */}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex h-10 w-10 items-center justify-center md:hidden"
+          className="flex h-10 w-10 items-center justify-center"
           aria-expanded={open}
           aria-controls="mobile-menu"
           aria-label={open ? "Fechar menu" : "Abrir menu"}
@@ -174,6 +180,7 @@ export function Header({
             />
           </span>
         </button>
+        </div>
       </nav>
 
       <AnimatePresence>
@@ -217,7 +224,6 @@ export function Header({
           </motion.div>
         )}
       </AnimatePresence>
-      <div className="container-px flex items-center gap-4 border-t border-white/5"><InventoryTypeNav selected={world}/><span className="text-xs text-paper/50">{world === "motorcycle" ? "Universo das motas" : "Universo dos carros"}</span></div>
     </header>
   );
 }

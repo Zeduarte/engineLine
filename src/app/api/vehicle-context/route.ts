@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAllowedVehicleTypes } from "@/lib/vehicle-context";
 
 const ADMIN_TARGETS = [
   "/admin", "/admin/carros", "/admin/carros/novo", "/admin/oficina",
@@ -17,6 +18,15 @@ export async function GET(request: NextRequest) {
   const area = params.get("area") === "admin" ? "admin" : "public";
   if (type !== "car" && type !== "motorcycle") {
     return NextResponse.json({ error: "Tipo inválido" }, { status: 400 });
+  }
+
+  // No backoffice o tipo é uma permissão, não uma preferência: quem só tem
+  // acesso a carros não passa a ver motas escrevendo este URL à mão.
+  if (area === "admin" && !(await getAllowedVehicleTypes()).includes(type)) {
+    return NextResponse.json(
+      { error: "Sem acesso a esse tipo de viatura." },
+      { status: 403 },
+    );
   }
 
   const target = params.get("target");

@@ -1,5 +1,5 @@
-import { getAdminVehicleType } from "@/lib/vehicle-context";
-import { InventoryTypeNav } from "@/components/inventory/InventoryTypeNav";
+import { getAdminVehicleType, getAllowedVehicleTypes } from "@/lib/vehicle-context";
+import { AdminWorldBar } from "@/components/admin/AdminWorldBar";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/admin-queries";
@@ -21,6 +21,7 @@ export default async function DashboardLayout({
 
   const supabase = await createClient();
   const vehicleType = await getAdminVehicleType();
+  const allowedTypes = await getAllowedVehicleTypes();
   const { error: schemaError } = await supabase.rpc("has_section", {section:"dashboard"});
   if (schemaError) return <main className="mx-auto max-w-xl space-y-4 px-6 py-16 text-paper">
     <h1 className="text-2xl font-bold">{schemaError.code === "PGRST202" ? "Atualização do backoffice pendente" : "Backoffice temporariamente indisponível"}</h1>
@@ -51,7 +52,7 @@ export default async function DashboardLayout({
       <div className="md:hidden"><MobileNav user={user} sections={sections} companyName={companyName} newLeads={count ?? 0}/></div>
       <div className="md:grid md:grid-cols-[248px_1fr]">
         <div className="sticky top-0 hidden h-dvh md:block"><Sidebar user={user} sections={sections} companyName={companyName} newLeads={count ?? 0}/></div>
-        <main className="min-w-0"><div className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8 lg:px-10"><div className="mb-6 border-b border-white/10 pb-3"><p className="text-sm text-paper/60">Gerir {vehicleType === "car" ? "carros" : "motas"}</p><InventoryTypeNav selected={vehicleType} area="admin" /></div>{children}</div></main>
+        <main className="min-w-0"><div className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8 lg:px-10"><AdminWorldBar world={vehicleType} allowed={allowedTypes} />{children}</div></main>
       </div>
     </div>
   );

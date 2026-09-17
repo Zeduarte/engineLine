@@ -332,5 +332,7 @@ export const newUserSchema = z.object({
   role: z.enum(["admin", "chefe", "vendedor", "mecanico"]).default("vendedor"),
   /** Separadores a que o novo utilizador terá acesso (opcional). */
   allowed_sections: z.array(z.string()).optional(),
+  /** Tipos de viatura acessíveis. Vazio/ausente = os dois. */
+  allowed_vehicle_types: z.array(z.enum(["car", "motorcycle"])).optional(),
 });
 export type NewUserValues = z.infer<typeof newUserSchema>;

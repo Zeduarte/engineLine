@@ -11,9 +11,11 @@ import {
   assignableRoles,
   canManage,
   effectiveSections,
+  effectiveVehicleTypes,
   type Role,
   type Section,
 } from "@/lib/permissions";
+import { VEHICLE_TYPES, type VehicleType } from "@/lib/vehicle-categories";
 import type { UserRole } from "@/lib/supabase/database.types";
 
 export interface UserResult {
@@ -48,6 +50,28 @@ function grantableSections(
   const set = new Set<Section>(req.filter((s) => mine.includes(s)));
   set.add(ALWAYS);
   return [...set];
+}
+
+/**
+ * Tipos de viatura que um gestor pode conceder: nunca mais do que os seus.
+ * Devolve `null` quando fica com os dois (é o valor "sem restrição" na BD).
+ */
+function grantableVehicleTypes(
+  managerRole: string,
+  managerAllowed: string[] | null | undefined,
+  requested: string[] | undefined,
+  targetRole: string,
+): string[] | null {
+  // O admin acede sempre aos dois — guardar uma restrição seria ignorado.
+  if (targetRole === "admin") return null;
+  const mine = effectiveVehicleTypes(managerRole, managerAllowed);
+  const req = (requested ?? []).filter((t): t is VehicleType =>
+    (VEHICLE_TYPES as readonly string[]).includes(t),
+  );
+  const picked = req.filter((t) => mine.includes(t));
+  // Nada escolhido (ou nada concedível) → herda o do gestor.
+  const result = picked.length ? picked : mine;
+  return result.length === VEHICLE_TYPES.length ? null : result;
 }
 
 /** Cria um novo utilizador. Só quem tiver rank acima do papel pedido. */
@@ -102,6 +126,12 @@ export async function createUser(input: unknown): Promise<UserResult> {
         role: parsed.data.role,
         full_name: parsed.data.full_name,
         allowed_sections: sections,
+        allowed_vehicle_types: grantableVehicleTypes(
+          me.role,
+          me.allowed_vehicle_types,
+          parsed.data.allowed_vehicle_types,
+          parsed.data.role,
+        ),
       });
     if (profileError) {
       await admin.auth.admin.deleteUser(data.user.id);
@@ -122,6 +152,7 @@ export async function updateUserAccess(
   id: string,
   role: UserRole,
   sections: string[],
+  vehicleTypes?: string[],
 ): Promise<UserResult> {
   const me = await requireSection("utilizadores");
   if (!me) return { ok: false, error: "Sem permissão." };
@@ -147,7 +178,16 @@ export async function updateUserAccess(
   if (!admin) return { ok: false, error: "Chave de administração não configurada." };
   const { error } = await admin
     .from("profiles")
-    .update({ role, allowed_sections: allowed })
+    .update({
+      role,
+      allowed_sections: allowed,
+      allowed_vehicle_types: grantableVehicleTypes(
+        me.role,
+        me.allowed_vehicle_types,
+        vehicleTypes,
+        role,
+      ),
+    })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
 

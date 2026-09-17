@@ -171,7 +171,10 @@ export default async function VehiclePage({ params }: { params: Params }) {
               min-content, e a tira de miniaturas da galeria esticava a coluna
               da foto até esmagar as especificações (texto cortado). */}
           <div className="mt-8 grid gap-8 min-[900px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] min-[900px]:items-start min-[900px]:gap-12">
-            <div className="space-y-8 min-[900px]:order-2">
+            {/* `min-w-0` nos itens: em mobile a grelha é de uma coluna e o
+                `minmax(0,…)` não se aplica — sem isto a tira de miniaturas
+                (8 × 80px) empurrava a página para 724px de largura. */}
+            <div className="min-w-0 space-y-8 min-[900px]:order-2">
               <div className="rounded-3xl bg-ink-soft p-6">
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-lg font-medium text-paper/70">
@@ -186,7 +189,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
               <SpecGrid vehicle={vehicle} />
             </div>
 
-            <div className="min-[900px]:order-1">
+            <div className="min-w-0 min-[900px]:order-1">
               <Gallery
                 slug={vehicle.slug}
                 images={vehicle.images}
@@ -197,7 +200,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
 
           {/* Resto do conteúdo, com o painel de contacto fixo à direita */}
           <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-14">
-            <div className="space-y-8 lg:space-y-10">
+            <div className="min-w-0 space-y-8 lg:space-y-10">
               {vehicle.description && (
                 <DescriptionCard text={vehicle.description} />
               )}
