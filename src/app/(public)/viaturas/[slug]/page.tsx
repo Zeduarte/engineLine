@@ -167,7 +167,10 @@ export default async function VehiclePage({ params }: { params: Params }) {
           {/* Imagem e informação LADO A LADO no desktop (foto à esquerda,
               preço + especificações à direita). Em mobile a informação vem
               primeiro e a galeria logo a seguir — por isso o `order`. */}
-          <div className="mt-8 grid gap-8 min-[900px]:grid-cols-[1.35fr_1fr] min-[900px]:items-start min-[900px]:gap-12">
+          {/* `minmax(0,…)`: sem isto o mínimo de uma coluna `fr` é o seu
+              min-content, e a tira de miniaturas da galeria esticava a coluna
+              da foto até esmagar as especificações (texto cortado). */}
+          <div className="mt-8 grid gap-8 min-[900px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] min-[900px]:items-start min-[900px]:gap-12">
             <div className="space-y-8 min-[900px]:order-2">
               <div className="rounded-3xl bg-ink-soft p-6">
                 <div className="flex items-center justify-between gap-4">
@@ -193,7 +196,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
           </div>
 
           {/* Resto do conteúdo, com o painel de contacto fixo à direita */}
-          <div className="mt-12 grid gap-10 lg:grid-cols-[1.5fr_1fr] lg:gap-14">
+          <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-14">
             <div className="space-y-8 lg:space-y-10">
               {vehicle.description && (
                 <DescriptionCard text={vehicle.description} />

@@ -124,7 +124,9 @@ export function Gallery({
       {images.length > 1 && (
         // Contentor com scroll horizontal PRÓPRIO: as miniaturas nunca
         // transbordam para a página (evita o scroll lateral em mobile).
-        <div className="mt-4 -mx-1 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-1 [scrollbar-width:thin]">
+        // `min-w-0`: a tira só pede a largura que a coluna lhe dá; sem isto
+        // exigia a soma de todas as miniaturas e alargava a grelha.
+        <div className="mt-4 -mx-1 min-w-0 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-1 [scrollbar-width:thin]">
           <ul className="flex snap-x gap-3" role="list">
             {images.map((img, i) => (
               <li key={img.src} className="shrink-0 snap-start">
