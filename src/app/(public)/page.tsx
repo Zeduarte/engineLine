@@ -1,3 +1,5 @@
+import { getPublicVehicleType } from "@/lib/vehicle-context";
+import type { HeroMedia } from "@/lib/hero-media";
 import { getShowroomContent } from "@/lib/showroom-queries";
 import { FaqSection } from "@/components/showroom/FaqSection";
 import { ServiceCards } from "@/components/showroom/ServiceCards";
@@ -28,6 +30,7 @@ export const revalidate = 60;
 // Server Component: os dados (destaques + conteúdo editável) são obtidos no
 // servidor e passados às ilhas cliente. Zero JS de dados enviado para o browser.
 export default async function HomePage() {
+  const type = await getPublicVehicleType();
   const showroom = await getShowroomContent();
   const [recent, content, testimonials, branding, allVehicles, sold] =
     await Promise.all([
@@ -46,21 +49,22 @@ export default async function HomePage() {
     fuel: v.fuel,
   }));
 
-  const heroMedia = getHeroMedia(content.hero.media);
+  const heroMedia: HeroMedia = type === "motorcycle" ? {type:"image",src:"/entrance/motorcycle.jpg"} : getHeroMedia(content.hero.media);
+  const heroContent = type === "motorcycle" ? {...content.hero,eyebrow:"Motas · engineLine",title:"A tua próxima viagem começa sobre duas rodas",subtitle:"Explora as nossas motas e encontra a tua próxima companheira de estrada.",primaryCta:{label:"Ver motas",href:"/inventario"}} : content.hero;
 
   return (
     <>
       <Hero
-        content={content.hero}
+        content={heroContent}
         media={heroMedia}
         search={
           allVehicles.length > 0 ? <QuickSearch vehicles={searchItems} /> : null
         }
       />
 
-      <BrandMarquee brands={content.brands} />
+      <BrandMarquee brands={type === "motorcycle" ? [...new Set(allVehicles.map(v=>v.make))] : content.brands} />
       <FeaturedVehicles vehicles={recent} />
-      <SellCTA />
+      <SellCTA vehicleType={type} />
       <PinnedTrust content={content.trust} />
       <SoldShowcase vehicles={sold} />
       <div className="container-px">

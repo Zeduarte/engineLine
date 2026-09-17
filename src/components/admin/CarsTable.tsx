@@ -22,6 +22,7 @@ import {
 import { CAR_STATUS_LABEL } from "./StatusBadge";
 
 export interface CarListItem {
+  vehicleType: "car" | "motorcycle";
   id: string;
   make: string;
   model: string;
@@ -347,7 +348,8 @@ export function CarsTable({ items }: { items: CarListItem[] }) {
                     <td className="p-3">
                       <div className="flex items-center justify-end gap-1">
                         <Link
-                          href={`/viaturas/${car.slug}`}
+                          prefetch={false}
+            href={`/api/vehicle-context?area=public&type=${car.vehicleType}&target=${encodeURIComponent(`/viaturas/${car.slug}`)}`}
                           target="_blank"
                           className="rounded-lg px-2 py-1 text-xs text-paper/60 hover:bg-white/5 hover:text-paper"
                           title="Ver no site"

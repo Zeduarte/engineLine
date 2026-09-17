@@ -1,3 +1,4 @@
+import type { VehicleType } from "@/lib/vehicle-categories";
 import Link from "next/link";
 
 /**
@@ -5,7 +6,7 @@ import Link from "next/link";
  * FUNDO do card, com um escurecimento diagonal para o texto se manter legível.
  * Se a imagem não existir, fica o fundo sólido (bg-ink-soft) — nada parte.
  */
-export function SellCTA() {
+export function SellCTA({vehicleType = "car"}:{vehicleType?:VehicleType}) {
   return (
     <section className="container-px py-20 md:py-28">
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-ink-soft">
@@ -13,7 +14,7 @@ export function SellCTA() {
         <div
           aria-hidden
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url(/images/showcase.jpg)" }}
+          style={{ backgroundImage: vehicleType === "motorcycle" ? "url(/entrance/motorcycle.jpg)" : "url(/images/showcase.jpg)" }}
         />
         {/* Escurecimento para contraste do texto (mais escuro à esquerda). */}
         <div
@@ -25,7 +26,7 @@ export function SellCTA() {
           <div>
             <p className="eyebrow mb-4">Retoma & Encomenda</p>
             <h2 className="text-3xl font-semibold text-paper md:text-4xl">
-              Tem um carro para trocar? Ou procura algo específico?
+              {vehicleType === "motorcycle" ? "Tem uma mota para trocar? Ou procura algo específico?" : "Tem um carro para trocar? Ou procura algo específico?"}
             </h2>
             <p className="mt-4 max-w-md text-paper/70">
               Avalie a sua retoma em minutos ou peça a viatura ideal — mesmo que

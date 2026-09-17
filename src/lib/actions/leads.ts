@@ -1,5 +1,6 @@
 "use server";
 
+import { getPublicVehicleType } from "@/lib/vehicle-context";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { publicSubmissionClient } from "@/lib/public-submissions";
@@ -71,11 +72,12 @@ export async function submitLead(
       error: e instanceof Error ? e.message : "Tente novamente.",
     };
   }
+  const vehicleType = await getPublicVehicleType();
   let carLabel = v.car_label || null;
   if (v.car_id) {
     const { data: car } = await supabase
       .from("cars")
-      .select("make,model,status")
+      .select("make,model,status").eq("vehicle_type",vehicleType)
       .eq("id", v.car_id)
       .in("status", ["published", "reserved"])
       .maybeSingle();
@@ -98,6 +100,7 @@ export async function submitLead(
   }
   const { error } = await supabase.from("leads").insert({
     kind: v.kind,
+    vehicle_type: vehicleType,
     car_id: v.car_id ?? null,
     car_label: carLabel,
     name: v.name,

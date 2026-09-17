@@ -213,6 +213,7 @@ type CarMediaUpdate = Partial<CarMediaInsert>;
 
 // ---- leads -----------------------------------------------------------------
 type LeadsRow = {
+  vehicle_type: "car" | "motorcycle" | null;
   assigned_to: string | null;
   next_action: string | null;
   next_action_at: string | null;
@@ -234,6 +235,7 @@ type LeadsRow = {
   updated_at: string;
 };
 type LeadsInsert = {
+  vehicle_type?: "car" | "motorcycle" | null;
   assigned_to?: string | null;
   next_action?: string | null;
   next_action_at?: string | null;
@@ -520,6 +522,14 @@ export type Database = {
       consume_submission: {
         Args: { key_value: string; max_hits: number; window_seconds: number };
         Returns: boolean;
+      };
+      create_workshop_intake_for_type: {
+        Args: {vehicle_name:string;plate:string;selected_type:string};
+        Returns:string;
+      };
+      analytics_summary_by_type: {
+        Args: {selected_type:string};
+        Returns:AnalyticsSummary;
       };
       create_workshop_intake: {
         Args: { vehicle_name: string; plate: string };

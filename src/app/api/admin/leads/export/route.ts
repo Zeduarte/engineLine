@@ -1,9 +1,11 @@
+import { getAdminVehicleType } from "@/lib/vehicle-context";
 import { createClient } from "@/lib/supabase/server";
 import { leadFilters } from "@/lib/lead-filters";
 import { csvCell } from "@/lib/operations";
 export async function GET(request:Request) {
  const db=await createClient();const {data:allowed}=await db.rpc("has_section",{section:"leads"});
  if(!allowed)return new Response("Sem permissão",{status:403});
+ const vehicleType=await getAdminVehicleType();const general=new URL(request.url).searchParams.get("gerais")==="1";
  const f=leadFilters(Object.fromEntries(new URL(request.url).searchParams));
  // Pull one page per stream request. Memory stays bounded for large exports.
  let offset=0;let first=true;
@@ -11,6 +13,7 @@ export async function GET(request:Request) {
   try {
    if(first){controller.enqueue(new TextEncoder().encode("\uFEFF"+["Nome","Email","Telefone","Viatura","Estado","Responsável","Próxima ação","Quando","Motivo de perda"].map(csvCell).join(",")+"\r\n"));first=false;}
    let q=db.from("leads").select("*");
+   q=general?q.is("vehicle_type",null):q.eq("vehicle_type",vehicleType);
    if(f.status)q=q.eq("status",f.status);
    if(f.q)q=q.or(`name.ilike.%${f.q}%,email.ilike.%${f.q}%,phone.ilike.%${f.q}%,car_label.ilike.%${f.q}%`);
    if(f.assigned)q=q.eq("assigned_to",f.assigned);

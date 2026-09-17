@@ -84,7 +84,7 @@ export function TradeInForm() {
             <input type="hidden" name="kind" value="trade_in" />
 
             <p className="text-xs font-semibold uppercase tracking-wider text-paper/40">
-              O seu carro atual
+              A sua viatura atual
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Marca" error={errors.ti_make}>

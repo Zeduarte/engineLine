@@ -162,4 +162,28 @@ await test("showroom locations cannot leave dangling vehicle references", async 
   await db.query("update cars set point_of_sale_id=null where id=$1", [car2]);
   await db.exec("update site_content set content='{}' where key='showroom'");
 });
+await test('vehicle worlds retain lead classification and separate reporting',async()=>{
+ const bike=(await db.query("insert into cars(slug,make,model,vehicle_type,body,doors,status,price_on_request) values('world-bike','Honda','PCX','motorcycle','Scooter',0,'draft',true) returning id")).rows[0].id;
+ const enquiry=(await db.query("insert into leads(car_id,vehicle_type,name,email) values($1,'car','Moto','moto@example.test') returning id,vehicle_type",[bike])).rows[0];
+ assert.equal(enquiry.vehicle_type,'motorcycle');
+ const general=(await db.query("insert into leads(name,email) values('Legacy','legacy@example.test') returning vehicle_type")).rows[0];
+ assert.equal(general.vehicle_type,null);
+ const cars=await asUser(admin,async()=>(await db.query("select analytics_summary_by_type('car') summary")).rows[0].summary);
+ const bikes=await asUser(admin,async()=>(await db.query("select analytics_summary_by_type('motorcycle') summary")).rows[0].summary);
+ assert.ok(!cars.by_car.some(c=>c.id===bike));assert.ok(bikes.by_car.some(c=>c.id===bike));
+ const actualBikeLeads=(await db.query("select count(*)::int n from leads where vehicle_type='motorcycle'")).rows[0].n;
+ assert.equal(bikes.leads,actualBikeLeads);
+ await db.query("update cars set vehicle_type='car',body='Berlina',doors=4 where id=$1",[bike]);
+ assert.equal((await db.query('select vehicle_type from leads where id=$1',[enquiry.id])).rows[0].vehicle_type,'car');
+ await db.query('update leads set car_id=$1 where id=$2',[car2,enquiry.id]);
+ assert.equal((await db.query('select vehicle_type from leads where id=$1',[enquiry.id])).rows[0].vehicle_type,'motorcycle');
+});
+await test('workshop creates the selected category and keeps existing permission checks',async()=>{
+ const id=await asUser(mechanic,async()=>(await db.query("select create_workshop_intake_for_type('Honda por identificar','AA-11-AA','motorcycle') id")).rows[0].id);
+ const row=(await db.query('select vehicle_type,doors,status from cars where id=$1',[id])).rows[0];
+ assert.deepEqual(row,{vehicle_type:'motorcycle',doors:0,status:'draft'});
+ await asUser(mechanic,async()=>assert.rejects(db.query("select create_workshop_intake_for_type('Invalid','AA-11-AA','truck')"),/Tipo inválido/));
+ await asUser(limited,async()=>assert.rejects(db.query("select create_workshop_intake_for_type('Honda','AA-11-AA','motorcycle')"),/Sem permissão/));
+ await asUser(null,async()=>assert.rejects(db.query("select create_workshop_intake_for_type('Honda','AA-11-AA','motorcycle')"),/permission denied/),'anon');
+});
 await db.close();

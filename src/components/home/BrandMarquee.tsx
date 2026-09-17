@@ -15,6 +15,7 @@ export function BrandMarquee({
   brands?: string[];
 }) {
   const prefersReduced = usePrefersReducedMotion();
+  if (!brands.length) return null;
   const items = [...brands, ...brands];
 
   return (

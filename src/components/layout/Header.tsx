@@ -1,4 +1,6 @@
 "use client";
+import { useVehicleWorld } from "@/components/site/VehicleWorld";
+import { InventoryTypeNav } from "@/components/inventory/InventoryTypeNav";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -23,6 +25,7 @@ export function Header({
   branding?: Branding;
 }) {
   const pathname = usePathname();
+  const world = useVehicleWorld();
   const router = useRouter();
   // Numa ficha de viatura (/viaturas/slug, não sub-rotas) mostramos a seta de
   // voltar ao lado do logótipo — sempre acessível no topo fixo.
@@ -97,7 +100,7 @@ export function Header({
                     active ? "text-paper" : "text-paper/60 hover:text-paper"
                   }`}
                 >
-                  {item.label}
+                  {item.label === "Carro ideal" && world === "motorcycle" ? "Mota ideal" : item.label}
                   {active && (
                     <motion.span
                       layoutId="nav-underline"
@@ -190,7 +193,7 @@ export function Header({
                     href={item.href}
                     className="block rounded-lg px-2 py-3 text-lg font-medium text-paper/80 hover:text-paper"
                   >
-                    {item.label}
+                    {item.label === "Carro ideal" && world === "motorcycle" ? "Mota ideal" : item.label}
                   </Link>
                 </li>
               ))}
@@ -214,6 +217,7 @@ export function Header({
           </motion.div>
         )}
       </AnimatePresence>
+      <div className="container-px flex items-center gap-4 border-t border-white/5"><InventoryTypeNav selected={world}/><span className="text-xs text-paper/50">{world === "motorcycle" ? "Universo das motas" : "Universo dos carros"}</span></div>
     </header>
   );
 }

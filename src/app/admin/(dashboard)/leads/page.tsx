@@ -1,3 +1,4 @@
+import { getAdminVehicleType } from "@/lib/vehicle-context";
 import Link from "next/link";
 import { requireSection } from "@/lib/guard";
 import { createClient } from "@/lib/supabase/server";
@@ -5,7 +6,9 @@ import { LEAD_STATUS_LABELS,leadFilters } from "@/lib/lead-filters";
 export const dynamic="force-dynamic";
 export default async function LeadsPage({searchParams}: {searchParams:Promise<Record<string,string|undefined>>}) {
  await requireSection("leads");const raw=await searchParams;const f=leadFilters(raw);const db=await createClient();
+ const vehicleType=await getAdminVehicleType();const general=raw.gerais==="1";
  let query=db.from("leads").select("*",{count:"exact"});
+ query=general?query.is("vehicle_type",null):query.eq("vehicle_type",vehicleType);
  if(f.status)query=query.eq("status",f.status);
  if(f.q)query=query.or(`name.ilike.%${f.q}%,email.ilike.%${f.q}%,phone.ilike.%${f.q}%,car_label.ilike.%${f.q}%`);
  if(f.assigned)query=query.eq("assigned_to",f.assigned);
@@ -18,7 +21,8 @@ export default async function LeadsPage({searchParams}: {searchParams:Promise<Re
  function href(page:number){const p=new URLSearchParams();for(const[k,v]of Object.entries(raw))if(v&&k!=="page")p.set(k,v);p.set("page",String(page));return `/admin/leads?${p}`;}
  const exportParams=new URLSearchParams();for(const[k,v]of Object.entries(raw))if(v&&k!=="page")exportParams.set(k,v);
  return <div className="space-y-6"><header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-bold">Contactos e acompanhamento</h1><p className="mt-1 text-sm text-paper/50">{count??0} contactos encontrados</p></div><a className="btn-ghost" href={`/api/admin/leads/export?${exportParams}`}>Exportar resultados CSV</a></header>
- <form className="card grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5"><label className="text-sm">Pesquisar<input className="field mt-1" name="q" defaultValue={f.q} placeholder="Nome, telefone, email ou viatura"/></label>
+ <nav className="flex gap-4 text-sm text-accent"><Link href="/admin/leads">Contactos de {vehicleType === "car" ? "carros" : "motas"}</Link><Link href="/admin/leads?gerais=1">Contactos antigos sem tipo</Link></nav>{general && <p className="text-sm text-paper/60">Contactos anteriores sem tipo definido. Associe uma viatura para os classificar.</p>}
+ <form className="card grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">{general && <input type="hidden" name="gerais" value="1"/>}<label className="text-sm">Pesquisar<input className="field mt-1" name="q" defaultValue={f.q} placeholder="Nome, telefone, email ou viatura"/></label>
  <label className="text-sm">Estado<select className="field mt-1" name="status" defaultValue={f.status??""}><option value="">Todos</option>{Object.entries(LEAD_STATUS_LABELS).map(([v,l])=><option value={v} key={v}>{l}</option>)}</select></label>
  <label className="text-sm">Responsável<select className="field mt-1" name="assigned" defaultValue={f.assigned??""}><option value="">Todos</option>{staff?.map(p=><option value={p.id} key={p.id}>{p.full_name}</option>)}</select></label>
  <label className="text-sm">Prioridade<select className="field mt-1" name="due" defaultValue={f.due??""}><option value="">Todas</option><option value="overdue">Ações em atraso</option><option value="unanswered">Sem resposta</option><option value="unassigned">Por atribuir</option></select></label><button className="btn-primary self-end">Filtrar</button></form>

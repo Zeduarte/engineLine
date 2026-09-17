@@ -1,5 +1,6 @@
 "use server";
 
+import { getAdminVehicleType } from "@/lib/vehicle-context";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -173,7 +174,8 @@ export async function createWorkshopVehicle(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
   }
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_workshop_intake", {
+  const { data, error } = await supabase.rpc("create_workshop_intake_for_type", {
+    selected_type: await getAdminVehicleType(),
     vehicle_name: parsed.data.name,
     plate: parsed.data.plate.toUpperCase().replace(/\s+/g, ""),
   });

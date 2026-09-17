@@ -8,8 +8,9 @@ import {
   useState,
 } from "react";
 
+import { useVehicleWorld } from "@/components/site/VehicleWorld";
 const MAX = 3;
-const KEY = "engineline:compare";
+
 
 interface CompareCtx {
   slugs: string[];
@@ -24,25 +25,30 @@ const Ctx = createContext<CompareCtx | null>(null);
 
 /** Estado global (persistido em localStorage) das viaturas a comparar. */
 export function CompareProvider({ children }: { children: React.ReactNode }) {
+  const KEY = `engineline:compare:${useVehicleWorld()}`;
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [slugs, setSlugs] = useState<string[]>([]);
 
   // Hidrata do localStorage no cliente.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) setSlugs(JSON.parse(raw));
+      const parsed = raw ? JSON.parse(raw) : [];
+      setSlugs(Array.isArray(parsed) ? parsed.filter((s): s is string => typeof s === "string").slice(0, MAX) : []);
     } catch {
       /* ignora */
     }
-  }, []);
+    setLoadedKey(KEY);
+  }, [KEY]);
 
   useEffect(() => {
+    if (loadedKey !== KEY) return;
     try {
       localStorage.setItem(KEY, JSON.stringify(slugs));
     } catch {
       /* ignora */
     }
-  }, [slugs]);
+  }, [slugs, KEY, loadedKey]);
 
   const value = useMemo<CompareCtx>(
     () => ({

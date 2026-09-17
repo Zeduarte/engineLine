@@ -1,3 +1,4 @@
+import { getPublicVehicleType } from "./vehicle-context";
 import "server-only";
 import type { VehicleType } from "./vehicle-categories";
 import { getShowroomContent } from "./showroom-queries";
@@ -37,6 +38,7 @@ const CAR_SELECT = "*, car_media(*)";
 export async function getVehicles(
   vehicleType?: VehicleType | null,
 ): Promise<Vehicle[]> {
+  vehicleType = vehicleType ?? await getPublicVehicleType();
   const supabase = supabasePublic;
   let query = supabase
     .from("cars")
@@ -58,7 +60,7 @@ export async function getFeaturedVehicles(limit = 3): Promise<Vehicle[]> {
   const supabase = supabasePublic;
   const { data, error } = await supabase
     .from("cars")
-    .select(CAR_SELECT)
+    .select(CAR_SELECT).eq("vehicle_type", await getPublicVehicleType())
     .in("status", ["published", "reserved"])
     .eq("featured", true)
     .order("published_at", { ascending: false, nullsFirst: false })
@@ -75,7 +77,7 @@ export async function getFeaturedVehicles(limit = 3): Promise<Vehicle[]> {
 export async function getRecentVehicles(limit = 12): Promise<Vehicle[]> {
   const { data, error } = await supabasePublic
     .from("cars")
-    .select(CAR_SELECT)
+    .select(CAR_SELECT).eq("vehicle_type", await getPublicVehicleType())
     .in("status", ["published", "reserved"])
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
@@ -96,7 +98,7 @@ export async function getRecentVehicles(limit = 12): Promise<Vehicle[]> {
 export async function getSoldVehicles(limit?: number): Promise<Vehicle[]> {
   let query = supabasePublic
     .from("cars")
-    .select(CAR_SELECT)
+    .select(CAR_SELECT).eq("vehicle_type", await getPublicVehicleType())
     .eq("status", "sold")
     .order("sold_at", { ascending: false, nullsFirst: false })
     .order("updated_at", { ascending: false });
@@ -116,7 +118,7 @@ export async function getVehicleBySlug(
   const supabase = supabasePublic;
   const { data, error } = await supabase
     .from("cars")
-    .select(CAR_SELECT)
+    .select(CAR_SELECT).eq("vehicle_type", await getPublicVehicleType())
     .eq("slug", slug)
     .in("status", ["published", "reserved", "sold"])
     .maybeSingle();

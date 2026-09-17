@@ -1,5 +1,6 @@
 "use client";
 
+import { useVehicleWorld } from "@/components/site/VehicleWorld";
 import { useCallback, useEffect, useState } from "react";
 
 /**
@@ -50,9 +51,10 @@ export interface UseLocalList {
 }
 
 export function useLocalList(
-  key: string,
+  baseKey: string,
   options: { max?: number; prepend?: boolean } = {},
 ): UseLocalList {
+  const key = `${baseKey}:${useVehicleWorld()}`;
   const { max, prepend = false } = options;
   const [items, setItems] = useState<string[]>([]);
   const [ready, setReady] = useState(false);

@@ -1,3 +1,5 @@
+import { getPublicVehicleType, getVehicleSelection } from "@/lib/vehicle-context";
+import { VehicleWorld } from "@/components/site/VehicleWorld";
 import { LenisProvider } from "@/components/providers/LenisProvider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -19,11 +21,13 @@ export default async function PublicLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const branding = await getBranding();
+  const type = await getPublicVehicleType();
+  const selection = await getVehicleSelection();
 
   return (
-    <LenisProvider>
+    <VehicleWorld key={type} type={type}><LenisProvider>
       <CompareProvider>
-        <WorldEntrance name={branding.companyName} />
+        <WorldEntrance name={branding.companyName} selected={selection} />
         {/* Salto para conteúdo — acessibilidade por teclado. */}
         <a
           href="#conteudo"
@@ -34,7 +38,7 @@ export default async function PublicLayout({
         <DealerJsonLd branding={branding} />
         <ScrollProgress />
         <Header branding={branding} />
-        <main id="conteudo">{children}</main>
+        <main id="conteudo" className="pt-16">{children}</main>
         <Footer branding={branding} />
         <ContactFab
           whatsapp={branding.company.whatsapp}
@@ -44,6 +48,6 @@ export default async function PublicLayout({
         <CompareBar />
         <GrainOverlay />
       </CompareProvider>
-    </LenisProvider>
+    </LenisProvider></VehicleWorld>
   );
 }

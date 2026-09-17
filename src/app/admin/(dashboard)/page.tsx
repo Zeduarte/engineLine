@@ -1,3 +1,4 @@
+import { getAdminVehicleType } from "@/lib/vehicle-context";
 import { createClient } from "@/lib/supabase/server";
 import { OperationalDashboard } from "@/components/admin/OperationalDashboard";
 import Link from "next/link";
@@ -39,6 +40,7 @@ function Kpi({
 }
 
 export default async function DashboardPage() {
+  const vehicleType = await getAdminVehicleType();
   // O mecânico não tem dashboard — vai direto para a Oficina.
   const profile = await getCurrentProfile();
   if (profile?.role === "mecanico") redirect("/admin/oficina");
@@ -161,7 +163,8 @@ export default async function DashboardPage() {
                   <tr key={c.slug || c.name}>
                     <td className="p-3">
                       <Link
-                        href={`/viaturas/${c.slug}`}
+                        prefetch={false}
+            href={`/api/vehicle-context?area=public&type=${vehicleType}&target=${encodeURIComponent(`/viaturas/${c.slug}`)}`}
                         className="text-paper hover:text-accent"
                       >
                         {c.name}

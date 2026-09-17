@@ -12,6 +12,7 @@ export default async function CarsPage() {
 
   const items: CarListItem[] = cars.map((c) => ({
     id: c.id,
+    vehicleType: c.vehicle_type ?? "car",
     plate: c.license_plate,
     make: c.make,
     model: c.model,

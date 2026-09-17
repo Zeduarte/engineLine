@@ -1,3 +1,4 @@
+import { getAdminVehicleType } from "@/lib/vehicle-context";
 import Link from "next/link";
 import { requireSection } from "@/lib/guard";
 import { createClient } from "@/lib/supabase/server";
@@ -7,9 +8,9 @@ import { formatPrice } from "@/lib/format";
 import { WorkshopSettingsForm } from "@/components/admin/WorkshopSettingsForm";
 export const dynamic="force-dynamic";
 export default async function FinancePage({searchParams}: {searchParams:Promise<{q?:string;age?:string}>}) {
- const me=await requireSection("financeiro");const db=await createClient();const params=await searchParams;
+ const me=await requireSection("financeiro");const db=await createClient();const vehicleType=await getAdminVehicleType();const params=await searchParams;
  const [cars,finances,costs,tasks]=await Promise.all([
-  allRows((a,b)=>db.from("cars").select("id,make,model,license_plate,price,status").order("id").range(a,b)),
+  allRows((a,b)=>db.from("cars").select("id,make,model,license_plate,price,status").eq("vehicle_type", vehicleType).order("id").range(a,b)),
   allRows((a,b)=>db.from("vehicle_financials").select("*").order("car_id").range(a,b)),
   allRows((a,b)=>db.from("vehicle_costs").select("car_id,amount").order("id").range(a,b)),
   allRows((a,b)=>db.from("vehicle_tasks").select("car_id,hours").order("id").range(a,b)),

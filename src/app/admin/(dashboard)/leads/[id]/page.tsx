@@ -1,3 +1,4 @@
+import { getAdminVehicleType } from "@/lib/vehicle-context";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSection } from "@/lib/guard";
@@ -13,11 +14,12 @@ export default async function LeadPage({params}: {params:Promise<{id:string}>}) 
   const me = await requireSection("leads");
   const {id} = await params;
   const db = await createClient();
+  const vehicleType = await getAdminVehicleType();
   const [{data:lead,error},{data:staff},{data:activities},{data:reservations},{data:cars}] = await Promise.all([
-    db.from("leads").select("*").eq("id",id).maybeSingle(), db.rpc("staff_directory"),
+    db.from("leads").select("*").eq("id",id).or(`vehicle_type.eq.${vehicleType},vehicle_type.is.null`).maybeSingle(), db.rpc("staff_directory"),
     db.from("lead_activities").select("*").eq("lead_id",id).order("created_at",{ascending:false}).limit(100),
     db.from("reservations").select("*").eq("lead_id",id).order("created_at",{ascending:false}),
-    db.from("cars").select("id,make,model,license_plate,status").in("status",["published","reserved"]).order("make"),
+    db.from("cars").select("id,make,model,license_plate,status").eq("vehicle_type",vehicleType).in("status",["published","reserved"]).order("make"),
   ]);
   if (error) throw new Error("Não foi possível carregar o contacto.");
   if (!lead) notFound();
@@ -32,6 +34,7 @@ export default async function LeadPage({params}: {params:Promise<{id:string}>}) 
       <div className="mt-3 flex flex-wrap gap-4 text-accent"><a href={`mailto:${lead.email}`}>{lead.email}</a>{lead.phone && <a href={`tel:${lead.phone}`}>{lead.phone}</a>}</div>
       {lead.message && <p className="mt-4 whitespace-pre-wrap text-sm">{lead.message}</p>}
     </header>
+    {lead.vehicle_type === null && <p className="card p-4 text-sm">Contacto antigo sem tipo. Associe um carro ou uma mota na área correspondente.</p>}
     {lead.next_action_at && !inactive && <div className="card border-accent/40 p-4"><strong>{new Date(lead.next_action_at)<new Date() ? "Ação em atraso" : "Próxima ação"}</strong><p>{lead.next_action} · {new Date(lead.next_action_at).toLocaleString("pt-PT",{timeZone:"Europe/Lisbon"})}</p></div>}
     {(lead.preferred_date || Object.keys(lead.car_details ?? {}).length > 0) && <section className="card space-y-2 p-4 text-sm">
       <h2 className="font-semibold">Detalhes do pedido</h2>

@@ -143,31 +143,6 @@ export function Filters({
           </div>
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            <Field label="Ponto de venda">
-              <Select
-                value={filters.location ?? ""}
-                onChange={(v) => onChange({ location: v || null })}
-              >
-                <option value="">Todos</option>
-                {options.locations.map((l) => (
-                  <option key={l.value} value={l.value}>
-                    {l.label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Ano até">
-              <NumberInput
-                value={filters.maxYear}
-                onChange={(v) => onChange({ maxYear: v })}
-              />
-            </Field>
-            <Field label="Km desde">
-              <NumberInput
-                value={filters.minMileage}
-                onChange={(v) => onChange({ minMileage: v })}
-              />
-            </Field>
             <label className="flex items-center gap-2 text-sm text-paper">
               <input
                 type="checkbox"
@@ -230,37 +205,14 @@ export function Filters({
               </Select>
             </Field>
 
-            <Field label="Preço mín. (€)">
-              <NumberInput
-                value={filters.minPrice}
-                placeholder="0"
-                onChange={(v) => onChange({ minPrice: v })}
-              />
-            </Field>
-
-            <Field label="Preço máx. (€)">
-              <NumberInput
-                value={filters.maxPrice}
-                placeholder="—"
-                onChange={(v) => onChange({ maxPrice: v })}
-              />
-            </Field>
-
-            <Field label="Ano desde">
-              <NumberInput
-                value={filters.minYear}
-                placeholder="—"
-                onChange={(v) => onChange({ minYear: v })}
-              />
-            </Field>
-
-            <Field label="Km até">
-              <NumberInput
-                value={filters.maxMileage}
-                placeholder="—"
-                onChange={(v) => onChange({ maxMileage: v })}
-              />
-            </Field>
+            {([
+              ["Preço (€)","minPrice","maxPrice"],
+              ["Ano","minYear","maxYear"],
+              ["Quilómetros","minMileage","maxMileage"],
+            ] as const).map(([label,min,max]) => <fieldset key={label} className="col-span-2 rounded-xl border border-white/10 p-3">
+              <legend className="px-1 text-xs uppercase tracking-wider text-paper/60">{label}</legend>
+              <div className="grid grid-cols-2 gap-3"><Field label={`${label} desde`}><NumberInput value={filters[min]} placeholder="Mínimo" onChange={v=>onChange({[min]:v})}/></Field><Field label={`${label} até`}><NumberInput value={filters[max]} placeholder="Máximo" onChange={v=>onChange({[max]:v})}/></Field></div>
+            </fieldset>)}
           </div>
         </div>
       )}

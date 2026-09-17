@@ -1,5 +1,6 @@
 "use client";
 
+import { useVehicleWorld } from "@/components/site/VehicleWorld";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PrivacyNotice } from "@/components/forms/PrivacyNotice";
@@ -10,6 +11,7 @@ import { submitLead, type LeadActionState } from "@/lib/actions/leads";
  * esteja em stock. Cria uma lead `order` (procura qualificada).
  */
 export function OrderCarForm() {
+  const type = useVehicleWorld();
   const [state, formAction, pending] = useActionState<
     LeadActionState,
     FormData
@@ -82,7 +84,7 @@ export function OrderCarForm() {
                 name="od_desc"
                 rows={3}
                 className="field"
-                placeholder="Ex.: BMW Série 3 diesel, automático, até 120.000 km, cor escura"
+                placeholder={type === "motorcycle" ? "Ex.: Honda CB500, até 20.000 km" : "Ex.: BMW Série 3 diesel, automático, até 120.000 km, cor escura"}
               />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">

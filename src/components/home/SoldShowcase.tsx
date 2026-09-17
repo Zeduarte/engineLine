@@ -17,7 +17,7 @@ export function SoldShowcase({ vehicles }: { vehicles: Vehicle[] }) {
         <div className="max-w-2xl">
           <p className="eyebrow mb-4">Já entregues</p>
           <h2 className="text-headline font-semibold text-paper">
-            Carros que encontraram dono
+            Viaturas que encontraram dono
           </h2>
           <p className="mt-4 text-lg font-light text-paper/60">
             Cada viatura vendida é uma história de confiança. Veja algumas das

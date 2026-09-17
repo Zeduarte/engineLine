@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
-import { useRouter } from "next/navigation";
+import type { VehicleType } from "@/lib/vehicle-categories";
 import { asset } from "@/lib/asset";
 import styles from "./WorldEntrance.module.css";
 
-/** Demonstration selector: memory only, so every full reload shows it again. */
-export function WorldEntrance({ name }: { name: string }) {
+/** First visit selects the persistent public vehicle category. */
+export function WorldEntrance({ name, selected }: { name: string; selected: VehicleType | null }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const [entered, setEntered] = useState(false);
-  const router = useRouter();
+  const [entered, setEntered] = useState(Boolean(selected));
   const [leaving, setLeaving] = useState<string | null>(null);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const exiting = useRef(false);
@@ -52,13 +51,13 @@ export function WorldEntrance({ name }: { name: string }) {
     };
   }, [entered]);
 
-  function enter(choice = "A tua próxima viagem") {
+  function enter(type: VehicleType, choice = "A tua próxima viagem") {
     if (exiting.current) return;
     exiting.current = true;
     const finish = () => {
       dialog.current?.close();
       setEntered(true);
-      router.push("/");
+      window.location.assign(`/api/vehicle-context?type=${type}&area=public`);
     };
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       finish();
@@ -72,11 +71,11 @@ export function WorldEntrance({ name }: { name: string }) {
 
   return (
     <dialog ref={dialog} className={styles.entrance} data-leaving={leaving ? "true" : undefined} aria-labelledby="world-title"
-      data-lenis-prevent onCancel={(event) => { event.preventDefault(); enter(); }}>
+      data-lenis-prevent onCancel={(event) => { event.preventDefault(); }}>
       <header className={styles.header}>
         <span className={styles.brand}>{name}<span className={styles.brandDot}>.</span></span>
         <span className={styles.edition}>DUAS FORMAS DE SENTIR A ESTRADA</span>
-        <button className={styles.skip} onClick={() => enter()}>Entrar no site <span aria-hidden>↗</span></button>
+        <span className={styles.skip}>Escolhe carros ou motas</span>
       </header>
 
       <div className={styles.heading}>
@@ -86,7 +85,7 @@ export function WorldEntrance({ name }: { name: string }) {
 
       <div className={styles.worlds}>
         <span className={styles.opening} aria-hidden />
-        <button className={`${styles.world} ${styles.moto}`} onPointerMove={move} onPointerLeave={reset} onClick={() => enter("Liberdade sobre duas rodas")} aria-label="Escolher motas e entrar no site">
+        <button className={`${styles.world} ${styles.moto}`} onPointerMove={move} onPointerLeave={reset} onClick={() => enter("motorcycle", "Liberdade sobre duas rodas")} aria-label="Escolher motas e entrar no site">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={asset("/entrance/motorcycle.jpg")} alt="" fetchPriority="high" className={styles.photo} />
           <span className={styles.shade} />
@@ -101,7 +100,7 @@ export function WorldEntrance({ name }: { name: string }) {
           </span>
         </button>
         <span className={styles.divider} aria-hidden><span>&</span></span>
-        <button className={`${styles.world} ${styles.car}`} onPointerMove={move} onPointerLeave={reset} onClick={() => enter("Paixão em quatro rodas")} aria-label="Escolher carros e entrar no site">
+        <button className={`${styles.world} ${styles.car}`} onPointerMove={move} onPointerLeave={reset} onClick={() => enter("car", "Paixão em quatro rodas")} aria-label="Escolher carros e entrar no site">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={asset("/hero/porse.jpeg")} alt="" fetchPriority="high" className={styles.photo} />
           <span className={styles.shade} />

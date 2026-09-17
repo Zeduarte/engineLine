@@ -1,3 +1,4 @@
+import { getPublicVehicleType } from "@/lib/vehicle-context";
 import type { Metadata } from "next";
 import { getVehicles } from "@/lib/queries";
 import { CarQuiz } from "@/components/quiz/CarQuiz";
@@ -6,12 +7,13 @@ import { AnimatedText } from "@/components/ui/AnimatedText";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Encontre o seu carro ideal",
+  title: "Encontre a sua viatura ideal",
   description:
     "Responda a 5 perguntas rápidas e descubra as viaturas do nosso stand mais indicadas para si.",
 };
 
 export default async function QuizPage() {
+  const type = await getPublicVehicleType();
   const vehicles = await getVehicles();
 
   return (
@@ -24,7 +26,7 @@ export default async function QuizPage() {
             className="text-headline font-semibold text-paper"
             highlight={["ideal"]}
           >
-            Encontre o seu carro ideal
+            {type === "motorcycle" ? "Encontre a sua mota ideal" : "Encontre o seu carro ideal"}
           </AnimatedText>
           <p className="mt-4 text-lg font-light text-paper/60">
             Responda a 5 perguntas rápidas e mostramos-lhe as viaturas do nosso

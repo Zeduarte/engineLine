@@ -89,7 +89,8 @@ export default async function EditCarPage({ params }: { params: Params }) {
         </div>
         {car.status === "published" && (
           <Link
-            href={`/viaturas/${car.slug}`}
+            prefetch={false}
+            href={`/api/vehicle-context?area=public&type=${car.vehicle_type ?? "car"}&target=${encodeURIComponent(`/viaturas/${car.slug}`)}`}
             target="_blank"
             className="btn-ghost"
           >

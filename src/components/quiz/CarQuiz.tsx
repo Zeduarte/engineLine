@@ -1,5 +1,7 @@
 "use client";
 
+import { useVehicleWorld } from "@/components/site/VehicleWorld";
+import { MOTORCYCLE_BODIES } from "@/lib/vehicle-categories";
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { VehicleCard } from "@/components/vehicle/VehicleCard";
@@ -99,12 +101,12 @@ function scoreVehicle(v: Vehicle, a: Answers): number {
     score += 10;
 
   if (a.usage) {
-    if (a.usage === "city" && (v.body === "Citadino" || v.body === "SUV")) score += 8;
+    if (a.usage === "city" && (v.body === "Citadino" || v.body === "SUV" || v.body === "Scooter" || v.body === "Naked")) score += 8;
     if (a.usage === "family" && (v.body === "SUV" || v.body === "Carrinha" || v.body === "Monovolume"))
       score += 8;
-    if (a.usage === "travel" && (v.fuel === "Diesel" || v.body === "Berlina" || v.body === "SUV"))
+    if (a.usage === "travel" && (v.fuel === "Diesel" || v.body === "Berlina" || v.body === "SUV" || v.body === "Touring" || v.body === "Trail"))
       score += 8;
-    if (a.usage === "performance" && (v.body === "Coupé" || v.power >= 250)) score += 10;
+    if (a.usage === "performance" && (v.body === "Coupé" || v.body === "Desportiva" || v.power >= 250)) score += 10;
   }
 
   if (v.featured) score += 3;
@@ -112,6 +114,15 @@ function scoreVehicle(v: Vehicle, a: Answers): number {
 }
 
 export function CarQuiz({ vehicles }: { vehicles: Vehicle[] }) {
+  const world = useVehicleWorld();
+  const steps = STEPS.map(s => {
+    if (world !== "motorcycle") return s;
+    if (s.key === "body") return {...s,title:"Que tipo de mota procura?",options:[...MOTORCYCLE_BODIES.map(value=>({value,label:value})),{value:"any",label:"Indiferente"}]};
+    if (s.key === "budget") return {...s,options:[{value:"0-5000",label:"Até 5.000 €"},{value:"5000-10000",label:"5.000 – 10.000 €"},{value:"10000-20000",label:"10.000 – 20.000 €"},{value:"20000-999999999",label:"Mais de 20.000 €"}]};
+    if (s.key === "fuel") return {...s,options:s.options.filter(o=>["Gasolina","Elétrico","any"].includes(o.value))};
+    if (s.key === "usage") return {...s,options:s.options.filter(o=>o.value!=="family")};
+    return s;
+  });
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [done, setDone] = useState(false);
@@ -127,10 +138,10 @@ export function CarQuiz({ vehicles }: { vehicles: Vehicle[] }) {
   }, [done, vehicles, answers]);
 
   function pick(value: string) {
-    const key = STEPS[step]!.key;
+    const key = steps[step]!.key;
     const next = { ...answers, [key]: value };
     setAnswers(next);
-    if (step + 1 < STEPS.length) setStep(step + 1);
+    if (step + 1 < steps.length) setStep(step + 1);
     else setDone(true);
   }
 
@@ -176,15 +187,15 @@ export function CarQuiz({ vehicles }: { vehicles: Vehicle[] }) {
     );
   }
 
-  const current = STEPS[step]!;
-  const progress = Math.round((step / STEPS.length) * 100);
+  const current = steps[step]!;
+  const progress = Math.round((step / steps.length) * 100);
 
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-8">
         <div className="mb-2 flex items-center justify-between text-xs text-paper/50">
           <span>
-            Passo {step + 1} de {STEPS.length}
+            Passo {step + 1} de {steps.length}
           </span>
           <span>{progress}%</span>
         </div>
@@ -225,14 +236,14 @@ export function CarQuiz({ vehicles }: { vehicles: Vehicle[] }) {
               public/images/quiz.jpg (fallback: fundo sólido). */}
           <div
             className="relative mt-6 h-40 overflow-hidden rounded-2xl border border-white/10 bg-ink-soft bg-cover bg-center md:h-56"
-            style={{ backgroundImage: "url(/images/quiz.jpg)" }}
+            style={{ backgroundImage: world === "motorcycle" ? "url(/entrance/motorcycle.jpg)" : "url(/images/quiz.jpg)" }}
           >
             <div
               aria-hidden
               className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent"
             />
             <div className="absolute bottom-4 left-5">
-              <p className="eyebrow mb-1">Encontre o seu carro ideal</p>
+              <p className="eyebrow mb-1">{world === "motorcycle" ? "Encontre a sua mota ideal" : "Encontre o seu carro ideal"}</p>
               <p className="text-lg font-semibold text-paper">
                 Sem surpresas, sem pressão.
               </p>

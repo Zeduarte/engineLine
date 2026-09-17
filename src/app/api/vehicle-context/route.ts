@@ -1,0 +1,40 @@
+import { NextRequest, NextResponse } from "next/server";
+
+const ADMIN_TARGETS = [
+  "/admin", "/admin/carros", "/admin/carros/novo", "/admin/oficina",
+  "/admin/financeiro", "/admin/leads", "/admin/integracoes",
+  "/admin/pagina-inicial", "/admin/definicoes", "/admin/testemunhos",
+  "/admin/utilizadores",
+];
+const PUBLIC_TARGETS = [
+  "/", "/inventario", "/vendidos", "/favoritos", "/quiz", "/vender",
+  "/contactos", "/sobre", "/servicos", "/comparar",
+];
+
+export async function GET(request: NextRequest) {
+  const params = request.nextUrl.searchParams;
+  const type = params.get("type");
+  const area = params.get("area") === "admin" ? "admin" : "public";
+  if (type !== "car" && type !== "motorcycle") {
+    return NextResponse.json({ error: "Tipo inválido" }, { status: 400 });
+  }
+
+  const target = params.get("target");
+  const allowed = area === "admin" ? ADMIN_TARGETS : PUBLIC_TARGETS;
+  const validTarget = target && (
+    allowed.includes(target) ||
+    (area === "public" && /^\/viaturas\/[a-z0-9-]+$/.test(target)) ||
+    (area === "admin" && /^\/admin\/carros\/[0-9a-f-]{36}$/.test(target))
+  );
+  const destination = validTarget ? target : area === "admin" ? "/admin/carros" : "/";
+  const response = NextResponse.redirect(new URL(destination, request.url), 303);
+  response.cookies.set(`engineline_${area}_type`, type, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: request.nextUrl.protocol === "https:",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+  response.headers.set("Cache-Control", "no-store");
+  return response;
+}

@@ -25,7 +25,8 @@ function load(file){file=resolve(file);if(cache.has(file))return cache.get(file)
  const source=readFileSync(file,'utf8');const {outputText}=ts.transpileModule(source,{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}});
  const custom=(id)=>{
   if(id==='server-only')return {};
-  if(id==='next/navigation')return {useRouter:()=>({refresh(){}}),notFound(){throw Error('404');}};
+  if(id==='next/headers')return {cookies:async()=>({get:()=>({value:'car'})})};
+  if(id==='next/navigation')return {usePathname:()=>'/inventario',useRouter:()=>({refresh(){}}),notFound(){throw Error('404');}};
   if(id==='next/link')return {__esModule:true,default:({href,children,scroll,...props})=>React.createElement('a',{href,...props},children)};
   if(id==='@/lib/supabase/server')return {createClient:async()=>db};
   if(id==='@/lib/guard')return {requireSection:async()=>({id:'me',role,allowed_sections:null})};
@@ -82,7 +83,7 @@ await test('editing a motorcycle restores its type and hides car-specific doors'
 await test('inventory exposes separate shareable car and motorcycle sections',()=>{
  const Nav=load('src/components/inventory/InventoryTypeNav.tsx').InventoryTypeNav;
  const html=renderToStaticMarkup(React.createElement(Nav,{selected:'motorcycle'}));
- assert.ok(html.includes('href="/inventario?tipo=carros"'));
- assert.ok(html.includes('href="/inventario?tipo=motas" aria-current="page"'));
+ assert.ok(html.includes('type=car&amp;target=%2Finventario"'));
+ assert.ok(html.includes('type=motorcycle&amp;target=%2Finventario" aria-current="page"'));
  assert.equal((html.match(/aria-current="page"/g)||[]).length,1);
 });

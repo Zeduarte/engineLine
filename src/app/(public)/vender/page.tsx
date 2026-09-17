@@ -6,7 +6,7 @@ import { OrderCarForm } from "@/components/forms/OrderCarForm";
 export const metadata: Metadata = {
   title: "Vender ou Encomendar",
   description:
-    "Avalie a retoma do seu carro ou encomende a viatura que procura. Resposta rápida e sem compromisso.",
+    "Avalie a retoma da sua viatura ou encomende a viatura que procura. Resposta rápida e sem compromisso.",
 };
 
 export default function SellPage() {
@@ -19,7 +19,7 @@ export default function SellPage() {
           splitBy="word"
           className="max-w-3xl text-display font-bold text-paper"
         >
-          O seu carro vale mais connosco
+          A sua viatura vale mais connosco
         </AnimatedText>
         <p className="mt-6 max-w-xl text-lg font-light text-paper/60">
           Avalie a sua retoma em minutos ou peça a viatura ideal — mesmo que

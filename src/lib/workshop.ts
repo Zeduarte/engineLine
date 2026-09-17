@@ -1,3 +1,4 @@
+import { getAdminVehicleType } from "@/lib/vehicle-context";
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { coverImage } from "@/lib/mappers";
@@ -22,10 +23,11 @@ export interface WorkshopVehicle {
  */
 export async function getWorkshopVehicles(): Promise<WorkshopVehicle[]> {
   const supabase = await createClient();
+  const vehicleType = await getAdminVehicleType();
   const [{ data: cars }, { data: logs }] = await Promise.all([
     supabase
       .from("cars")
-      .select("*, car_media(*)")
+      .select("*, car_media(*)").eq("vehicle_type", vehicleType)
       .order("updated_at", { ascending: false }),
     supabase.from("vehicle_tasks").select("car_id, hours"),
   ]);
@@ -95,8 +97,9 @@ export async function getWorkshopVehicle(
   id: string,
 ): Promise<WorkshopVehicleDetail | null> {
   const supabase = await createClient();
+  const vehicleType = await getAdminVehicleType();
   const [{ data: car }, { data: logRows }] = await Promise.all([
-    supabase.from("cars").select("*, car_media(*)").eq("id", id).maybeSingle(),
+    supabase.from("cars").select("*, car_media(*)").eq("vehicle_type", vehicleType).eq("id", id).maybeSingle(),
     supabase
       .from("vehicle_tasks")
       .select("*")

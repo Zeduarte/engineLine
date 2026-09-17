@@ -66,7 +66,7 @@ export function CarForm({
   defaults?: Partial<CarFormValues>;
 }) {
   const router = useRouter();
-  const [typeChosen, setTypeChosen] = useState(Boolean(carId));
+  const [typeChosen, setTypeChosen] = useState(Boolean(carId || defaults?.vehicle_type));
   const [extras, setExtras] = useState<string[]>(defaults?.extras ?? []);
   const [extraInput, setExtraInput] = useState("");
   const [channels, setChannels] = useState<string[]>(defaults?.channels ?? []);
@@ -179,6 +179,10 @@ export function CarForm({
 
     if (!res.ok) {
       toast.error(res.error ?? "Não foi possível guardar.");
+      return;
+    }
+    if (values.vehicle_type !== defaults?.vehicle_type) {
+      window.location.assign(`/api/vehicle-context?area=admin&type=${values.vehicle_type}&target=${encodeURIComponent(`/admin/carros/${carId ?? res.id}`)}`);
       return;
     }
     if (carId) {

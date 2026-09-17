@@ -1,3 +1,4 @@
+import { getAdminVehicleType } from "@/lib/vehicle-context";
 import "server-only";
 import { allRows } from "@/lib/pagination";
 import { createClient } from "@/lib/supabase/server";
@@ -50,7 +51,8 @@ export async function getCurrentProfile(): Promise<ProfileRow | null> {
 /** Todos os carros (staff) com a sua media — para a listagem do backoffice. */
 export async function getAdminCars(): Promise<CarWithMedia[]> {
   const supabase = await createClient();
-  return await allRows((a,b) => supabase.from("cars").select("*, car_media(*)").order("updated_at", {ascending:false}).order("id").range(a,b)) as unknown as CarWithMedia[];
+  const vehicleType = await getAdminVehicleType();
+  return await allRows((a,b) => supabase.from("cars").select("*, car_media(*)").eq("vehicle_type", vehicleType).order("updated_at", {ascending:false}).order("id").range(a,b)) as unknown as CarWithMedia[];
 }
 
 /** Um carro por id, com media ordenada. */
@@ -58,9 +60,10 @@ export async function getAdminCarById(
   id: string,
 ): Promise<CarWithMedia | null> {
   const supabase = await createClient();
+  const vehicleType = await getAdminVehicleType();
   const { data, error } = await supabase
     .from("cars")
-    .select("*, car_media(*)")
+    .select("*, car_media(*)").eq("vehicle_type", vehicleType)
     .eq("id", id)
     .maybeSingle();
   if (error) {
@@ -122,9 +125,10 @@ const MONTHS_PT = [
 /** Agrega KPIs e séries para os gráficos da dashboard. */
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = await createClient();
+  const vehicleType = await getAdminVehicleType();
   const [cars, summary] = await Promise.all([
-    allRows((a,b) => supabase.from("cars").select("id, slug, make, model, fuel, price, price_on_request, status, created_at, sold_at").order("id").range(a,b)),
-    supabase.rpc("analytics_summary"),
+    allRows((a,b) => supabase.from("cars").select("id, slug, make, model, fuel, price, price_on_request, status, created_at, sold_at").eq("vehicle_type", vehicleType).order("id").range(a,b)),
+    supabase.rpc("analytics_summary_by_type", {selected_type:vehicleType}),
   ]);
   if (summary.error || !summary.data) throw new Error("Não foi possível carregar os indicadores.");
   const analytics = summary.data;

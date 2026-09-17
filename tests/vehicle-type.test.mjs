@@ -6,7 +6,9 @@ import { createRequire } from "node:module";
 import ts from "typescript";
 const require = createRequire(import.meta.url);
 const rows = [];
+const leadRows = [];
 let nextId = 1;
+let publicType="car",adminType="car";
 const requestedSections = [];
 function query(table) {
   const conditions = [];
@@ -17,6 +19,7 @@ function query(table) {
     select() {
       return api;
     },
+    range() { return api; },
     order() {
       return api;
     },
@@ -65,7 +68,7 @@ function query(table) {
             id: `00000000-0000-4000-8000-${String(nextId++).padStart(12, "0")}`,
           },
         ];
-        rows.push(...result);
+        (table === "leads" ? leadRows : rows).push(...result);
       }
       if (operation === "update")
         result.forEach((r) => Object.assign(r, payload));
@@ -88,12 +91,14 @@ function load(file) {
   const mod = { exports: {} };
   const custom = (id) => {
     if (id === "server-only") return {};
+    if (id === "next/headers") return {cookies:async()=>({get:key=>({value:key === "engineline_admin_type" ? adminType : publicType})})};
     if (id === "next/cache")
       return { revalidatePath() {}, unstable_cache: (f) => f };
     if (id === "@/lib/guard")
       return {
         requireSection: async (section) => requestedSections.push(section),
       };
+    if (id === "@/lib/public-submissions") return {publicSubmissionClient:async()=>db};
     if (id === "@/lib/supabase/server") return { createClient: async () => db };
     if (id === "@/lib/supabase/public") return { supabasePublic: db };
     if (id === "@/lib/storage")
@@ -122,7 +127,8 @@ function load(file) {
   return mod.exports;
 }
 const { createCar, updateCar } = load("src/lib/actions/cars.ts");
-const { getVehicles } = load("src/lib/queries.ts");
+const { getVehicles, getRecentVehicles, getFeaturedVehicles, getSoldVehicles, getVehicleBySlug } = load("src/lib/queries.ts");
+const { getAdminCars, getAdminCarById } = load("src/lib/admin-queries.ts");
 const { inventoryVehicleType } = load("src/lib/vehicle-categories.ts");
 await test("advert type is persisted on create/edit and scopes public database reads", async () => {
   const common = {
@@ -167,7 +173,10 @@ await test("advert type is persisted on create/edit and scopes public database r
     (await getVehicles("car")).map((v) => v.id),
     [c.id],
   );
-  assert.equal((await getVehicles()).length, 2);
+  assert.deepEqual((await getVehicles()).map(v=>v.id),[c.id]);
+  publicType="motorcycle";
+  assert.deepEqual((await getVehicles()).map(v=>v.id),[b.id]);
+  publicType="car";
   assert.deepEqual(requestedSections, ["carros", "carros", "carros"]);
 });
 test("inventory URL accepts only known vehicle sections", () => {
@@ -175,4 +184,53 @@ test("inventory URL accepts only known vehicle sections", () => {
   assert.equal(inventoryVehicleType("motas"), "motorcycle");
   for (const value of [undefined, "unknown", ["motas", "carros"]])
     assert.equal(inventoryVehicleType(value), null);
+});
+
+await test("public and admin categories stay independent across every vehicle list and detail",async()=>{
+ const bike=rows.find(r=>r.vehicle_type==="motorcycle"), car=rows.find(r=>r.vehicle_type==="car");
+ bike.featured=car.featured=true;
+ publicType="motorcycle";adminType="car";
+ assert.deepEqual((await getRecentVehicles()).map(v=>v.id),[bike.id]);
+ assert.deepEqual((await getFeaturedVehicles()).map(v=>v.id),[bike.id]);
+ assert.equal(await getVehicleBySlug(car.slug),undefined);
+ assert.equal((await getVehicleBySlug(bike.slug)).id,bike.id);
+ assert.deepEqual((await getAdminCars()).map(v=>v.id),[car.id]);
+ assert.equal(await getAdminCarById(bike.id),null);
+ bike.status=car.status="sold";
+ assert.deepEqual((await getSoldVehicles()).map(v=>v.id),[bike.id]);
+ adminType="motorcycle";
+ assert.deepEqual((await getAdminCars()).map(v=>v.id),[bike.id]);
+ publicType="car";
+ assert.deepEqual((await getSoldVehicles()).map(v=>v.id),[car.id]);
+});
+await test("selection endpoint stores only the requested area and rejects unsafe types and redirects",async()=>{
+ const {NextRequest}=require("next/server");
+ const {GET}=load("src/app/api/vehicle-context/route.ts");
+ const result=await GET(new NextRequest("https://example.test/api/vehicle-context?type=motorcycle&area=public&target=%2Finventario"));
+ assert.equal(result.status,303);
+ assert.equal(result.headers.get("location"),"https://example.test/inventario");
+ assert.equal(result.cookies.get("engineline_public_type").value,"motorcycle");
+ assert.equal(result.cookies.get("engineline_admin_type"),undefined);
+ assert.match(result.headers.get("set-cookie"),/HttpOnly/);
+ const unsafe=await GET(new NextRequest("https://example.test/api/vehicle-context?type=car&area=admin&target=https://evil.test"));
+ assert.equal(unsafe.headers.get("location"),"https://example.test/admin/carros");
+ assert.equal(unsafe.cookies.get("engineline_admin_type").value,"car");
+ const invalid=await GET(new NextRequest("https://example.test/api/vehicle-context?type=truck"));
+ assert.equal(invalid.status,400);
+});
+
+await test("public enquiries inherit the chosen world and cannot bind to the other category",async()=>{
+ const {submitLead}=load("src/lib/actions/leads.ts");
+ publicType="motorcycle";
+ const car=rows.find(r=>r.vehicle_type==="car"),bike=rows.find(r=>r.vehicle_type==="motorcycle");
+ car.status=bike.status="published";
+ function form(id){const f=new FormData();for(const[k,v]of Object.entries({privacy_acknowledged:"yes",kind:"contact",name:"Cliente Teste",email:"cliente@example.test",message:"Pretendo mais informações",...(id?{car_id:id}:{})}))f.set(k,v);return f;}
+ assert.equal((await submitLead({ok:false},form())).ok,true);
+ assert.equal(leadRows.at(-1).vehicle_type,"motorcycle");
+ const before=leadRows.length;
+ assert.equal((await submitLead({ok:false},form(car.id))).ok,false);
+ assert.equal(leadRows.length,before);
+ assert.equal((await submitLead({ok:false},form(bike.id))).ok,true);
+ assert.equal(leadRows.at(-1).car_id,bike.id);
+ assert.equal(leadRows.at(-1).vehicle_type,"motorcycle");
 });
