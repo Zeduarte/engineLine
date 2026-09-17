@@ -127,7 +127,10 @@ export function Filters({
         <div className="mt-5 border-t border-white/10 pt-5">
           {/* Atalhos rápidos */}
           <div className="mb-5 flex flex-wrap gap-2">
-            {QUICK_CHIPS.map((chip) => (
+            {QUICK_CHIPS.filter(
+              (chip) =>
+                filters.vehicleType !== "motorcycle" || !chip.patch.body,
+            ).map((chip) => (
               <button
                 key={chip.label}
                 type="button"
@@ -140,21 +143,6 @@ export function Filters({
           </div>
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            <Field label="Tipo de viatura">
-              <Select
-                value={filters.vehicleType ?? ""}
-                onChange={(v) =>
-                  onChange({
-                    vehicleType: (v || null) as VehicleFilters["vehicleType"],
-                    body: null,
-                  })
-                }
-              >
-                <option value="">Todos</option>
-                <option value="car">Automóveis</option>
-                <option value="motorcycle">Motas</option>
-              </Select>
-            </Field>
             <Field label="Ponto de venda">
               <Select
                 value={filters.location ?? ""}
@@ -220,7 +208,13 @@ export function Filters({
               </Select>
             </Field>
 
-            <Field label="Carroçaria">
+            <Field
+              label={
+                filters.vehicleType === "motorcycle"
+                  ? "Categoria da mota"
+                  : "Carroçaria"
+              }
+            >
               <Select
                 value={filters.body ?? ""}
                 onChange={(v) =>

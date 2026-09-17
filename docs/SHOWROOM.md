@@ -30,3 +30,13 @@ A ativação na produção e testes com Google real exigem configuração do alo
 - Build de produção concluído com dados de teste locais.
 - 11 verificações HTTP aprovadas: inventário, serviços, financiamento, encomendas, oficina desativada (404), contactos, detalhe de automóvel e mota, ficha imprimível, sitemap e Google sem configuração.
 - A verificação visual interativa não foi concluída: o navegador deste ambiente bloqueou o acesso ao servidor local. Não foram testadas credenciais Google reais nem aplicadas migrações no Supabase remoto.
+
+## Escolha inicial de carro ou mota
+
+- Ao criar um anúncio, é obrigatório escolher **Carro** ou **Mota** antes de preencher os dados. Ao editar, o tipo guardado fica selecionado.
+- O tipo continua na coluna `cars.vehicle_type` (`car` / `motorcycle`), introduzida na migração 0018. Não são necessárias tabelas separadas nem uma nova migração.
+- Mudar o tipo limpa marca, modelo e versão e adapta categoria, portas e lugares. Os restantes campos preenchidos são preservados.
+- O inventário apresenta **Todos / Carros / Motas**, com URLs `/inventario?tipo=carros` e `/inventario?tipo=motas`. A consulta pública à base de dados é filtrada pelo tipo escolhido; as opções dos filtros pertencem a essa seleção.
+- Limpar filtros mantém a secção de carros ou motas. Para regressar ao stock completo, selecionar **Todos**.
+
+Validação desta separação: 36 testes automatizados, incluindo criação/edição e filtragem no servidor; teste de interação DOM para escolher mota, enviar o formulário e trocar para carro; quatro verificações HTTP do stock completo, carros, motas e parâmetro desconhecido. Build, TypeScript e ESLint aprovados. A migração 0018 continua a ser necessária no ambiente de destino.

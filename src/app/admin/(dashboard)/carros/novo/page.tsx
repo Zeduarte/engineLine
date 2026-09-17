@@ -17,8 +17,8 @@ export default async function NewCarPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-paper">Nova viatura</h1>
         <p className="mt-1 text-sm text-paper/50">
-          Preencha os dados. Depois de criar, poderá adicionar fotografias e
-          vídeo.
+          Escolha primeiro se pretende anunciar um carro ou uma mota. Depois de
+          criar o anúncio, poderá adicionar fotografias e vídeo.
         </p>
       </div>
       <CarForm locations={showroom.locations} />

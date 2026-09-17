@@ -35,3 +35,32 @@ export function isCampaign(vehicle: {
     (vehicle.previousPrice ?? 0) > vehicle.price
   );
 }
+
+// Sugestões; o editor também aceita marcas e modelos escritos livremente.
+export const MOTORCYCLE_BRANDS = [
+  "Aprilia",
+  "Benelli",
+  "BMW",
+  "CFMoto",
+  "Ducati",
+  "Harley-Davidson",
+  "Honda",
+  "Husqvarna",
+  "Kawasaki",
+  "KTM",
+  "Kymco",
+  "Moto Guzzi",
+  "Piaggio",
+  "Royal Enfield",
+  "Suzuki",
+  "SYM",
+  "Triumph",
+  "Vespa",
+  "Yamaha",
+  "Zero",
+] as const;
+export function inventoryVehicleType(
+  value: string | string[] | undefined,
+): VehicleType | null {
+  return value === "carros" ? "car" : value === "motas" ? "motorcycle" : null;
+}

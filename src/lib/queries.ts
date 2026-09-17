@@ -1,4 +1,5 @@
 import "server-only";
+import type { VehicleType } from "./vehicle-categories";
 import { getShowroomContent } from "./showroom-queries";
 import { unstable_cache } from "next/cache";
 import { supabasePublic } from "@/lib/supabase/public";
@@ -33,14 +34,18 @@ async function mapPublicCars(rows: CarWithMedia[]): Promise<Vehicle[]> {
 
 const CAR_SELECT = "*, car_media(*)";
 
-export async function getVehicles(): Promise<Vehicle[]> {
+export async function getVehicles(
+  vehicleType?: VehicleType | null,
+): Promise<Vehicle[]> {
   const supabase = supabasePublic;
-  const { data, error } = await supabase
+  let query = supabase
     .from("cars")
     .select(CAR_SELECT)
     .in("status", ["published", "reserved"])
     .order("featured", { ascending: false })
     .order("published_at", { ascending: false, nullsFirst: false });
+  if (vehicleType) query = query.eq("vehicle_type", vehicleType);
+  const { data, error } = await query;
 
   if (error) {
     console.error("getVehicles:", error.message);

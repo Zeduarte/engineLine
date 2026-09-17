@@ -82,7 +82,10 @@ export function InventoryClient({
         onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}
         onSort={setSort}
         onReset={() => {
-          setFilters(emptyFilters());
+          setFilters({
+            ...emptyFilters(),
+            vehicleType: initialFilters?.vehicleType ?? null,
+          });
           setSort("relevance");
         }}
       />

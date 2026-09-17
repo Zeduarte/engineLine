@@ -1,6 +1,11 @@
 "use client";
 
-import { CAR_BODIES, MOTORCYCLE_BODIES } from "@/lib/vehicle-categories";
+import {
+  CAR_BODIES,
+  MOTORCYCLE_BODIES,
+  MOTORCYCLE_BRANDS,
+  type VehicleType,
+} from "@/lib/vehicle-categories";
 import type { PointOfSale } from "@/lib/showroom";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -61,6 +66,7 @@ export function CarForm({
   defaults?: Partial<CarFormValues>;
 }) {
   const router = useRouter();
+  const [typeChosen, setTypeChosen] = useState(Boolean(carId));
   const [extras, setExtras] = useState<string[]>(defaults?.extras ?? []);
   const [extraInput, setExtraInput] = useState("");
   const [channels, setChannels] = useState<string[]>(defaults?.channels ?? []);
@@ -120,7 +126,23 @@ export function CarForm({
   const vehicleType = watch("vehicle_type");
   const onRequest = watch("price_on_request");
   const make = watch("make") ?? "";
-  const modelOptions = CAR_MODELS[make] ?? [];
+  const modelOptions =
+    vehicleType === "motorcycle" ? [] : (CAR_MODELS[make] ?? []);
+
+  function chooseType(kind: VehicleType) {
+    if (kind !== vehicleType) {
+      setValue("vehicle_type", kind, { shouldDirty: true });
+      setValue("body", kind === "motorcycle" ? "Naked" : "Berlina", {
+        shouldDirty: true,
+      });
+      setValue("doors", kind === "motorcycle" ? 0 : 5, { shouldDirty: true });
+      setValue("seats", kind === "motorcycle" ? 2 : 5, { shouldDirty: true });
+      setValue("make", "", { shouldDirty: true });
+      setValue("model", "", { shouldDirty: true });
+      setValue("variant", "", { shouldDirty: true });
+    }
+    setTypeChosen(true);
+  }
   // Sugestões de extras que ainda não foram adicionadas.
   const extraSuggestions = COMMON_EXTRAS.filter((e) => !extras.includes(e));
 
@@ -168,33 +190,58 @@ export function CarForm({
     }
   }
 
+  const typeSelector = (
+    <section className="card p-5" aria-labelledby="vehicle-type-heading">
+      <h2
+        id="vehicle-type-heading"
+        className="text-lg font-semibold text-paper"
+      >
+        {carId ? "Tipo de anúncio" : "O que pretende anunciar?"}
+      </h2>
+      {!typeChosen && (
+        <p className="mt-2 text-sm text-paper/60">
+          Escolha carro ou mota para começar a preencher o anúncio.
+        </p>
+      )}
+      <div
+        className="mt-4 grid grid-cols-2 gap-3"
+        role="group"
+        aria-label="Tipo de anúncio"
+      >
+        {(
+          [
+            { value: "car", label: "Carro" },
+            { value: "motorcycle", label: "Mota" },
+          ] as const
+        ).map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            disabled={isSubmitting}
+            aria-pressed={typeChosen && vehicleType === option.value}
+            onClick={() => chooseType(option.value)}
+            className={`rounded-xl border px-5 py-5 text-lg font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50 ${typeChosen && vehicleType === option.value ? "border-accent bg-accent/10 text-accent" : "border-white/15 text-paper hover:border-accent"}`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      {typeChosen && (
+        <p className="mt-3 text-sm text-paper/60" role="status">
+          Anúncio de {vehicleType === "motorcycle" ? "mota" : "carro"}
+        </p>
+      )}
+    </section>
+  );
+  if (!typeChosen) return typeSelector;
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+      {typeSelector}
+      <input type="hidden" {...register("vehicle_type")} />
       {/* Identificação */}
       <Section title="Identificação">
         <Grid>
-          <Field label="Tipo de viatura">
-            <select
-              className="field"
-              {...register("vehicle_type")}
-              onChange={(e) => {
-                const kind = e.target.value as "car" | "motorcycle";
-                setValue("vehicle_type", kind, { shouldDirty: true });
-                setValue("body", kind === "motorcycle" ? "Naked" : "Berlina", {
-                  shouldDirty: true,
-                });
-                setValue("doors", kind === "motorcycle" ? 0 : 5, {
-                  shouldDirty: true,
-                });
-                setValue("seats", kind === "motorcycle" ? 2 : 5, {
-                  shouldDirty: true,
-                });
-              }}
-            >
-              <option value="car">Automóvel</option>
-              <option value="motorcycle">Mota</option>
-            </select>
-          </Field>
           <Field
             label="Mês da primeira matrícula"
             error={errors.registration_month?.message}
@@ -245,8 +292,14 @@ export function CarForm({
                   setValue("model", "", { shouldDirty: true });
                 }
               }}
-              options={CAR_BRANDS}
-              placeholder="Ex.: Mercedes-Benz"
+              options={
+                vehicleType === "motorcycle" ? MOTORCYCLE_BRANDS : CAR_BRANDS
+              }
+              placeholder={
+                vehicleType === "motorcycle"
+                  ? "Ex.: Honda"
+                  : "Ex.: Mercedes-Benz"
+              }
             />
           </Field>
           <Field label="Modelo" error={errors.model?.message} required>
@@ -351,8 +404,18 @@ export function CarForm({
               ))}
             </select>
           </Field>
-          <Field label="Carroçaria" error={errors.body?.message} required>
-            <select className="field" {...register("body")}>
+          <Field
+            label={
+              vehicleType === "motorcycle" ? "Categoria da mota" : "Carroçaria"
+            }
+            error={errors.body?.message}
+            required
+          >
+            <select
+              className="field"
+              {...register("body")}
+              value={watch("body") ?? ""}
+            >
               <option value="">Por confirmar — selecione</option>
               {(vehicleType === "motorcycle"
                 ? MOTORCYCLE_BODIES
@@ -380,15 +443,19 @@ export function CarForm({
               {...register("displacement")}
             />
           </Field>
-          <Field label="Portas" error={errors.doors?.message}>
-            <select className="field" {...register("doors")}>
-              {DOOR_OPTIONS.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </Field>
+          {vehicleType === "motorcycle" ? (
+            <input type="hidden" {...register("doors")} />
+          ) : (
+            <Field label="Portas" error={errors.doors?.message}>
+              <select className="field" {...register("doors")}>
+                {DOOR_OPTIONS.filter((n) => n > 0).map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
           <Field label="Lugares" error={errors.seats?.message}>
             <select className="field" {...register("seats")}>
               {SEAT_OPTIONS.map((n) => (

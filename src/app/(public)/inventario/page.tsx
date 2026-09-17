@@ -1,3 +1,5 @@
+import { InventoryTypeNav } from "@/components/inventory/InventoryTypeNav";
+import { inventoryVehicleType } from "@/lib/vehicle-categories";
 import type { Metadata } from "next";
 import { getVehicles } from "@/lib/queries";
 import { InventoryClient } from "@/components/inventory/InventoryClient";
@@ -18,10 +20,12 @@ export default async function InventoryPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const sp = await searchParams;
-  const vehicles = await getVehicles();
+  const vehicleType = inventoryVehicleType(sp.tipo);
+  const vehicles = await getVehicles(vehicleType);
 
   // Filtros iniciais vindos do URL (ex.: da pesquisa rápida da homepage).
   const initialFilters = {
+    vehicleType,
     make: sp.make || null,
     model: sp.model || null,
     fuel: (sp.fuel as FuelType) || null,
@@ -33,7 +37,11 @@ export default async function InventoryPage({
       <header className="mb-12 max-w-2xl">
         <p className="eyebrow mb-4">Stock</p>
         <h1 className="text-headline font-semibold text-paper">
-          Todas as viaturas disponíveis
+          {vehicleType === "car"
+            ? "Carros disponíveis"
+            : vehicleType === "motorcycle"
+              ? "Motas disponíveis"
+              : "Todas as viaturas disponíveis"}
         </h1>
         <p className="mt-4 text-lg font-light text-paper/60">
           {vehicles.length} viaturas selecionadas, prontas para entrega. Use os
@@ -41,7 +49,12 @@ export default async function InventoryPage({
         </p>
       </header>
 
-      <InventoryClient vehicles={vehicles} initialFilters={initialFilters} />
+      <InventoryTypeNav selected={vehicleType} />
+      <InventoryClient
+        key={JSON.stringify(initialFilters)}
+        vehicles={vehicles}
+        initialFilters={initialFilters}
+      />
 
       <section className="mt-20">
         <StockAlertForm defaultQuery={sp.q ?? ""} />
