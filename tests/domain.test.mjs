@@ -49,3 +49,43 @@ await test('chat streaming never leaks the action marker to the visitor',()=>{
  assert.equal(safeEmitLength('Preço [['),5);
  assert.equal(safeEmitLength('Preço 10.000 €'),14);
 });
+
+const {normalizeLocationIds,describeIssuePath}=load('src/lib/showroom.ts');
+await test('point-of-sale identifiers are generated, never blocking the user',()=>{
+ // Um id válido é estável: as viaturas ligam-se a ele.
+ const estavel=normalizeLocationIds([{id:'penafiel',name:'Stand Penafiel'}]);
+ assert.equal(estavel[0].id,'penafiel');
+
+ // O que o utilizador escreveu ("Supermotas") não passa na regra → gera-se.
+ const corrigido=normalizeLocationIds([{id:'Supermotas',name:'Supermotas'}]);
+ assert.equal(corrigido[0].id,'supermotas');
+ assert.equal(normalizeLocationIds([{id:'',name:'Cabeça Santa'}])[0].id,'cabeca-santa');
+ assert.equal(normalizeLocationIds([{id:'!!',name:''}])[0].id,'ponto-1');
+
+ // Dois pontos nunca ficam com o mesmo id.
+ const repetidos=normalizeLocationIds([
+  {id:'Supermotas',name:'Supermotas'},
+  {id:'supermotas',name:'Supermotas'},
+ ]);
+ assert.deepEqual(repetidos.map(p=>p.id),['supermotas','supermotas-2']);
+});
+await test('validation errors name the section instead of the array index',()=>{
+ assert.equal(describeIssuePath(['locations',0,'address']),'Ponto de venda 1 · morada');
+ assert.equal(describeIssuePath(['faqs',2,'question']),'Pergunta 3 · pergunta');
+ assert.equal(describeIssuePath(['services',1]),'Serviço 2');
+});
+
+const {showroomSchema,DEFAULT_SHOWROOM}=load('src/lib/showroom.ts');
+await test('the exact value that blocked saving now passes validation',()=>{
+ const ponto={id:'Supermotas',name:'Supermotas',address:'Av. Cruzeiro das Lampreias n 727',
+  city:'Cabeça Santa',postalCode:'4575-134',phone:'916100742',email:'',
+  hours:'9h-13h e 14h-19h',latitude:null,longitude:null};
+ const conteudo={...structuredClone(DEFAULT_SHOWROOM),locations:[ponto]};
+ // Como estava: o formulário mandava o id tal e qual e a gravação falhava.
+ assert.equal(showroomSchema.safeParse(conteudo).success,false);
+ // Como fica: o id é corrigido antes de validar.
+ const corrigido={...conteudo,locations:normalizeLocationIds(conteudo.locations)};
+ const r=showroomSchema.safeParse(corrigido);
+ assert.equal(r.success,true,JSON.stringify(r.error?.issues));
+ assert.equal(r.data.locations[0].id,'supermotas');
+});

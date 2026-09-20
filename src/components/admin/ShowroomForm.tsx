@@ -60,10 +60,12 @@ export function ShowroomForm({
               className="space-y-3 rounded-xl border border-white/10 p-4"
             >
               <legend>{l.name || `Ponto ${i + 1}`}</legend>
+              {/* O identificador liga a viatura ao ponto e é gerado pelo
+                  sistema — mostra-se só para referência, não se edita. */}
+              <p className="text-xs text-paper/40">Referência: {l.id}</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {(
                   [
-                    ["id", "Identificador estável"],
                     ["name", "Nome"],
                     ["address", "Morada"],
                     ["city", "Localidade"],
@@ -79,7 +81,7 @@ export function ShowroomForm({
                       className="field mt-1"
                       value={l[key]}
                       onChange={(e) => location(i, { [key]: e.target.value })}
-                      required={["id", "name", "address", "city"].includes(key)}
+                      required={["name", "address", "city"].includes(key)}
                       type={key === "email" ? "email" : "text"}
                     />
                   </label>

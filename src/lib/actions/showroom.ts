@@ -2,17 +2,36 @@
 import { revalidatePath } from "next/cache";
 import { requireSection } from "@/lib/guard";
 import { createClient } from "@/lib/supabase/server";
-import { showroomSchema } from "@/lib/showroom";
+import {
+  describeIssuePath,
+  normalizeLocationIds,
+  showroomSchema,
+} from "@/lib/showroom";
 export async function saveShowroom(
   input: unknown,
 ): Promise<{ ok: boolean; error?: string }> {
   await requireSection("pagina-inicial");
-  const parsed = showroomSchema.safeParse(input);
+  // Corrige identificadores antes de validar: são gerados pelo sistema, não
+  // é o utilizador que os escreve, por isso não o devem bloquear.
+  const withIds =
+    input && typeof input === "object" && Array.isArray((input as { locations?: unknown }).locations)
+      ? {
+          ...(input as object),
+          locations: normalizeLocationIds(
+            (input as { locations: { id: string; name: string }[] }).locations.map((l) => ({
+              ...l,
+              id: typeof l?.id === "string" ? l.id : "",
+              name: typeof l?.name === "string" ? l.name : "",
+            })),
+          ),
+        }
+      : input;
+  const parsed = showroomSchema.safeParse(withIds);
   if (!parsed.success)
     return {
       ok: false,
       error: parsed.error.issues
-        .map((i) => `${i.path.join(" → ")}: ${i.message}`)
+        .map((i) => `${describeIssuePath(i.path)}: ${i.message}`)
         .join("; "),
     };
   const db = await createClient();

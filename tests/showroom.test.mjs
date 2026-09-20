@@ -16,10 +16,13 @@ function load(path) {
   new Function("module", "exports", "require", outputText)(
     mod,
     mod.exports,
+    // Resolve tanto caminhos relativos como o alias `@/` do tsconfig.
     (name) =>
       name.startsWith(".")
         ? load(resolve(dirname(path), name + ".ts"))
-        : require(name),
+        : name.startsWith("@/")
+          ? load(resolve("src", name.slice(2) + ".ts"))
+          : require(name),
   );
   return mod.exports;
 }

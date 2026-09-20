@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { slugify } from "@/lib/slug";
 
 export const SERVICE_IDS = [
   "financiamento",
@@ -160,4 +161,65 @@ export const DEFAULT_SHOWROOM: ShowroomContent = {
 export function parseShowroom(input: unknown): ShowroomContent {
   const parsed = showroomSchema.safeParse(input);
   return parsed.success ? parsed.data : structuredClone(DEFAULT_SHOWROOM);
+}
+
+/**
+ * Corrige identificadores de pontos de venda.
+ *
+ * O identificador liga a viatura ao ponto, por isso um id válido nunca muda —
+ * mudá-lo desligaria as viaturas. Só se corrige o que não passa na regra
+ * (minúsculas, números e hífen), gerando-o a partir do nome. Ids repetidos
+ * ganham um sufixo, senão dois pontos diferentes apontariam para o mesmo sítio.
+ */
+export function normalizeLocationIds<T extends { id: string; name: string }>(
+  locations: T[],
+): T[] {
+  const usados = new Set<string>();
+  return locations.map((l, i) => {
+    const valido = /^[a-z0-9-]+$/.test(l.id);
+    const base = valido ? l.id : slugify(l.name) || `ponto-${i + 1}`;
+    let id = base;
+    for (let n = 2; usados.has(id); n++) id = `${base}-${n}`;
+    usados.add(id);
+    return id === l.id ? l : { ...l, id };
+  });
+}
+
+const CAMPOS: Record<string, string> = {
+  id: "identificador",
+  name: "nome",
+  address: "morada",
+  city: "localidade",
+  postalCode: "código postal",
+  phone: "telefone",
+  email: "email",
+  hours: "horários",
+  latitude: "latitude",
+  longitude: "longitude",
+  title: "título",
+  summary: "resumo",
+  body: "texto",
+  question: "pergunta",
+  answer: "resposta",
+  category: "categoria",
+};
+
+const SECCOES: Record<string, string> = {
+  locations: "Ponto de venda",
+  services: "Serviço",
+  faqs: "Pergunta",
+};
+
+/**
+ * Traduz o caminho de um erro de validação para linguagem do utilizador:
+ * `locations → 0 → id` passa a `Ponto de venda 1 · identificador`.
+ */
+export function describeIssuePath(path: (string | number)[]): string {
+  const [seccao, indice, campo] = path;
+  const nome = typeof seccao === "string" ? SECCOES[seccao] : undefined;
+  if (nome && typeof indice === "number") {
+    const sufixo = typeof campo === "string" ? ` · ${CAMPOS[campo] ?? campo}` : "";
+    return `${nome} ${indice + 1}${sufixo}`;
+  }
+  return path.map((p) => (typeof p === "string" ? (CAMPOS[p] ?? p) : p)).join(" → ");
 }
