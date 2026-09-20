@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { GrainOverlay } from "@/components/ui/GrainOverlay";
 import { ChatLauncher } from "@/components/chat/ChatLauncher";
+import { ChatProvider } from "@/components/chat/ChatContext";
 import { CompareProvider } from "@/components/inventory/CompareContext";
 import { CompareBar } from "@/components/inventory/CompareBar";
 import { DealerJsonLd } from "@/components/seo/DealerJsonLd";
@@ -26,6 +27,9 @@ export default async function PublicLayout({
 
   return (
     <VehicleWorld key={type} type={type}><LenisProvider>
+      {/* O provider envolve o conteúdo: a barra fixa da ficha de viatura
+          precisa de abrir o mesmo painel de conversa que o botão flutuante. */}
+      <ChatProvider enabled={!!process.env.ANTHROPIC_API_KEY}>
       <CompareProvider>
         <WorldEntrance name={branding.companyName} selected={selection} />
         {/* Salto para conteúdo — acessibilidade por teclado. */}
@@ -41,6 +45,7 @@ export default async function PublicLayout({
         <main id="conteudo" className="pt-16">{children}</main>
         <Footer branding={branding} />
         {/* Assistente virtual + canais de contacto no mesmo botão flutuante.
+            Na ficha de viatura o botão dá lugar à barra fixa do fundo.
             Sem chave da Anthropic configurada, fica só o contacto humano. */}
         <ChatLauncher
           whatsapp={branding.company.whatsapp}
@@ -51,6 +56,7 @@ export default async function PublicLayout({
         <CompareBar />
         <GrainOverlay />
       </CompareProvider>
+      </ChatProvider>
     </LenisProvider></VehicleWorld>
   );
 }

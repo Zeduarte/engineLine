@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { waHref } from "@/lib/branding";
 import { ContactFab } from "@/components/layout/ContactFab";
 import { ChatWidget } from "./ChatWidget";
+import { useChat } from "./ChatContext";
 
 /**
  * Botão flutuante único do site: assistente virtual + canais de contacto
@@ -23,7 +25,12 @@ export function ChatLauncher({
   chatEnabled: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
+  const pathname = usePathname();
+  const { open: chatOpen, question, openChat, closeChat, clearQuestion } = useChat();
+  const setChatOpen = (v: boolean) => (v ? openChat() : closeChat());
+  // Na ficha de viatura a conversa começa na barra fixa do fundo; um botão
+  // flutuante por cima dela seria uma segunda porta para a mesma coisa.
+  const onVehiclePage = /^\/viaturas\/[^/]+\/?$/.test(pathname);
 
   if (!chatEnabled) {
     return <ContactFab whatsapp={whatsapp} messenger={messenger} name={name} />;
@@ -52,19 +59,22 @@ export function ChatLauncher({
     icon: React.ReactNode;
   }[];
 
-  function openChat() {
+  function abrirAssistente() {
     setMenuOpen(false);
-    setChatOpen(true);
+    openChat();
   }
 
   return (
     <>
       <ChatWidget
         open={chatOpen}
-        onClose={() => setChatOpen(false)}
+        onClose={closeChat}
         companyName={name}
+        initialQuestion={question}
+        onQuestionSent={clearQuestion}
       />
 
+      {!onVehiclePage && (
       <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
         <AnimatePresence>
           {menuOpen && !chatOpen && (
@@ -72,7 +82,7 @@ export function ChatLauncher({
               <motion.button
                 key="assistant"
                 type="button"
-                onClick={openChat}
+                onClick={abrirAssistente}
                 initial={{ opacity: 0, y: 10, scale: 0.8 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.8 }}
@@ -118,7 +128,7 @@ export function ChatLauncher({
           type="button"
           onClick={() => {
             if (chatOpen) setChatOpen(false);
-            else if (channels.length === 0) openChat();
+            else if (channels.length === 0) abrirAssistente();
             else setMenuOpen((o) => !o);
           }}
           aria-expanded={menuOpen || chatOpen}
@@ -136,6 +146,7 @@ export function ChatLauncher({
           )}
         </button>
       </div>
+      )}
     </>
   );
 }

@@ -22,13 +22,13 @@ interface Message {
 /** Teto por conversa: protege a fatura mesmo que alguém insista. */
 const MAX_USER_MESSAGES = 20;
 
-const STARTERS_VEHICLE = [
+export const STARTERS_VEHICLE = [
   "Esta viatura tem garantia?",
   "É nacional? Quantos donos teve?",
   "Posso marcar um test drive?",
 ];
 
-const STARTERS_GENERAL = [
+export const STARTERS_GENERAL = [
   "Que carros têm até 15.000 €?",
   "Onde ficam e a que horas abrem?",
   "Aceitam o meu carro como retoma?",
@@ -38,10 +38,15 @@ export function ChatWidget({
   open,
   onClose,
   companyName,
+  initialQuestion,
+  onQuestionSent,
 }: {
   open: boolean;
   onClose: () => void;
   companyName: string;
+  /** Pergunta escrita fora do painel (barra fixa da ficha). */
+  initialQuestion?: string | null;
+  onQuestionSent?: () => void;
 }) {
   const pathname = usePathname();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -50,6 +55,8 @@ export function ChatWidget({
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Evita enviar duas vezes (o React em modo estrito corre o efeito a dobrar).
+  const sentRef = useRef<string | null>(null);
 
   const onVehiclePage = /^\/viaturas\/[^/]+\/?$/.test(pathname);
   const starters = onVehiclePage ? STARTERS_VEHICLE : STARTERS_GENERAL;
@@ -64,6 +71,17 @@ export function ChatWidget({
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
+
+  // Pergunta escrita na barra fixa: envia-a assim que o painel abre.
+  useEffect(() => {
+    if (!open || !initialQuestion || busy) return;
+    if (sentRef.current === initialQuestion) return;
+    sentRef.current = initialQuestion;
+    onQuestionSent?.();
+    void ask(initialQuestion);
+    // `ask` é estável o suficiente para este disparo único por pergunta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialQuestion]);
 
   // Escape fecha o painel.
   useEffect(() => {
