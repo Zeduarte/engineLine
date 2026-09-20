@@ -17,6 +17,8 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   actions?: ChatAction[];
+  /** Momento em que a mensagem entrou na conversa. */
+  at: number;
 }
 
 /** Teto por conversa: protege a fatura mesmo que alguém insista. */
@@ -28,6 +30,11 @@ export const STARTERS_VEHICLE = [
   "É nacional? Quantos donos teve?",
   "Posso marcar um test drive?",
 ];
+
+const hora = new Intl.DateTimeFormat("pt-PT", {
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 export function ChatWidget({
   open,
@@ -48,6 +55,9 @@ export function ChatWidget({
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Hora da saudação. Só é definida no cliente — no servidor não há conversa,
+  // por isso não há risco de a marcação divergir entre os dois.
+  const [greetedAt, setGreetedAt] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   // Evita enviar duas vezes (o React em modo estrito corre o efeito a dobrar).
@@ -62,7 +72,9 @@ export function ChatWidget({
   }, [messages]);
 
   useEffect(() => {
-    if (open) inputRef.current?.focus();
+    if (!open) return;
+    inputRef.current?.focus();
+    setGreetedAt((t) => t ?? Date.now());
   }, [open]);
 
   // Pergunta escrita na barra fixa: envia-a assim que o painel abre.
@@ -86,17 +98,26 @@ export function ChatWidget({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  function limpar() {
+    setMessages([]);
+    setError(null);
+    sentRef.current = null;
+    setGreetedAt(Date.now());
+    inputRef.current?.focus();
+  }
+
   async function ask(question: string) {
     const text = question.trim();
     if (!text || busy || limitReached) return;
 
-    const history = [...messages, { role: "user" as const, content: text }];
-    setMessages([...history, { role: "assistant", content: "" }]);
+    const now = Date.now();
+    const history = [...messages, { role: "user" as const, content: text, at: now }];
+    setMessages([...history, { role: "assistant", content: "", at: now }]);
     setInput("");
     setBusy(true);
     setError(null);
 
-    // O assistente só precisa do texto — nunca enviamos os botões de volta.
+    // O assistente só precisa do texto — nunca enviamos os botões nem as horas.
     const payload = history.map((m) => ({ role: m.role, content: m.content }));
 
     try {
@@ -143,53 +164,81 @@ export function ChatWidget({
     <AnimatePresence>
       {open && (
         <motion.div
-          initial={{ opacity: 0, y: 16, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 16, scale: 0.97 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 24 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
           role="dialog"
           aria-label={`Assistente virtual do ${companyName}`}
-          className="fixed inset-x-3 bottom-24 z-50 flex max-h-[min(70vh,560px)] flex-col overflow-hidden rounded-3xl border border-white/10 bg-ink-soft shadow-2xl shadow-black/50 sm:inset-x-auto sm:right-5 sm:w-[380px]"
+          // Painel grande: em mobile ocupa o ecrã abaixo do header; em desktop
+          // é uma coluna alta à direita, acima da barra da ficha.
+          className="fixed inset-x-2 bottom-20 top-20 z-50 flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-ink-soft/95 shadow-2xl shadow-black/60 backdrop-blur-xl sm:inset-x-auto sm:right-5 sm:top-auto sm:h-[min(78vh,680px)] sm:w-[400px]"
         >
-          <header className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
-            <div>
-              <p className="text-sm font-semibold text-paper">
-                Assistente {companyName}
-              </p>
-              <p className="text-xs text-paper/50">
-                Respostas automáticas sobre o stock
-              </p>
+          <header className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <Avatar />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-paper">
+                  Assistente {companyName}
+                </p>
+                <p className="text-xs text-paper/50">
+                  Responde sobre esta viatura
+                </p>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Fechar o assistente"
-              className="grid h-8 w-8 place-items-center rounded-full text-xl leading-none text-paper/60 transition-colors hover:bg-white/10 hover:text-paper"
-            >
-              ×
-            </button>
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={limpar}
+                disabled={messages.length === 0}
+                aria-label="Limpar conversa"
+                title="Limpar conversa"
+                className="grid h-8 w-8 place-items-center rounded-full text-paper/50 transition-colors hover:bg-white/10 hover:text-paper disabled:opacity-30 disabled:hover:bg-transparent"
+              >
+                <EraserIcon />
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Minimizar assistente"
+                title="Minimizar"
+                className="grid h-8 w-8 place-items-center rounded-full text-paper/50 transition-colors hover:bg-white/10 hover:text-paper"
+              >
+                <ChevronDownIcon />
+              </button>
+            </div>
           </header>
 
-          <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+          <div
+            ref={scrollRef}
+            className="flex-1 space-y-4 overflow-y-auto px-4 py-4"
+          >
+            {/* Saudação: não faz parte da conversa enviada ao modelo. */}
+            <Bubble
+              message={{
+                role: "assistant",
+                content: `Olá! Sou o assistente do ${companyName}. Em que posso ajudar?`,
+                at: greetedAt ?? Date.now(),
+              }}
+              busy={false}
+            />
+
             {messages.length === 0 && (
-              <div className="space-y-3">
-                <p className="text-sm text-paper/60">
-                  Olá! Posso ajudar com dúvidas sobre as viaturas, horários e
-                  como avançar. Não recolho dados pessoais — para isso uso os
-                  formulários do site.
+              <div className="space-y-2 pt-1">
+                {STARTERS_VEHICLE.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => ask(s)}
+                    className="block rounded-2xl border border-white/10 px-3.5 py-2 text-left text-sm text-paper/80 transition-colors hover:border-accent hover:text-accent"
+                  >
+                    {s}
+                  </button>
+                ))}
+                <p className="pt-2 text-xs leading-relaxed text-paper/40">
+                  Não recolho dados pessoais — para isso uso os formulários do
+                  site.
                 </p>
-                <div className="flex flex-col gap-2">
-                  {STARTERS_VEHICLE.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => ask(s)}
-                      className="rounded-2xl border border-white/10 px-3 py-2 text-left text-sm text-paper/80 transition-colors hover:border-accent hover:text-accent"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
               </div>
             )}
 
@@ -209,8 +258,9 @@ export function ChatWidget({
               e.preventDefault();
               ask(input);
             }}
-            className="flex items-center gap-2 border-t border-white/10 px-4 py-3"
+            className="flex items-center gap-2 border-t border-white/10 px-3 py-3"
           >
+            <Avatar small />
             <input
               ref={inputRef}
               value={input}
@@ -218,10 +268,10 @@ export function ChatWidget({
               maxLength={1000}
               disabled={busy || limitReached}
               placeholder={
-                limitReached ? "Conversa terminada" : "Escreva a sua pergunta…"
+                limitReached ? "Conversa terminada" : "Escreva a sua mensagem"
               }
               aria-label="Mensagem para o assistente"
-              className="min-w-0 flex-1 rounded-full bg-white/5 px-4 py-2.5 text-sm text-paper placeholder:text-paper/35 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
+              className="min-w-0 flex-1 bg-transparent px-1 text-sm text-paper placeholder:text-paper/40 focus:outline-none disabled:opacity-50"
             />
             <button
               type="submit"
@@ -229,14 +279,14 @@ export function ChatWidget({
               aria-label="Enviar"
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-ink transition-opacity disabled:opacity-40"
             >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M5 12h14M13 6l6 6-6 6" />
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 19V5M6 11l6-6 6 6" />
               </svg>
             </button>
           </form>
 
           {limitReached && (
-            <p className="px-5 pb-3 text-xs text-paper/50">
+            <p className="px-4 pb-3 text-xs text-paper/50">
               Para continuar, fale com a equipa através dos contactos do site.
             </p>
           )}
@@ -247,17 +297,17 @@ export function ChatWidget({
 }
 
 function Bubble({ message, busy }: { message: Message; busy: boolean }) {
-  if (message.role === "user") {
-    return (
-      <p className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-accent px-3.5 py-2 text-sm text-ink">
-        {message.content}
-      </p>
-    );
-  }
+  const mine = message.role === "user";
 
   return (
-    <div className="max-w-[90%] space-y-3">
-      <p className="whitespace-pre-wrap rounded-2xl rounded-bl-md bg-white/5 px-3.5 py-2 text-sm leading-relaxed text-paper/90">
+    <div className={mine ? "flex flex-col items-end" : "flex flex-col items-start"}>
+      <div
+        className={`max-w-[88%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+          mine
+            ? "rounded-br-md bg-accent text-ink"
+            : "rounded-bl-md bg-white/8 text-paper/90"
+        }`}
+      >
         {message.content}
         {busy && !message.content && (
           <span className="inline-flex gap-1 align-middle" aria-label="A escrever">
@@ -270,7 +320,12 @@ function Bubble({ message, busy }: { message: Message; busy: boolean }) {
             ))}
           </span>
         )}
-      </p>
+      </div>
+
+      <time className="mt-1 px-1 text-[11px] text-paper/35">
+        {hora.format(message.at)}
+      </time>
+
       {message.actions?.map((a) => <ActionButton key={a.label} action={a} />)}
     </div>
   );
@@ -278,7 +333,7 @@ function Bubble({ message, busy }: { message: Message; busy: boolean }) {
 
 function ActionButton({ action }: { action: ChatAction }) {
   const className =
-    "block rounded-full bg-accent/15 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/25";
+    "mt-1 block rounded-full bg-accent/15 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/25";
 
   // Já estamos na página certa — rola até ao painel em vez de navegar.
   if (action.scrollTo) {
@@ -317,6 +372,37 @@ function ActionButton({ action }: { action: ChatAction }) {
     >
       {action.label}
     </a>
+  );
+}
+
+function Avatar({ small = false }: { small?: boolean }) {
+  return (
+    <span
+      className={`grid shrink-0 place-items-center rounded-full bg-accent text-ink ${
+        small ? "h-8 w-8" : "h-9 w-9"
+      }`}
+      aria-hidden
+    >
+      <svg viewBox="0 0 24 24" width={small ? 15 : 17} height={small ? 15 : 17} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3z" />
+      </svg>
+    </span>
+  );
+}
+
+function EraserIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M8 20H5l-2-2 9-9 6 6-5 5H8zM13 6l5 5" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
   );
 }
 
