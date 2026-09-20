@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { usePathname } from "next/navigation";
 import type { VehicleType } from "@/lib/vehicle-categories";
 import { asset } from "@/lib/asset";
 import styles from "./WorldEntrance.module.css";
@@ -8,6 +9,10 @@ import styles from "./WorldEntrance.module.css";
 /** First visit selects the persistent public vehicle category. */
 export function WorldEntrance({ name, selected }: { name: string; selected: VehicleType | null }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  // Página onde o visitante entrou. Sem isto a rota devolvia toda a gente à
+  // homepage, e quem chegasse de um link partilhado (OLX, Google, WhatsApp)
+  // perdia a viatura que foi ver.
+  const pathname = usePathname();
   const [entered, setEntered] = useState(Boolean(selected));
   const [leaving, setLeaving] = useState<string | null>(null);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,7 +62,9 @@ export function WorldEntrance({ name, selected }: { name: string; selected: Vehi
     const finish = () => {
       dialog.current?.close();
       setEntered(true);
-      window.location.assign(`/api/vehicle-context?type=${type}&area=public`);
+      window.location.assign(
+        `/api/vehicle-context?type=${type}&area=public&target=${encodeURIComponent(pathname)}`,
+      );
     };
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       finish();

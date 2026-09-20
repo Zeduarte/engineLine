@@ -10,6 +10,7 @@ const ADMIN_TARGETS = [
 const PUBLIC_TARGETS = [
   "/", "/inventario", "/vendidos", "/favoritos", "/quiz", "/vender",
   "/contactos", "/sobre", "/servicos", "/comparar",
+  "/politica-de-cookies", "/politica-de-privacidade", "/termos-condicoes",
 ];
 
 export async function GET(request: NextRequest) {

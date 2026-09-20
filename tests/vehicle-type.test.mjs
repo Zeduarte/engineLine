@@ -267,3 +267,23 @@ await test("per-user vehicle access limits the backoffice world and the switch e
  profile={id:"staff-test",role:"admin",allowed_vehicle_types:null};
  adminType="car";
 });
+
+await test("first visit keeps the page the visitor arrived on",async()=>{
+ // Links partilhados (OLX, Google, WhatsApp) apontam para uma viatura ou
+ // página concreta. Escolher carros/motas na entrada não pode perder o destino.
+ const {GET}=load("src/app/api/vehicle-context/route.ts");
+ const {NextRequest}=require("next/server");
+ const entrar=alvo=>GET(new NextRequest(
+  `https://example.test/api/vehicle-context?type=car&area=public&target=${encodeURIComponent(alvo)}`));
+
+ for(const alvo of ["/viaturas/bmw-116d","/contactos","/inventario","/vendidos","/servicos","/politica-de-privacidade"]){
+  const r=await entrar(alvo);
+  assert.equal(r.headers.get("location"),`https://example.test${alvo}`,alvo);
+ }
+
+ // Sem destino continua a ir para a homepage, e um destino externo é ignorado.
+ const semAlvo=await GET(new NextRequest("https://example.test/api/vehicle-context?type=car&area=public"));
+ assert.equal(semAlvo.headers.get("location"),"https://example.test/");
+ const externo=await entrar("https://evil.test/phish");
+ assert.equal(externo.headers.get("location"),"https://example.test/");
+});
