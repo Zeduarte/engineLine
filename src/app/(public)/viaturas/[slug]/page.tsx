@@ -262,9 +262,9 @@ export default async function VehiclePage({ params }: { params: Params }) {
           <SellCTA />
         </div>
 
-        <div className="mt-20">
-          <ContactBar vehicle={vehicle} company={branding.company} />
-        </div>
+        {/* Fora do fluxo: flutua sobre o anúncio de ponta a ponta e reserva
+            sozinha o espaço que ocupa (ver `ContactBar`). */}
+        <ContactBar vehicle={vehicle} company={branding.company} />
       </article>
     </>
   );

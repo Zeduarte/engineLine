@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Vehicle } from "@/types/vehicle";
 import { priceLabel } from "@/lib/format";
 import { waHref, type Company } from "@/lib/branding";
@@ -26,6 +26,25 @@ export function ContactBar({
   const { enabled, openChat } = useChat();
   const [question, setQuestion] = useState("");
   const [hint, setHint] = useState(0);
+  const bar = useRef<HTMLDivElement>(null);
+
+  // A barra flutua sobre a página, por isso tapava o fim do rodapé. Reserva
+  // o espaço que ocupa enquanto estiver montada, e devolve-o ao sair.
+  useEffect(() => {
+    const el = bar.current;
+    if (!el) return;
+    const anterior = document.body.style.paddingBottom;
+    const aplicar = () => {
+      document.body.style.paddingBottom = `${el.offsetHeight}px`;
+    };
+    aplicar();
+    const observer = new ResizeObserver(aplicar);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      document.body.style.paddingBottom = anterior;
+    };
+  }, []);
 
   // Roda as sugestões para convidar a perguntar — pára assim que escrevem.
   useEffect(() => {
@@ -41,7 +60,13 @@ export function ContactBar({
   const message = `Olá! Tenho interesse no ${vehicle.make} ${vehicle.model} ${vehicle.year} (${priceLabel(vehicle.price, vehicle.priceOnRequest)}).\n${url}`;
 
   return (
-    <div className="sticky bottom-0 z-40 border-t border-white/10 bg-ink/90 backdrop-blur-xl">
+    // `fixed`, não `sticky`: em `sticky` a barra só colava dentro da caixa
+    // onde está, no fim do artigo — ficava a cinco ecrãs de distância e o
+    // visitante nunca a via. Flutua sobre o anúncio de ponta a ponta.
+    <div
+      ref={bar}
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink/95 backdrop-blur-xl"
+    >
       <div className="container-px flex items-center gap-3 py-3">
         {/* O preço só cabe em ecrãs largos; em mobile o espaço é do chat. */}
         <div className="hidden lg:block">
