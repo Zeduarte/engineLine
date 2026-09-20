@@ -22,16 +22,11 @@ interface Message {
 /** Teto por conversa: protege a fatura mesmo que alguém insista. */
 const MAX_USER_MESSAGES = 20;
 
+/** Perguntas sugeridas — o assistente só existe na ficha de viatura. */
 export const STARTERS_VEHICLE = [
   "Esta viatura tem garantia?",
   "É nacional? Quantos donos teve?",
   "Posso marcar um test drive?",
-];
-
-export const STARTERS_GENERAL = [
-  "Que carros têm até 15.000 €?",
-  "Onde ficam e a que horas abrem?",
-  "Aceitam o meu carro como retoma?",
 ];
 
 export function ChatWidget({
@@ -58,8 +53,6 @@ export function ChatWidget({
   // Evita enviar duas vezes (o React em modo estrito corre o efeito a dobrar).
   const sentRef = useRef<string | null>(null);
 
-  const onVehiclePage = /^\/viaturas\/[^/]+\/?$/.test(pathname);
-  const starters = onVehiclePage ? STARTERS_VEHICLE : STARTERS_GENERAL;
   const userCount = messages.filter((m) => m.role === "user").length;
   const limitReached = userCount >= MAX_USER_MESSAGES;
 
@@ -186,7 +179,7 @@ export function ChatWidget({
                   formulários do site.
                 </p>
                 <div className="flex flex-col gap-2">
-                  {starters.map((s) => (
+                  {STARTERS_VEHICLE.map((s) => (
                     <button
                       key={s}
                       type="button"
