@@ -22,7 +22,14 @@ import {
  *
  * Sob reduced-motion, `useScrollAnimation` não corre: mostra-se o primeiro
  * painel e a lista completa fica acessível (fallback semântico em baixo).
+ *
+ * Em mobile NÃO se pina nada: as duas colunas empilham-se e não cabem num
+ * ecrã, por isso o `overflow-hidden` cortava o texto do painel. Aí os pilares
+ * mostram-se todos, um a seguir ao outro.
  */
+
+/** A partir daqui há espaço para as duas colunas e para a animação. */
+const DESKTOP = "(min-width: 768px)";
 
 /** Selos de confiança fixos (reforçam a secção, sempre visíveis). */
 const BADGES = [
@@ -41,6 +48,7 @@ export function PinnedTrust({
   const [active, setActive] = useState(0);
 
   const ref = useScrollAnimation<HTMLDivElement>((root) => {
+    if (!window.matchMedia(DESKTOP).matches) return;
     const panels = gsap.utils.toArray<HTMLElement>("[data-panel]", root);
     gsap.set(panels, { autoAlpha: 0, y: 30 });
     gsap.set(panels[0]!, { autoAlpha: 1, y: 0 });
@@ -75,14 +83,15 @@ export function PinnedTrust({
   return (
     <section
       ref={ref}
-      className="relative bg-ink-soft"
-      // ~90vh de scroll por pilar — mais demorado (cada pilar dura mais tempo).
-      style={{ height: `${PILLARS.length * 90}vh` }}
+      // ~90vh de scroll por pilar, só onde há animação. Em mobile a altura é
+      // a do conteúdo, senão o que não cabe é cortado.
+      className="relative bg-ink-soft md:h-[var(--pin-height)]"
+      style={{ "--pin-height": `${PILLARS.length * 90}vh` } as React.CSSProperties}
       aria-label="Porquê comprar no engineLine"
     >
       <div
         data-pin
-        className="container-px flex h-dvh items-center overflow-hidden py-16"
+        className="container-px flex py-16 md:h-dvh md:items-center md:overflow-hidden"
       >
         <div className="grid w-full items-center gap-10 md:grid-cols-2 md:gap-16">
           {/* Coluna esquerda — texto que troca por etapas */}
@@ -93,12 +102,14 @@ export function PinnedTrust({
             </h2>
 
             {/* Painéis que trocam (animados por GSAP) */}
-            <div className="relative mt-10 min-h-[15rem]">
+            <div className="relative mt-10 md:min-h-[15rem]">
               {PILLARS.map((p, i) => (
                 <div
                   key={i}
                   data-panel
-                  className="absolute inset-0 flex flex-col justify-start"
+                  // Empilhados em mobile (todos visíveis); sobrepostos em
+                  // desktop, onde a animação faz o crossfade.
+                  className="mb-10 flex flex-col justify-start last:mb-0 md:absolute md:inset-0 md:mb-0"
                 >
                   <p className="text-5xl font-bold text-accent md:text-6xl">
                     {p.kpi}
@@ -114,7 +125,7 @@ export function PinnedTrust({
             </div>
 
             {/* Progresso por etapas */}
-            <ol className="mt-8 flex gap-2" aria-hidden>
+            <ol className="mt-8 hidden gap-2 md:flex" aria-hidden>
               {PILLARS.map((_, i) => (
                 <li
                   key={i}
@@ -165,8 +176,9 @@ export function PinnedTrust({
             {/* Scrim para legibilidade do texto sobreposto. */}
             <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-transparent" />
 
-            {/* KPI do pilar ativo em sobreposição */}
-            <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
+            {/* KPI do pilar ativo em sobreposição. Em mobile os pilares já
+                estão todos listados acima — aqui só repetiria o primeiro. */}
+            <div className="absolute inset-x-0 bottom-0 hidden p-6 md:block md:p-8">
               <p className="text-xs font-medium uppercase tracking-widest text-paper/50">
                 {String(active + 1).padStart(2, "0")} / {String(PILLARS.length).padStart(2, "0")}
               </p>
