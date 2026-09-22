@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/admin-queries";
 import { companyCalendar, isSelectable, summarise } from "@/lib/leave";
+import { canDecideLeaveFor, leaveSelfApproves } from "@/lib/permissions";
 import { getBalance, getCompanyDays, getLeaveDays } from "@/lib/leave-queries";
 
 /**
@@ -22,26 +23,33 @@ export interface LeaveResult {
 const dia = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const toggleSchema = z.object({ day: dia, half: z.boolean() });
 
-function canApprove(role: string): boolean {
-  return role === "admin" || role === "chefe";
-}
-
 /**
- * Marca ou desmarca um dia. Clicar num dia livre marca-o; clicar num dia já
- * marcado alterna entre dia inteiro e meio dia e, no fim, desmarca — é o
- * gesto que o calendário oferece.
+ * Aplica de uma vez as alterações feitas no modo de edição: os dias a
+ * acrescentar (verdes) e os dias a retirar (vermelhos).
+ *
+ * É tudo ou nada do ponto de vista do utilizador — se o saldo não chega para
+ * o conjunto, nada é gravado, em vez de ficar meio aplicado.
  */
-export async function toggleLeaveDay(input: {
-  day: string;
-  half: boolean;
-}): Promise<LeaveResult> {
+export async function applyLeaveChanges(input: {
+  year: number;
+  add: { day: string; half: boolean }[];
+  remove: string[];
+}): Promise<LeaveResult & { approved?: boolean }> {
   const me = await getCurrentProfile();
   if (!me) return { ok: false, error: "Sessão expirada. Volte a entrar." };
 
-  const parsed = toggleSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Dia inválido." };
-  const { day, half } = parsed.data;
-  const year = Number(day.slice(0, 4));
+  const parsed = z
+    .object({
+      year: z.number().int().min(2000).max(2100),
+      add: z.array(toggleSchema).max(400),
+      remove: z.array(dia).max(400),
+    })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Alterações inválidas." };
+  const { year, add, remove } = parsed.data;
+  if (!add.length && !remove.length) {
+    return { ok: false, error: "Não há alterações para guardar." };
+  }
 
   const db = await createClient();
   const [extras, atuais, saldo] = await Promise.all([
@@ -49,92 +57,82 @@ export async function toggleLeaveDay(input: {
     getLeaveDays(me.id, year),
     getBalance(me.id, year),
   ]);
+  const calendar = companyCalendar(year, extras);
+  const porDia = new Map(atuais.map((d) => [d.day, d]));
 
-  const existente = atuais.find((d) => d.day === day);
-  if (existente && existente.status === "approved") {
-    return {
-      ok: false,
-      error: "Este dia já foi aprovado. Peça a alteração ao responsável.",
-    };
-  }
-
-  if (!isSelectable(day, companyCalendar(year, extras))) {
-    return { ok: false, error: "Esse dia não é um dia de trabalho." };
-  }
-
-  // Sem saldo não se marca — mas desmarcar e reduzir para meio dia é sempre
-  // permitido, senão quem passasse do limite ficava preso.
-  const anterior = existente ? (existente.half ? 0.5 : 1) : 0;
-  const novo = half ? 0.5 : 1;
-  if (novo > anterior) {
-    const { available } = summarise(saldo, atuais);
-    if (available < novo - anterior) {
-      return { ok: false, error: "Não tem saldo disponível para esse dia." };
+  for (const d of add) {
+    if (!d.day.startsWith(String(year))) {
+      return { ok: false, error: "Há dias fora do ano selecionado." };
+    }
+    if (!isSelectable(d.day, calendar)) {
+      return { ok: false, error: "Há dias que não são dias de trabalho." };
     }
   }
 
-  const { error } = await db.from("leave_days").upsert(
-    {
-      profile_id: me.id,
-      day,
-      half,
-      status: existente?.status === "rejected" ? "draft" : (existente?.status ?? "draft"),
-    },
-    { onConflict: "profile_id,day" },
+  // Saldo depois de aplicar tudo: só se recusa se o resultado final passar.
+  const restantes = atuais.filter(
+    (d) => !remove.includes(d.day) && !add.some((a) => a.day === d.day),
   );
-  if (error) {
-    console.error("toggleLeaveDay:", error.message);
-    return { ok: false, error: "Não foi possível marcar o dia." };
+  const finais = [
+    ...restantes,
+    ...add.map((a) => ({
+      day: a.day,
+      half: a.half,
+      status: porDia.get(a.day)?.status ?? ("draft" as const),
+    })),
+  ];
+  if (summarise(saldo, finais).available < 0) {
+    return { ok: false, error: "As alterações passam o saldo disponível." };
+  }
+
+  // Quem está no topo aprova o próprio plano; os restantes pedem aprovação.
+  const aprovaSozinho = leaveSelfApproves(me.role);
+  const status = aprovaSozinho ? "approved" : "pending";
+
+  if (remove.length) {
+    const { error } = await db
+      .from("leave_days")
+      .delete()
+      .eq("profile_id", me.id)
+      .in("day", remove);
+    if (error) {
+      console.error("applyLeaveChanges (remover):", error.message);
+      return { ok: false, error: "Não foi possível retirar os dias." };
+    }
+  }
+
+  if (add.length) {
+    const { error } = await db.from("leave_days").upsert(
+      add.map((a) => ({
+        profile_id: me.id,
+        day: a.day,
+        half: a.half,
+        status,
+        ...(aprovaSozinho
+          ? { decided_by: me.id, decided_at: new Date().toISOString() }
+          : {}),
+      })),
+      { onConflict: "profile_id,day" },
+    );
+    if (error) {
+      console.error("applyLeaveChanges (juntar):", error.message);
+      return { ok: false, error: missingTable(error) };
+    }
   }
 
   revalidatePath("/admin/perfil", "layout");
-  return { ok: true };
+  return { ok: true, approved: aprovaSozinho };
 }
 
-/** Desmarca um dia. */
-export async function removeLeaveDay(day: string): Promise<LeaveResult> {
-  const me = await getCurrentProfile();
-  if (!me) return { ok: false, error: "Sessão expirada. Volte a entrar." };
-  if (!dia.safeParse(day).success) return { ok: false, error: "Dia inválido." };
-
-  const db = await createClient();
-  const { error } = await db
-    .from("leave_days")
-    .delete()
-    .eq("profile_id", me.id)
-    .eq("day", day)
-    .in("status", ["draft", "pending", "rejected"]);
-  if (error) {
-    console.error("removeLeaveDay:", error.message);
-    return { ok: false, error: "Não foi possível desmarcar o dia." };
-  }
-  revalidatePath("/admin/perfil", "layout");
-  return { ok: true };
-}
-
-/** Submete os dias em rascunho para aprovação. */
-export async function submitLeavePlan(year: number): Promise<LeaveResult> {
-  const me = await getCurrentProfile();
-  if (!me) return { ok: false, error: "Sessão expirada. Volte a entrar." };
-
-  const db = await createClient();
-  const { data, error } = await db
-    .from("leave_days")
-    .update({ status: "pending" })
-    .eq("profile_id", me.id)
-    .eq("status", "draft")
-    .gte("day", `${year}-01-01`)
-    .lte("day", `${year}-12-31`)
-    .select("day");
-  if (error) {
-    console.error("submitLeavePlan:", error.message);
-    return { ok: false, error: "Não foi possível submeter o plano." };
-  }
-  if (!data?.length) {
-    return { ok: false, error: "Não há dias novos para submeter." };
-  }
-  revalidatePath("/admin/perfil", "layout");
-  return { ok: true };
+/** Mensagem útil quando a migração ainda não foi aplicada. */
+function missingTable(error: { code?: string; message: string }): string {
+  const falta =
+    error.code === "42P01" ||
+    error.code === "PGRST205" ||
+    /relation .* does not exist|schema cache/i.test(error.message);
+  return falta
+    ? "A base de dados ainda não tem as tabelas de férias. Aplique as migrações 0021 e 0022."
+    : "Não foi possível guardar as alterações.";
 }
 
 /** Aprova ou recusa dias de um colaborador. Só chefes e administradores. */
@@ -145,9 +143,6 @@ export async function decideLeave(input: {
 }): Promise<LeaveResult> {
   const me = await getCurrentProfile();
   if (!me) return { ok: false, error: "Sessão expirada. Volte a entrar." };
-  if (!canApprove(me.role)) {
-    return { ok: false, error: "Sem permissão para decidir pedidos." };
-  }
 
   const parsed = z
     .object({
@@ -159,6 +154,16 @@ export async function decideLeave(input: {
   if (!parsed.success) return { ok: false, error: "Pedido inválido." };
 
   const db = await createClient();
+  // A hierarquia decide: só aprova quem está acima do colaborador.
+  const { data: alvo } = await db
+    .from("profiles")
+    .select("role")
+    .eq("id", parsed.data.profileId)
+    .maybeSingle();
+  if (!alvo || !canDecideLeaveFor(me.role, alvo.role)) {
+    return { ok: false, error: "Só pode decidir pedidos de quem está abaixo de si." };
+  }
+
   const { error } = await db
     .from("leave_days")
     .update({
@@ -182,7 +187,7 @@ export async function decideLeave(input: {
 export async function saveBalance(data: FormData): Promise<LeaveResult> {
   const me = await getCurrentProfile();
   if (!me) return { ok: false, error: "Sessão expirada. Volte a entrar." };
-  if (!canApprove(me.role)) {
+  if (me.role !== "admin" && me.role !== "chefe") {
     return { ok: false, error: "Sem permissão para alterar saldos." };
   }
 

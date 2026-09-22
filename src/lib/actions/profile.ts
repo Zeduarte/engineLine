@@ -62,7 +62,17 @@ export async function saveMyProfile(
 
   if (error) {
     console.error("saveMyProfile:", error.message);
-    return { ok: false, error: "Não foi possível guardar os seus dados." };
+    // Sem a migração aplicada, as colunas novas não existem. Dizer só "não
+    // foi possível" deixava o utilizador sem saber o que fazer.
+    const faltaMigracao =
+      error.code === "PGRST204" ||
+      /column .* does not exist|schema cache/i.test(error.message);
+    return {
+      ok: false,
+      error: faltaMigracao
+        ? "A base de dados ainda não tem os campos do perfil. Aplique a migração 0021_profile_and_leave.sql."
+        : "Não foi possível guardar os seus dados.",
+    };
   }
 
   revalidatePath("/admin/perfil", "layout");

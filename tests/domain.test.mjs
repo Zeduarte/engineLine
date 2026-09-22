@@ -167,3 +167,21 @@ await test('consecutive days group into one request, across weekends',()=>{
  assert.equal(L.describeRange('2026-12-24','2026-12-24'),'24 de dezembro');
  assert.equal(L.describeRange('2026-07-30','2026-08-03'),'30 de julho a 3 de agosto');
 });
+
+const {canDecideLeaveFor,leaveSelfApproves}=load('src/lib/permissions.ts');
+await test('leave approval follows the hierarchy, and only admins self-approve',()=>{
+ // O administrador está no topo.
+ assert.equal(canDecideLeaveFor('admin','chefe'),true);
+ assert.equal(canDecideLeaveFor('admin','admin'),true);
+ // O chefe decide quem está abaixo, nunca um par nem um superior.
+ assert.equal(canDecideLeaveFor('chefe','vendedor'),true);
+ assert.equal(canDecideLeaveFor('chefe','mecanico'),true);
+ assert.equal(canDecideLeaveFor('chefe','chefe'),false,'um par não decide');
+ assert.equal(canDecideLeaveFor('chefe','admin'),false,'nunca um superior');
+ // Quem não gere ninguém não decide nada.
+ assert.equal(canDecideLeaveFor('vendedor','vendedor'),false);
+ assert.equal(canDecideLeaveFor('mecanico','vendedor'),false);
+ // Só o administrador aprova o próprio plano ao submetê-lo.
+ assert.equal(leaveSelfApproves('admin'),true);
+ for(const r of ['chefe','vendedor','mecanico']) assert.equal(leaveSelfApproves(r),false,r);
+});

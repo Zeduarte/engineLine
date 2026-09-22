@@ -13,14 +13,15 @@ import {
   type LeaveBalance,
   type LeaveDay,
 } from "@/lib/leave";
-import { removeLeaveDay, submitLeavePlan, toggleLeaveDay } from "@/lib/actions/leave";
+import { applyLeaveChanges } from "@/lib/actions/leave";
 
 /**
  * Calendário anual de férias.
  *
- * Um clique percorre os três estados de um dia: livre → dia inteiro →
- * meio dia → livre. Dias aprovados não se alteram aqui; a alteração passa
- * pelo responsável, senão o plano aprovado deixava de valer.
+ * Em leitura mostra o plano. Em "Registar férias" entra-se num rascunho: os
+ * dias que se juntam ficam verdes, os que se retiram ficam vermelhos, e nada
+ * é gravado até "Guardar alterações" — assim vê-se o antes e o depois antes
+ * de decidir.
  */
 
 const MESES = [
@@ -46,47 +47,85 @@ export function LeaveCalendar({
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [busyDay, setBusyDay] = useState<string | null>(null);
+  // Rascunho local: dias a juntar e dias a retirar, ainda por gravar.
+  const [editing, setEditing] = useState(false);
+  const [toAdd, setToAdd] = useState<Map<string, boolean>>(new Map());
+  const [toRemove, setToRemove] = useState<Set<string>>(new Set());
 
   const calendar = useMemo(() => companyCalendar(year, extras), [year, extras]);
   const marcados = useMemo(
     () => new Map(days.map((d) => [d.day, d])),
     [days],
   );
-  const resumo = summarise(balance, days);
-  const porSubmeter = days.filter((d) => d.status === "draft").length;
+  // O resumo acompanha o rascunho: o saldo muda à medida que se edita.
+  const previstos = useMemo(() => {
+    const base = days.filter(
+      (d) => !toRemove.has(d.day) && !toAdd.has(d.day),
+    );
+    const juntos = [...toAdd.entries()].map(([day, half]) => ({
+      day,
+      half,
+      status: (days.find((d) => d.day === day)?.status ?? "draft") as LeaveDay["status"],
+    }));
+    return [...base, ...juntos];
+  }, [days, toAdd, toRemove]);
+
+  const resumo = summarise(balance, editing ? previstos : days);
+  const alteracoes = toAdd.size + toRemove.size;
 
   function clicar(day: string) {
-    if (readOnly || pending) return;
-    const atual = marcados.get(day);
-    if (atual?.status === "approved") {
-      toast.error("Dia aprovado. Peça a alteração ao responsável.");
+    if (readOnly || !editing || pending) return;
+    const marcado = marcados.get(day);
+
+    // Um dia já marcado: primeiro clique risca-o (vermelho), segundo repõe.
+    if (marcado && !toAdd.has(day)) {
+      setToRemove((prev) => {
+        const next = new Set(prev);
+        if (next.has(day)) next.delete(day);
+        else next.add(day);
+        return next;
+      });
       return;
     }
-    setBusyDay(day);
-    start(async () => {
-      // livre → inteiro → meio → livre
-      const res = !atual
-        ? await toggleLeaveDay({ day, half: false })
-        : !atual.half
-          ? await toggleLeaveDay({ day, half: true })
-          : await removeLeaveDay(day);
-      setBusyDay(null);
-      if (!res.ok) toast.error(res.error ?? "Não foi possível alterar o dia.");
-      else router.refresh();
+
+    // Um dia livre: inteiro → meio dia → livre outra vez.
+    setToAdd((prev) => {
+      const next = new Map(prev);
+      const atual = next.get(day);
+      if (atual === undefined) next.set(day, false);
+      else if (atual === false) next.set(day, true);
+      else next.delete(day);
+      return next;
     });
   }
 
-  function submeter() {
+  function guardar() {
     start(async () => {
-      const res = await submitLeavePlan(year);
-      if (res.ok) {
-        toast.success("Plano submetido para aprovação.");
-        router.refresh();
-      } else {
-        toast.error(res.error ?? "Não foi possível submeter.");
+      const res = await applyLeaveChanges({
+        year,
+        add: [...toAdd.entries()].map(([day, half]) => ({ day, half })),
+        remove: [...toRemove],
+      });
+      if (!res.ok) {
+        toast.error(res.error ?? "Não foi possível guardar as alterações.");
+        return;
       }
+      toast.success(
+        res.approved
+          ? "Férias registadas e aprovadas."
+          : "Alterações enviadas para aprovação.",
+      );
+      setToAdd(new Map());
+      setToRemove(new Set());
+      setEditing(false);
+      router.refresh();
     });
+  }
+
+  function cancelar() {
+    setToAdd(new Map());
+    setToRemove(new Set());
+    setEditing(false);
   }
 
   return (
@@ -106,17 +145,40 @@ export function LeaveCalendar({
             ))}
           </select>
         </label>
-        {!readOnly && porSubmeter > 0 && (
+        {!readOnly && !editing && (
           <button
             type="button"
-            onClick={submeter}
-            disabled={pending}
+            onClick={() => setEditing(true)}
             className="btn-primary h-auto px-5 py-2 text-sm"
           >
-            {pending
-              ? "A submeter…"
-              : `Submeter ${porSubmeter} ${porSubmeter === 1 ? "dia" : "dias"}`}
+            Registar férias
           </button>
+        )}
+        {editing && (
+          <>
+            <button
+              type="button"
+              onClick={guardar}
+              disabled={pending || alteracoes === 0}
+              className="btn-primary h-auto px-5 py-2 text-sm"
+            >
+              {pending
+                ? "A guardar…"
+                : `Guardar ${alteracoes} ${alteracoes === 1 ? "alteração" : "alterações"}`}
+            </button>
+            <button
+              type="button"
+              onClick={cancelar}
+              disabled={pending}
+              className="btn-ghost h-auto px-4 py-2 text-sm"
+            >
+              Cancelar
+            </button>
+            <p className="text-xs text-paper/50">
+              Clique num dia livre para o juntar, ou num dia marcado para o
+              retirar.
+            </p>
+          </>
         )}
       </div>
 
@@ -130,9 +192,10 @@ export function LeaveCalendar({
               label={nome}
               calendar={calendar}
               marcados={marcados}
-              busyDay={busyDay}
+              toAdd={toAdd}
+              toRemove={toRemove}
               onPick={clicar}
-              readOnly={readOnly}
+              editing={editing && !readOnly}
             />
           ))}
         </div>
@@ -154,7 +217,7 @@ export function LeaveCalendar({
         </aside>
       </div>
 
-      <Legend />
+      <Legend editing={editing} />
     </div>
   );
 }
@@ -165,18 +228,20 @@ function Month({
   label,
   calendar,
   marcados,
-  busyDay,
+  toAdd,
+  toRemove,
   onPick,
-  readOnly,
+  editing,
 }: {
   year: number;
   month: number;
   label: string;
   calendar: Map<string, CompanyDay>;
   marcados: Map<string, LeaveDay>;
-  busyDay: string | null;
+  toAdd: Map<string, boolean>;
+  toRemove: Set<string>;
   onPick: (day: string) => void;
-  readOnly: boolean;
+  editing: boolean;
 }) {
   const primeiro = new Date(year, month, 1);
   const dias = new Date(year, month + 1, 0).getDate();
@@ -207,9 +272,10 @@ function Month({
               especial={calendar.get(day)}
               marcado={marcados.get(day)}
               livre={isSelectable(day, calendar)}
-              busy={busyDay === day}
+              aJuntar={toAdd.get(day)}
+              aRetirar={toRemove.has(day)}
               onPick={onPick}
-              readOnly={readOnly}
+              editing={editing}
             />
           );
         })}
@@ -224,47 +290,63 @@ function Day({
   especial,
   marcado,
   livre,
-  busy,
+  aJuntar,
+  aRetirar,
   onPick,
-  readOnly,
+  editing,
 }: {
   day: string;
   numero: number;
   especial?: CompanyDay;
   marcado?: LeaveDay;
   livre: boolean;
-  busy: boolean;
+  /** No rascunho: `false` dia inteiro, `true` meio dia, ausente não se junta. */
+  aJuntar?: boolean;
+  aRetirar: boolean;
   onPick: (day: string) => void;
-  readOnly: boolean;
+  editing: boolean;
 }) {
-  const estilo = especial
-    ? ESPECIAL[especial.kind]
-    : marcado
-      ? MARCADO[marcado.status]
-      : livre
-        ? "text-paper/80 hover:bg-white/10"
-        : "text-paper/25";
+  // A ordem importa: o rascunho fala mais alto do que o que está gravado,
+  // porque é o que o utilizador acabou de decidir.
+  const estilo = aRetirar
+    ? "bg-red-500/80 font-semibold text-white line-through"
+    : aJuntar !== undefined
+      ? "bg-emerald-500/80 font-semibold text-ink"
+      : especial
+        ? ESPECIAL[especial.kind]
+        : marcado
+          ? MARCADO[marcado.status]
+          : livre
+            ? editing
+              ? "text-paper/80 hover:bg-white/10"
+              : "text-paper/60"
+            : "text-paper/25";
 
   const titulo = [
-    especial ? `${COMPANY_DAY_LABEL[especial.kind]}${especial.label ? `: ${especial.label}` : ""}` : null,
+    aRetirar ? "A retirar" : null,
+    aJuntar !== undefined ? (aJuntar ? "A juntar (meio dia)" : "A juntar") : null,
+    especial
+      ? `${COMPANY_DAY_LABEL[especial.kind]}${especial.label ? `: ${especial.label}` : ""}`
+      : null,
     marcado ? `${marcado.half ? "Meio dia" : "Dia inteiro"} · ${ESTADO[marcado.status]}` : null,
   ]
     .filter(Boolean)
     .join(" — ");
 
-  const conteudo = marcado?.half ? "½" : numero;
-  const clicavel = !readOnly && livre;
+  const meio = aJuntar !== undefined ? aJuntar : marcado?.half;
+  const conteudo = meio && !aRetirar ? "½" : numero;
+  const clicavel = editing && livre;
 
   return (
     <button
       type="button"
-      disabled={!clicavel || busy}
+      disabled={!clicavel}
       onClick={() => onPick(day)}
       title={titulo || undefined}
       aria-label={`${numero}${titulo ? ` — ${titulo}` : ""}`}
       className={`grid aspect-square place-items-center rounded text-xs transition-colors ${estilo} ${
-        busy ? "animate-pulse" : ""
-      } ${clicavel ? "cursor-pointer" : "cursor-default"}`}
+        clicavel ? "cursor-pointer" : "cursor-default"
+      }`}
     >
       {conteudo}
     </button>
@@ -291,15 +373,20 @@ const ESTADO: Record<LeaveDay["status"], string> = {
   rejected: "recusado",
 };
 
-function Legend() {
-  const itens: [string, string][] = [
+function Legend({ editing }: { editing: boolean }) {
+  const base: [string, string][] = [
     ["bg-amber-700/80", "Feriado"],
     ["bg-sky-400/80", "Tolerância"],
     ["bg-teal-700/80", "Dia obrigatório"],
-    ["bg-white/15 ring-1 ring-dashed ring-white/40", "Por submeter"],
-    ["bg-white/25", "À espera"],
+    ["bg-white/25", "À espera de aprovação"],
     ["bg-slate-600", "Plano aprovado"],
   ];
+  const rascunho: [string, string][] = [
+    ["bg-emerald-500/80", "A juntar"],
+    ["bg-red-500/80", "A retirar"],
+  ];
+  const itens = editing ? [...rascunho, ...base] : base;
+
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-paper/60">
       {itens.map(([cor, label]) => (

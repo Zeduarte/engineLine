@@ -132,6 +132,35 @@ export function canAccessVehicleType(
   return effectiveVehicleTypes(role, allowed).includes(type);
 }
 
+/**
+ * Quem pode decidir o plano de férias de outra pessoa.
+ *
+ * Segue a hierarquia do backoffice: rank estritamente superior. O
+ * administrador é a exceção — está no topo, logo decide tudo, incluindo o
+ * próprio plano.
+ */
+export function canDecideLeaveFor(
+  approverRole: string,
+  targetRole: string,
+): boolean {
+  // Não é `canManage`: essa impede um chefe de mexer no mecânico, porque lhe
+  // gerir o papel e os acessos é outra conversa. Para férias basta estar
+  // acima na hierarquia — senão as férias do mecânico ficavam à espera do
+  // administrador.
+  if (approverRole === "admin") return true;
+  const a = isRole(approverRole) ? ROLE_RANK[approverRole] : 0;
+  const t = isRole(targetRole) ? ROLE_RANK[targetRole] : 0;
+  return a > t;
+}
+
+/**
+ * O plano fica aprovado assim que é submetido? Só para quem não tem ninguém
+ * acima — pedir aprovação a si próprio não faz sentido.
+ */
+export function leaveSelfApproves(role: string): boolean {
+  return role === "admin";
+}
+
 /** `manager` pode gerir (editar) `target`? (rank estritamente superior). */
 export function canManage(managerRole: string, targetRole: string): boolean {
   if (targetRole === "mecanico" && managerRole !== "admin") return false;

@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { canDecideLeaveFor } from "@/lib/permissions";
 import {
   DEFAULT_BALANCE,
   type CompanyDay,
@@ -125,25 +126,35 @@ export interface PendingRequest {
   days: LeaveDay[];
 }
 
-/** Pedidos por decidir, agrupados por colaborador. */
-export async function getPendingRequests(): Promise<PendingRequest[]> {
+/**
+ * Pedidos por decidir, agrupados por colaborador.
+ *
+ * Só aparecem os de quem está abaixo de quem consulta — mostrar um pedido
+ * que depois o servidor recusa decidir seria enganador.
+ */
+export async function getPendingRequests(
+  approverRole: string,
+): Promise<PendingRequest[]> {
   const db = await createClient();
-  const [{ data, error }, colegas] = await Promise.all([
+  const [{ data, error }, colegas, { data: perfis }] = await Promise.all([
     db
       .from("leave_days")
       .select("profile_id,day,half,status")
       .eq("status", "pending")
       .order("day"),
     getColleagues(),
+    db.from("profiles").select("id,role"),
   ]);
   if (error) {
     console.error("getPendingRequests:", error.message);
     return [];
   }
+  const papeis = new Map((perfis ?? []).map((p) => [p.id as string, p.role as string]));
   const nomes = new Map(colegas.map((c) => [c.id, c.name]));
   const porPessoa = new Map<string, LeaveDay[]>();
   for (const d of data ?? []) {
     const id = d.profile_id as string;
+    if (!canDecideLeaveFor(approverRole, papeis.get(id) ?? "")) continue;
     const lista = porPessoa.get(id) ?? [];
     lista.push({
       day: d.day as string,

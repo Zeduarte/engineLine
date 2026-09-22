@@ -11,5 +11,5 @@ export default async function LeaveRequestsPage() {
   // Só quem decide férias entra aqui; os outros nem veem o separador.
   if (me.role !== "admin" && me.role !== "chefe") redirect("/admin/perfil");
 
-  return <LeaveRequests requests={await getPendingRequests()} />;
+  return <LeaveRequests requests={await getPendingRequests(me.role)} />;
 }

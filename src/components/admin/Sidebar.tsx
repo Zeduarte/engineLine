@@ -54,6 +54,29 @@ export function Sidebar({
         </span>
       </Link>
 
+      {/* A área pessoal fica destacada no topo, separada dos separadores de
+          trabalho: é aqui que cada um trata dos seus dados e das suas férias,
+          e no rodapé passava despercebida. */}
+      <Link
+        href="/admin/perfil"
+        aria-current={pathname.startsWith("/admin/perfil") ? "page" : undefined}
+        className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${
+          pathname.startsWith("/admin/perfil")
+            ? "border-accent/40 bg-accent/15"
+            : "border-white/10 hover:border-white/25 hover:bg-white/5"
+        }`}
+      >
+        <Avatar name={user.name} size={40} />
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-medium text-paper">
+            {user.name}
+          </span>
+          <span className="block text-xs text-paper/50">
+            O meu perfil e férias
+          </span>
+        </span>
+      </Link>
+
       <nav className="flex flex-1 flex-col gap-1">
         {items.map((item) => {
           const active = isActive(item.href, item.exact);
@@ -85,26 +108,6 @@ export function Sidebar({
       </nav>
 
       <div className="border-t border-white/10 pt-4">
-        {/* O avatar é a porta para a área pessoal (dados e férias). */}
-        <Link
-          href="/admin/perfil"
-          aria-current={pathname.startsWith("/admin/perfil") ? "page" : undefined}
-          className={`mb-3 flex items-center gap-3 rounded-xl px-2 py-2 transition-colors ${
-            pathname.startsWith("/admin/perfil")
-              ? "bg-accent/15"
-              : "hover:bg-white/5"
-          }`}
-        >
-          <Avatar name={user.name} />
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-medium text-paper">
-              {user.name}
-            </span>
-            <span className="block text-xs capitalize text-paper/50">
-              {user.role}
-            </span>
-          </span>
-        </Link>
         <Link
           href="/"
           target="_blank"
