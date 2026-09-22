@@ -89,3 +89,81 @@ await test('the exact value that blocked saving now passes validation',()=>{
  assert.equal(r.success,true,JSON.stringify(r.error?.issues));
  assert.equal(r.data.locations[0].id,'supermotas');
 });
+
+const L=load('src/lib/leave.ts');
+await test('portuguese holidays follow Easter and cover the fixed dates',()=>{
+ // Datas de Páscoa conhecidas.
+ assert.equal(L.isoDay(L.easterSunday(2026)),'2026-04-05');
+ assert.equal(L.isoDay(L.easterSunday(2027)),'2027-03-28');
+ assert.equal(L.isoDay(L.easterSunday(2024)),'2024-03-31');
+
+ const f=L.nationalHolidays(2026);
+ assert.equal(f.length,13);
+ const dias=f.map(d=>d.day);
+ for(const fixo of ['2026-01-01','2026-04-25','2026-05-01','2026-06-10','2026-08-15',
+                    '2026-10-05','2026-11-01','2026-12-01','2026-12-08','2026-12-25'])
+  assert.ok(dias.includes(fixo),fixo);
+ assert.ok(dias.includes('2026-04-03'),'Sexta-feira Santa');
+ assert.ok(dias.includes('2026-06-04'),'Corpo de Deus');
+ assert.deepEqual(dias,[...dias].sort());
+});
+await test('only working days that are not holidays can be booked',()=>{
+ const cal=L.companyCalendar(2026,[
+  {day:'2026-06-29',kind:'holiday',label:'São Pedro'},
+  {day:'2026-02-17',kind:'tolerance',label:'Carnaval'},
+  {day:'2026-12-24',kind:'mandatory',label:'Véspera de Natal'},
+ ]);
+ assert.equal(L.isSelectable('2026-07-13',cal),true,'segunda-feira normal');
+ assert.equal(L.isSelectable('2026-07-11',cal),false,'sábado');
+ assert.equal(L.isSelectable('2026-01-01',cal),false,'feriado nacional');
+ assert.equal(L.isSelectable('2026-06-29',cal),false,'feriado municipal');
+ assert.equal(L.isSelectable('2026-02-17',cal),false,'tolerância');
+ // Dia obrigatório é marcado pela empresa, mas continua a sair do saldo.
+ assert.equal(L.isSelectable('2026-12-24',cal),true);
+ // Os extras de outro ano não entram.
+ assert.equal(L.companyCalendar(2026,[{day:'2025-06-29',kind:'holiday',label:'x'}]).has('2025-06-29'),false);
+});
+await test('leave balance adds carry-over and the birthday, and ignores rejected days',()=>{
+ const saldo={baseDays:22,carriedDays:3,birthdayDay:1};
+ const dias=[
+  {day:'2026-07-13',half:false,status:'approved'},
+  {day:'2026-07-14',half:false,status:'approved'},
+  {day:'2026-07-15',half:true, status:'pending'},
+  {day:'2026-08-03',half:false,status:'draft'},
+  {day:'2026-09-01',half:false,status:'rejected'},
+ ];
+ const r=L.summarise(saldo,dias);
+ assert.equal(r.total,26);
+ assert.equal(r.approved,2);
+ assert.equal(r.pending,0.5);
+ assert.equal(r.marked,3.5,'recusado não conta');
+ assert.equal(r.available,22.5);
+ // Sem dias marcados o saldo é o total.
+ assert.equal(L.summarise(L.DEFAULT_BALANCE,[]).available,23);
+});
+await test('consecutive days group into one request, across weekends',()=>{
+ const dias=['2026-07-13','2026-07-14','2026-07-15','2026-07-16','2026-07-17']
+  .map(day=>({day,half:false,status:'pending'}));
+ const g=L.groupRanges(dias);
+ assert.equal(g.length,1);
+ assert.equal(L.describeRange(g[0].from,g[0].to),'13 a 17 de julho');
+
+ // Sexta e a segunda seguinte são o mesmo período; um salto maior não é.
+ const ponte=L.groupRanges([
+  {day:'2026-07-17',half:false,status:'pending'},
+  {day:'2026-07-20',half:false,status:'pending'},
+ ]);
+ assert.equal(ponte.length,1,'fim de semana pelo meio não quebra');
+ const separados=L.groupRanges([
+  {day:'2026-07-13',half:false,status:'pending'},
+  {day:'2026-07-22',half:false,status:'pending'},
+ ]);
+ assert.equal(separados.length,2);
+ // Estados diferentes nunca se juntam no mesmo pedido.
+ assert.equal(L.groupRanges([
+  {day:'2026-07-13',half:false,status:'approved'},
+  {day:'2026-07-14',half:false,status:'pending'},
+ ]).length,2);
+ assert.equal(L.describeRange('2026-12-24','2026-12-24'),'24 de dezembro');
+ assert.equal(L.describeRange('2026-07-30','2026-08-03'),'30 de julho a 3 de agosto');
+});

@@ -122,3 +122,11 @@ await test('admin world bar hides on shared sections and without access to the o
  }
  pathname='/inventario';
 });
+
+await test('the personal area is common to both vehicle worlds',()=>{
+ const {adminPathHasWorld}=load('src/lib/world.ts');
+ assert.equal(adminPathHasWorld('/admin/carros'),true);
+ assert.equal(adminPathHasWorld('/admin/perfil'),false,'perfil não é de carros nem de motas');
+ assert.equal(adminPathHasWorld('/admin/perfil/ferias'),false);
+ assert.equal(adminPathHasWorld('/admin/utilizadores'),false);
+});

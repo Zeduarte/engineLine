@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 /**
  * Runtime do site público (cliente):
@@ -68,6 +69,7 @@ export function SiteRuntime({
   ga4Id: string | null;
   pixelId: string | null;
 }) {
+  const pathname = usePathname();
   const [decision, setDecision] = useState<string | null>("pending");
 
   // Service Worker REMOVIDO: causava "Server Action not found" ao servir chunks
@@ -111,6 +113,11 @@ export function SiteRuntime({
     }
     setDecision(value);
   }
+
+  // O backoffice é para quem cá trabalha, com sessão iniciada: pedir-lhe
+  // consentimento de cookies a cada visita é ruído, e o banner tapava o
+  // conteúdo das páginas.
+  if (pathname.startsWith("/admin")) return null;
 
   // Mostra o banner a qualquer visitante que ainda não decidiu. Os scripts de
   // rastreio (GA4/Pixel) só carregam depois de "Aceitar" e só se estiverem

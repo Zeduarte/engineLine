@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/lib/actions/auth";
+import { Avatar } from "./Avatar";
 import type { Section } from "@/lib/permissions";
 
 const NAV: { href: string; label: string; exact: boolean; section: Section }[] = [
@@ -77,8 +78,12 @@ export function MobileNav({
               </Link>
             );
           })}
-          <div className="mt-2 flex items-center justify-between border-t border-white/10 px-3 pt-3">
-            <span className="text-xs text-paper/50">{user.name}</span>
+          <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/10 px-3 pt-3">
+            {/* Avatar: entrada para a área pessoal, como na barra lateral. */}
+            <Link href="/admin/perfil" className="flex min-w-0 items-center gap-2">
+              <Avatar name={user.name} size={28} />
+              <span className="truncate text-xs text-paper/70">{user.name}</span>
+            </Link>
             <form action={logout}>
               <button type="submit" className="text-xs text-paper/60">
                 Terminar sessão

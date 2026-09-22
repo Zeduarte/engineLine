@@ -29,6 +29,12 @@ export const COMMON_ADMIN_SECTIONS: Section[] = [
   "integracoes",
 ];
 
+/**
+ * A área pessoal (dados e férias) não é um separador de permissões — está
+ * fora de `Section` —, por isso tem de ser tratada à parte.
+ */
+const COMMON_ADMIN_PATHS = ["perfil"];
+
 /** O mundo influencia o que esta página pública mostra? */
 export function pathHasWorld(pathname: string): boolean {
   const clean = pathname.replace(/\/+$/, "") || "/";
@@ -40,6 +46,7 @@ export function pathHasWorld(pathname: string): boolean {
 /** O mundo influencia este ecrã do backoffice? */
 export function adminPathHasWorld(pathname: string): boolean {
   const section = pathname.split("/")[2] ?? "";
+  if (COMMON_ADMIN_PATHS.includes(section)) return false;
   return !COMMON_ADMIN_SECTIONS.includes(section as Section);
 }
 

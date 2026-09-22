@@ -84,6 +84,9 @@ type ProfilesRow = {
   allowed_sections: string[] | null;
   /** Tipos de viatura acessíveis no backoffice. NULL = ambos. */
   allowed_vehicle_types: string[] | null;
+  phone: string | null;
+  birth_date: string | null;
+  job_title: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -94,6 +97,9 @@ type ProfilesInsert = {
   role?: UserRole;
   allowed_sections?: string[] | null;
   allowed_vehicle_types?: string[] | null;
+  phone?: string | null;
+  birth_date?: string | null;
+  job_title?: string | null;
 };
 type ProfilesUpdate = {
   id?: string;
@@ -102,6 +108,9 @@ type ProfilesUpdate = {
   role?: UserRole;
   allowed_sections?: string[] | null;
   allowed_vehicle_types?: string[] | null;
+  phone?: string | null;
+  birth_date?: string | null;
+  job_title?: string | null;
 };
 
 // ---- cars ------------------------------------------------------------------
@@ -435,6 +444,44 @@ type ChannelListingsUpdate = Partial<ChannelListingsInsert>;
 export type Database = {
   public: {
     Tables: {
+      company_days: {
+        Row: { id: string; day: string; kind: string; label: string };
+        Insert: { id?: string; day: string; kind: string; label?: string };
+        Update: { id?: string; day?: string; kind?: string; label?: string };
+        Relationships: [];
+      };
+      leave_balances: {
+        Row: {
+          profile_id: string; year: number; base_days: number;
+          carried_days: number; birthday_day: number; updated_at: string;
+        };
+        Insert: {
+          profile_id: string; year: number; base_days?: number;
+          carried_days?: number; birthday_day?: number; updated_at?: string;
+        };
+        Update: {
+          profile_id?: string; year?: number; base_days?: number;
+          carried_days?: number; birthday_day?: number; updated_at?: string;
+        };
+        Relationships: [];
+      };
+      leave_days: {
+        Row: {
+          id: string; profile_id: string; day: string; half: boolean;
+          status: string; note: string; decided_by: string | null;
+          decided_at: string | null; created_at: string; updated_at: string;
+        };
+        Insert: {
+          id?: string; profile_id: string; day: string; half?: boolean;
+          status?: string; note?: string; decided_by?: string | null;
+          decided_at?: string | null;
+        };
+        Update: {
+          half?: boolean; status?: string; note?: string;
+          decided_by?: string | null; decided_at?: string | null;
+        };
+        Relationships: [];
+      };
       lead_activities: Table<Activity, "lead_id" | "kind" | "body">;
       vehicle_financials: Table<Financials, "car_id">;
       vehicle_costs: Table<
@@ -523,6 +570,11 @@ export type Database = {
         Returns: undefined;
       };
       has_section: { Args: { section: string }; Returns: boolean };
+      can_approve_leave: { Args: Record<string, never>; Returns: boolean };
+      leave_directory: {
+        Args: Record<string, never>;
+        Returns: { id: string; full_name: string }[];
+      };
       consume_submission: {
         Args: { key_value: string; max_hits: number; window_seconds: number };
         Returns: boolean;
