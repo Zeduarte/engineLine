@@ -31,9 +31,21 @@ export const dynamic = "force-dynamic";
 /** Aperto de mão de subscrição: a Meta chama uma vez, ao configurar o URL. */
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
-  const challenge = verifyChallenge(params, process.env.WHATSAPP_VERIFY_TOKEN ?? "");
+  const token = process.env.WHATSAPP_VERIFY_TOKEN ?? "";
+  const challenge = verifyChallenge(params, token);
   // Texto simples e não JSON: a Meta compara o corpo em bruto com o desafio.
-  if (challenge === null) return new NextResponse(null, { status: 403 });
+  if (challenge === null) {
+    // Quando o «Verify and save» da Meta falha, é aqui que se vê porquê — nos
+    // logs das funções do Netlify. O token nunca é escrito.
+    console.warn(
+      `api/whatsapp: verificação recusada — ${
+        !token
+          ? "WHATSAPP_VERIFY_TOKEN não está definido (falta o deploy depois de o criar?)"
+          : "o token da Meta não é igual ao WHATSAPP_VERIFY_TOKEN"
+      }`,
+    );
+    return new NextResponse(null, { status: 403 });
+  }
   return new NextResponse(challenge, {
     status: 200,
     headers: { "Content-Type": "text/plain" },
@@ -44,12 +56,23 @@ export async function POST(request: Request) {
   // O corpo tem de ser lido em bruto ANTES de qualquer JSON.parse: a assinatura
   // é sobre os bytes exactos, e um JSON reserializado nunca bateria.
   const raw = await request.text();
-  const ok = verifySignature(
-    raw,
-    request.headers.get("x-hub-signature-256"),
-    process.env.WHATSAPP_APP_SECRET ?? "",
-  );
-  if (!ok) return new NextResponse(null, { status: 403 });
+  const secret = process.env.WHATSAPP_APP_SECRET ?? "";
+  const header = request.headers.get("x-hub-signature-256");
+  if (!verifySignature(raw, header, secret)) {
+    // Nada se grava — o pedido não está autenticado, e gravá-lo deixaria
+    // qualquer pessoa encher a base de dados. Mas regista-se nos logs: sem
+    // isto, um App Secret errado era uma falha totalmente silenciosa.
+    console.warn(
+      `api/whatsapp: pedido recusado — ${
+        !secret
+          ? "WHATSAPP_APP_SECRET não está definido"
+          : !header
+            ? "sem assinatura (não veio da Meta)"
+            : "a assinatura não confere: confirme o App Secret em App settings → Basic"
+      }`,
+    );
+    return new NextResponse(null, { status: 403 });
+  }
 
   let payload: unknown;
   try {
@@ -82,10 +105,6 @@ export async function POST(request: Request) {
 type Db = NonNullable<ReturnType<typeof createAdminClient>>;
 
 async function processOne(db: Db, msg: InboundMessage): Promise<void> {
-  // Um URL vazado não pode ser accionado a partir de outra conta da Meta.
-  const esperado = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  if (esperado && msg.phoneNumberId && msg.phoneNumberId !== esperado) return;
-
   // Reclamação. Falha (chave duplicada) = já vista = reentrega: pára aqui. Vem
   // ANTES da quota, senão as reentregas da Meta gastavam a quota da pessoa.
   const { error: claimError } = await db
@@ -103,11 +122,34 @@ async function processOne(db: Db, msg: InboundMessage): Promise<void> {
       .update({ processed_at: new Date().toISOString(), ...patch })
       .eq("wam_id", msg.wamId);
 
-  // Quem é. Número desconhecido: silêncio — não se confirma a um estranho que
-  // este número é um assistente.
+  // Uma mensagem para outro número de empresa não é processada — um URL vazado
+  // não pode ser accionado a partir de outra conta. Mas fica registada, com o
+  // porquê: um Phone number ID mal copiado para o Netlify era o erro de
+  // configuração mais provável, e antes não deixava rasto nenhum. É também o
+  // que o botão «Test» da Meta produz, porque usa um número fictício — por isso
+  // uma linha destas no painel prova que a Meta chega cá e que o App Secret
+  // está certo.
+  const esperado = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!esperado || (msg.phoneNumberId && msg.phoneNumberId !== esperado)) {
+    await finish({
+      actor_id: null,
+      last_error: !esperado
+        ? "WHATSAPP_PHONE_NUMBER_ID não está definido"
+        : `mensagem para o número com ID ${msg.phoneNumberId}, mas o configurado é ${esperado}`,
+    });
+    return;
+  }
+
+  // Quem é. Número desconhecido: silêncio para quem escreveu — não se confirma
+  // a um estranho que este número é um assistente. Para o administrador, fica
+  // escrito porquê.
   const { data: actorId } = await db.rpc("wa_actor_for_phone", { raw_phone: msg.from });
   if (!actorId) {
-    await finish({ actor_id: null });
+    await finish({
+      actor_id: null,
+      last_error:
+        "número sem perfil associado — confirme o telefone em O meu perfil (ou há dois perfis com o mesmo número)",
+    });
     return;
   }
   const { data: profile } = await db

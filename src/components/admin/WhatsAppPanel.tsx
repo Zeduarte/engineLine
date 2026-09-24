@@ -123,30 +123,48 @@ export async function WhatsAppPanel({ baseUrl }: { baseUrl: string }) {
 
       <WhatsAppSimulator />
 
-      {/* Histórico */}
-      {ultimas && ultimas.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-paper/50">
-            Últimas mensagens recebidas
-          </h3>
-          <ul className="mt-3 space-y-1 text-sm text-paper/70">
+      {/* Histórico. Mostra-se sempre: "nada chegou" também é um diagnóstico —
+          quer dizer que a Meta não está a entregar, ou que o App Secret está
+          errado (esses pedidos são recusados antes de se gravar o que quer que
+          seja, e só aparecem nos logs do Netlify). */}
+      <div>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-paper/50">
+          Últimas mensagens recebidas
+        </h3>
+        {!ultimas || ultimas.length === 0 ? (
+          <div className="mt-2 space-y-1 text-sm text-paper/60">
+            <p>Ainda não chegou nenhuma mensagem do WhatsApp.</p>
+            <p className="text-xs text-paper/50">
+              Se já enviou uma: confirme na Meta que o campo <em>messages</em>{" "}
+              está subscrito no webhook, e experimente o botão <em>Test</em>{" "}
+              ao lado dele. Se mesmo assim nada aparecer aqui, veja os logs das
+              funções no Netlify e procure «api/whatsapp» — um App Secret
+              errado só aparece lá.
+            </p>
+          </div>
+        ) : (
+          <ul className="mt-3 space-y-2 text-sm text-paper/70">
             {ultimas.map((m) => (
-              <li key={m.wam_id}>
-                {new Date(m.received_at).toLocaleString("pt-PT")} · {m.from_phone} ·{" "}
-                {m.last_error ? (
-                  <span className="text-red-300">{m.last_error}</span>
-                ) : m.reply_sent_at ? (
-                  "respondida"
-                ) : m.processed_at ? (
-                  "processada, resposta não enviada"
-                ) : (
-                  "recebida"
-                )}
+              <li key={m.wam_id} className="border-b border-white/10 pb-2">
+                <span className="text-paper/50">
+                  {new Date(m.received_at).toLocaleString("pt-PT")} · {m.from_phone}
+                </span>
+                <span className="block">
+                  {m.last_error ? (
+                    <span className="text-red-300">{m.last_error}</span>
+                  ) : m.reply_sent_at ? (
+                    <span className="text-emerald-300">respondida</span>
+                  ) : m.processed_at ? (
+                    "processada, sem resposta enviada"
+                  ) : (
+                    "recebida, ainda a processar"
+                  )}
+                </span>
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 }
