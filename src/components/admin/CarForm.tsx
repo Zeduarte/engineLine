@@ -31,6 +31,7 @@ import {
 } from "@/lib/car-brands";
 import { CAR_MODELS } from "@/lib/car-models";
 import { extrasCatalog, MOTORCYCLE_EXTRAS_CATALOG } from "@/lib/extras";
+import { formatPlate } from "@/lib/plate";
 
 // Lista de anos calculada uma vez (o ano corrente é estável na sessão).
 const YEARS = yearOptions();
@@ -40,18 +41,6 @@ const YEARS = yearOptions();
 const DOOR_OPTIONS = [0, 2, 3, 4, 5];
 const CAR_SEAT_OPTIONS = [1, 2, 4, 5, 6, 7, 8, 9];
 const MOTORCYCLE_SEAT_OPTIONS = [1, 2];
-
-/**
- * Formata a matrícula em grupos de 2 separados por hífen (ex.: "44vs23" →
- * "44-VS-23"). Aceita letras e dígitos, em maiúsculas.
- */
-function formatPlate(raw: string): string {
-  const clean = raw
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 6);
-  return clean.match(/.{1,2}/g)?.join("-") ?? "";
-}
 
 // Ao focar um campo numérico, seleciona o conteúdo — assim escrever substitui
 // logo o "0" em vez de obrigar a apagá-lo primeiro.

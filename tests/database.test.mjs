@@ -8,7 +8,12 @@ await db.exec(`
  create role anon; create role authenticated; create role service_role bypassrls;
  create schema auth; create schema storage;
  create table auth.users(id uuid primary key, email text,raw_user_meta_data jsonb default '{}');
- create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+ -- Lê os DOIS nomes, como o auth.uid() da Supabase: a 0024 define ambos porque
+ -- não se sabe qual deles a versão instalada consulta. Um duplo que só lesse um
+ -- validaria metade do mecanismo e deixaria passar a outra metade.
+ create function auth.uid() returns uuid language sql stable as $$ select coalesce(
+   nullif(current_setting('request.jwt.claim.sub',true),''),
+   nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'sub')::uuid $$;
  create table storage.buckets(id text primary key,name text,public boolean);
  create table storage.objects(id uuid default gen_random_uuid(),bucket_id text,name text);
  alter table storage.objects enable row level security;
@@ -186,4 +191,156 @@ await test('workshop creates the selected category and keeps existing permission
  await asUser(limited,async()=>assert.rejects(db.query("select create_workshop_intake_for_type('Honda','AA-11-AA','motorcycle')"),/Sem permissão/));
  await asUser(null,async()=>assert.rejects(db.query("select create_workshop_intake_for_type('Honda','AA-11-AA','motorcycle')"),/permission denied/),'anon');
 });
+
+// ---------------------------------------------------------------------------
+// 0024 — ordens vindas do WhatsApp. A chave de serviço ignora a RLS, por isso a
+// autorização destas RPCs é a única barreira: é ela que estes testes vigiam.
+// ---------------------------------------------------------------------------
+
+/** Corre como o servidor (service_role), que é quem chama estas RPCs. */
+async function asServer(fn) {
+ await db.exec('set role service_role');
+ try { return await fn(); } finally { await db.exec('reset role'); }
+}
+
+await test('wa_begin_as authorizes by explicit id and really assumes the identity',async()=>{
+ // Não basta não estourar: verifica-se que o auth.uid() passou a ser o mecânico
+ // dentro da mesma transacção — é disso que depende o autor da auditoria.
+ await asServer(async()=>{
+  const {rows}=await db.query(`do $$ begin
+    perform public.wa_begin_as('${mechanic}', array['oficina']);
+    if auth.uid() <> '${mechanic}'::uuid then raise exception 'não impersonou'; end if;
+  end $$`).then(()=>({rows:[]}));
+  assert.deepEqual(rows,[]);
+ });
+});
+
+await test('wa_begin_as refuses the wrong section, an unknown profile and a null actor',async()=>{
+ await asServer(async()=>{
+  await assert.rejects(db.query("select public.wa_begin_as($1,array['financeiro'])",[mechanic]),/Sem permissão/);
+  await assert.rejects(db.query("select public.wa_begin_as('00000000-0000-4000-8000-0000000000ff',array['oficina'])"),/Colaborador desconhecido/);
+  await assert.rejects(db.query("select public.wa_begin_as(null,array['oficina'])"),/Ator em falta/);
+  // O vendedor limitado só tem o dashboard.
+  await assert.rejects(db.query("select public.wa_begin_as($1,array['financeiro'])",[limited]),/Sem permissão/);
+ });
+});
+
+await test('the WhatsApp write RPCs are closed to logged-in users',async()=>{
+ // Se estas chegassem ao `authenticated`, qualquer utilizador podia passar o id
+ // de outra pessoa e escrever em nome dela.
+ for(const call of [
+  `public.wa_begin_as('${mechanic}',array['oficina'])`,
+  `public.wa_add_cost('${mechanic}','${car}','parts','x',1,current_date)`,
+  `public.wa_log_hours('${mechanic}','${car}',current_date,'09:00','10:00',null)`,
+  `public.wa_create_workshop_vehicle('${mechanic}','Honda','AA-11-AA','car')`,
+ ]) await asUser(mechanic,async()=>assert.rejects(db.query(`select ${call}`),/permission denied/,call));
+});
+
+await test('a cost written from WhatsApp is attributed to the person who ordered it',async()=>{
+ const id=await asServer(async()=>(await db.query(
+  "select public.wa_add_cost($1,$2,'parts','Embraiagem nova',450.50,current_date) id",
+  [mechanic,car])).rows[0].id);
+ const cost=(await db.query('select created_by,amount,description from vehicle_costs where id=$1',[id])).rows[0];
+ assert.equal(cost.created_by,mechanic,'created_by é o colaborador');
+ assert.equal(Number(cost.amount),450.5,'os cêntimos não se perdem');
+ // A razão de existir de toda a impersonação: o histórico mostra quem deu a ordem.
+ const audit=(await db.query(
+  "select actor_id from audit_log where entity='vehicle_costs' and record_id=$1 order by created_at desc limit 1",
+  [car])).rows[0];
+ assert.equal(audit.actor_id,mechanic,'a auditoria tem autor, e é o certo');
+});
+
+await test('cost categories follow the same rule as the backoffice',async()=>{
+ await asServer(async()=>{
+  // Mão de obra sai das horas: é dinheiro de gestão e exige Financeiro.
+  await assert.rejects(db.query("select public.wa_add_cost($1,$2,'labour','x',10,current_date)",[mechanic,car]),/Sem permissão/);
+  await assert.rejects(db.query("select public.wa_add_cost($1,$2,'transport','x',10,current_date)",[mechanic,car]),/Sem permissão/);
+  // Material, sim.
+  assert.ok((await db.query("select public.wa_add_cost($1,$2,'other','Consumíveis',10,current_date) id",[mechanic,car])).rows[0].id);
+  // E o administrador pode tudo.
+  assert.ok((await db.query("select public.wa_add_cost($1,$2,'labour','Mão de obra',10,current_date) id",[admin,car])).rows[0].id);
+  // Valores e datas impossíveis não passam.
+  await assert.rejects(db.query("select public.wa_add_cost($1,$2,'parts','x',0,current_date)",[admin,car]),/Valor inválido/);
+  await assert.rejects(db.query("select public.wa_add_cost($1,$2,'parts','',10,current_date)",[admin,car]),/Descrição inválida/);
+  await assert.rejects(db.query("select public.wa_add_cost($1,$2,'parts','x',10,current_date+1)",[admin,car]),/Data inválida/);
+  await assert.rejects(db.query("select public.wa_add_cost($1,$2,'seguro','x',10,current_date)",[admin,car]),/Categoria inválida/);
+ });
+});
+
+await test('hours from WhatsApp are attributed and recomputed by the trigger',async()=>{
+ const id=await asServer(async()=>(await db.query(
+  "select public.wa_log_hours($1,$2,current_date,'09:00','17:30','Travões') id",[mechanic,car])).rows[0].id);
+ const row=(await db.query('select created_by,hours from vehicle_tasks where id=$1',[id])).rows[0];
+ assert.equal(row.created_by,mechanic);
+ assert.equal(Number(row.hours),8.5,'as horas vêm do gatilho, não de nós');
+ await asServer(async()=>{
+  await assert.rejects(db.query("select public.wa_log_hours($1,$2,current_date,'10:53','10:53',null)",[mechanic,car]),/Fim igual ao início/);
+  await assert.rejects(db.query("select public.wa_log_hours($1,$2,current_date+1,'09:00','10:00',null)",[mechanic,car]),/Data inválida/);
+ });
+});
+
+await test('impersonation does not leak out of the transaction',async()=>{
+ await asServer(async()=>{
+  await db.query("select public.wa_add_cost($1,$2,'parts','Filtros',20,current_date)",[mechanic,car]);
+  // Instrução nova, transacção nova: a identidade assumida não sobreviveu.
+  assert.equal((await db.query('select auth.uid() who')).rows[0].who,null);
+ });
+});
+
+await test('a phone identifies exactly one person, or nobody',async()=>{
+ await db.query("update profiles set phone='916193337' where id=$1",[mechanic]);
+ await asServer(async()=>{
+  // Com ou sem indicativo, com ou sem espaços: é a mesma pessoa.
+  for(const p of ['916193337','351916193337','+351 916 193 337','916 193 337'])
+   assert.equal((await db.query('select public.wa_actor_for_phone($1) id',[p])).rows[0].id,mechanic,p);
+  assert.equal((await db.query("select public.wa_actor_for_phone('351999999999') id")).rows[0].id,null,'desconhecido');
+  assert.equal((await db.query("select public.wa_actor_for_phone('') id")).rows[0].id,null);
+  assert.equal((await db.query('select public.wa_actor_for_phone(null) id')).rows[0].id,null);
+ });
+ // Dois perfis com o mesmo número: falha fechada, para não atribuir a ordem à
+ // pessoa errada.
+ await db.query("update profiles set phone='+351 916 193 337' where id=$1",[seller]);
+ await asServer(async()=>assert.equal(
+  (await db.query("select public.wa_actor_for_phone('916193337') id")).rows[0].id,null,'ambíguo'));
+ await db.query('update profiles set phone=null where id=$1',[seller]);
+});
+
+await test('the vehicle list a person sees respects their sections and vehicle types',async()=>{
+ const bike=(await db.query(`insert into cars(slug,make,model,year,fuel,transmission,body,status,price,vehicle_type,doors,seats)
+   values('wa-bike','Honda','CB500',2022,'Gasolina','Manual','Naked','published',6000,'motorcycle',0,2) returning id`)).rows[0].id;
+ await asServer(async()=>{
+  // O mecânico tem Oficina e nenhum limite de tipo: vê as duas.
+  const todas=(await db.query('select id from public.wa_vehicles_for_actor($1)',[mechanic])).rows.map(r=>r.id);
+  assert.ok(todas.includes(car)&&todas.includes(bike));
+  // Limitado a motas: o carro desaparece — nem sabe que existe.
+  await db.query("update profiles set allowed_vehicle_types=array['motorcycle'] where id=$1",[mechanic]);
+  const so=(await db.query('select id from public.wa_vehicles_for_actor($1)',[mechanic])).rows.map(r=>r.id);
+  assert.ok(so.includes(bike)&&!so.includes(car),'só motas');
+  // E não consegue escrever no que não vê.
+  await assert.rejects(db.query("select public.wa_add_cost($1,$2,'parts','x',10,current_date)",[mechanic,car]),
+   /Sem acesso a este tipo de viatura/);
+  // O resumo também é filtrado.
+  assert.equal((await db.query('select public.wa_vehicle_summary($1,$2) s',[mechanic,car])).rows[0].s,null);
+  assert.ok((await db.query('select public.wa_vehicle_summary($1,$2) s',[mechanic,bike])).rows[0].s);
+  await db.query('update profiles set allowed_vehicle_types=null where id=$1',[mechanic]);
+  // Quem só tem o dashboard não vê viatura nenhuma.
+  assert.equal((await db.query('select count(*)::int n from public.wa_vehicles_for_actor($1)',[limited])).rows[0].n,0);
+ });
+});
+
+await test('the WhatsApp state tables are unreachable from a logged-in session',async()=>{
+ for(const t of ['wa_messages','wa_pending_actions'])
+  await asUser(admin,async()=>assert.rejects(db.query(`select * from public.${t}`),/permission denied/,t));
+ // E o servidor guarda uma proposta por número: a nova substitui a anterior.
+ await asServer(async()=>{
+  await db.query(`insert into wa_pending_actions(actor_id,from_phone,kind,payload,summary)
+   values($1,'351916193337','add_cost','{}','primeira')`,[mechanic]);
+  await assert.rejects(db.query(`insert into wa_pending_actions(actor_id,from_phone,kind,payload,summary)
+   values($1,'351916193337','add_cost','{}','segunda')`,[mechanic]),/duplicate key|unique/i);
+  await db.query("update wa_pending_actions set status='superseded' where from_phone='351916193337'");
+  assert.ok((await db.query(`insert into wa_pending_actions(actor_id,from_phone,kind,payload,summary)
+   values($1,'351916193337','add_cost','{}','segunda') returning id`,[mechanic])).rows[0].id);
+ });
+});
+
 await db.close();
