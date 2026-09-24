@@ -7,13 +7,16 @@ const require=createRequire(import.meta.url);
 // Resolve o alias `@/` como o tsconfig, para os módulos poderem importar-se
 // entre si (ex.: permissions.ts -> vehicle-categories.ts).
 const cache=new Map();
-function resolveAlias(id){const base=`src/${id.slice(2)}`;for(const ext of ['.ts','.tsx','/index.ts'])if(existsSync(base+ext))return base+ext;throw new Error(`não resolvido: ${id}`);}
+function withExt(base){for(const ext of ['.ts','.tsx','/index.ts'])if(existsSync(base+ext))return base+ext;throw new Error(`não resolvido: ${base}`);}
+function resolveAlias(id){return withExt(`src/${id.slice(2)}`);}
+// Imports relativos entre módulos de src/ (ex.: schemas.ts -> ./brand-name).
+function resolveRelative(from,id){return withExt(new URL(id,new URL(from,'file:///')).pathname.slice(1));}
 function load(path){
  if(cache.has(path))return cache.get(path);
  const source=readFileSync(path,'utf8');
  const {outputText}=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}});
  const mod={exports:{}};cache.set(path,mod.exports);
- const localRequire=(id)=>id.startsWith('@/')?load(resolveAlias(id)):require(id);
+ const localRequire=(id)=>id.startsWith('@/')?load(resolveAlias(id)):id.startsWith('.')?load(resolveRelative(path,id)):require(id);
  new Function('module','exports','require',outputText)(mod,mod.exports,localRequire);
  cache.set(path,mod.exports);return mod.exports;}
 const {margin,daysInStock,preparationLabel,csvCell}=load('src/lib/operations.ts');
@@ -184,4 +187,110 @@ await test('leave approval follows the hierarchy, and only admins self-approve',
  // Só o administrador aprova o próprio plano ao submetê-lo.
  assert.equal(leaveSelfApproves('admin'),true);
  for(const r of ['chefe','vendedor','mecanico']) assert.equal(leaveSelfApproves(r),false,r);
+});
+
+// ---------------------------------------------------------------------------
+// Correções vindas da ronda de testes funcionais de 2026-09-23.
+// ---------------------------------------------------------------------------
+
+const {marginHint}=load('src/lib/operations.ts');
+await test('margin hint names the field that is actually missing',()=>{
+ // O relatório: aquisição gravada, preço sob consulta, e a página insistia em
+ // "Aquisição por preencher".
+ assert.equal(marginHint(10000,null),'Preço por preencher');
+ assert.equal(marginHint(null,20000),'Aquisição por preencher');
+ assert.equal(marginHint(null,null),'Aquisição e preço por preencher');
+});
+
+const {canonicalBrand,brandOptions,sameBrand}=load('src/lib/brand-name.ts');
+await test('brand spelling does not split the same make in two',()=>{
+ // Do relatório: a pesquisa achava três BMW, o filtro mostrava uma.
+ assert.equal(canonicalBrand('Bmw'),'BMW');
+ assert.equal(canonicalBrand('bmw'),'BMW');
+ assert.equal(canonicalBrand('  BMW '),'BMW');
+ assert.deepEqual(brandOptions(['BMW','Bmw','bmw']),['BMW']);
+ assert.equal(sameBrand('Bmw','BMW'),true);
+ // Marcas fora do catálogo ficam como foram escritas, mas agrupam-se.
+ assert.equal(canonicalBrand('Marca Rara'),'Marca Rara');
+ assert.deepEqual(brandOptions(['Marca rara','Marca Rara']).length,1);
+ assert.equal(canonicalBrand(''),'');
+});
+
+const {carFormSchema,companySchema}=load('src/lib/schemas.ts');
+const carroBase={vehicle_type:'car',make:'bmw',model:'116d',year:2020,mileage:50000,
+ fuel:'Diesel',transmission:'Manual',body:'Berlina',price:20000,doors:5,seats:5};
+await test('blank optional numbers stay unknown instead of becoming zero',()=>{
+ // Do relatório: criar sem donos nem potência publicava "Nº de donos 0" e "0 cv".
+ const r=carFormSchema.safeParse({...carroBase,owners:'',warranty_months:'',previous_price:''});
+ assert.equal(r.success,true,JSON.stringify(r.error?.issues));
+ assert.equal(r.data.owners,null,'donos em branco não é zero');
+ assert.equal(r.data.warranty_months,null);
+ assert.equal(r.data.previous_price,null);
+ // Um zero já gravado também se lê como desconhecido.
+ assert.equal(carFormSchema.safeParse({...carroBase,owners:0}).data.owners,null);
+ // Um valor indicado passa intacto.
+ assert.equal(carFormSchema.safeParse({...carroBase,owners:'2'}).data.owners,2);
+});
+await test('brand is stored in the catalogue spelling',()=>{
+ assert.equal(carFormSchema.safeParse(carroBase).data.make,'BMW');
+});
+await test('a motorcycle cannot be saved with car seating',()=>{
+ // Do relatório: o formulário de motas oferecia 4 a 9 lugares.
+ const mota={...carroBase,vehicle_type:'motorcycle',body:'Naked',doors:0,seats:5};
+ const r=carFormSchema.safeParse(mota);
+ assert.equal(r.success,false);
+ assert.equal(r.error.issues.some(i=>i.path[0]==='seats'),true);
+ assert.equal(carFormSchema.safeParse({...mota,seats:2}).success,true);
+});
+await test('whatsapp is rejected or completed when the country code is missing',()=>{
+ // Do relatório: a ficha gerava wa.me/916193337, que o WhatsApp não reconhece.
+ assert.equal(companySchema.safeParse({whatsapp:'916193337'}).data.whatsapp,'351916193337');
+ assert.equal(companySchema.safeParse({whatsapp:'351916193337'}).data.whatsapp,'351916193337');
+ assert.equal(companySchema.safeParse({whatsapp:'12345'}).success,false,'curto demais é recusado');
+ assert.equal(companySchema.safeParse({whatsapp:''}).success,true);
+});
+
+const {normalizeWhatsApp}=load('src/lib/phone.ts');
+await test('whatsapp links always carry a country code',()=>{
+ assert.equal(normalizeWhatsApp('916193337'),'351916193337');
+ assert.equal(normalizeWhatsApp('916 193 337'),'351916193337');
+ assert.equal(normalizeWhatsApp('+351 916 193 337'),'351916193337');
+ assert.equal(normalizeWhatsApp('4915112345678'),'4915112345678','estrangeiro fica igual');
+});
+
+const {defaultAssignableRole}=load('src/lib/permissions.ts');
+await test('creating a user does not default to administrator',()=>{
+ // Do relatório: o papel pré-selecionado era Administrador.
+ assert.equal(defaultAssignableRole('admin'),'vendedor');
+ assert.equal(defaultAssignableRole('chefe'),'vendedor');
+ assert.equal(defaultAssignableRole('vendedor'),null,'não atribui papéis a ninguém');
+});
+
+const {extrasCatalog,groupExtras}=load('src/lib/extras.ts');
+await test('motorcycles are offered motorcycle equipment only',()=>{
+ // Do relatório: vidros elétricos, volante e climatização bi-zona nas motas.
+ const mota=extrasCatalog('motorcycle').flatMap(g=>g.items);
+ for(const proibido of ['Vidros elétricos dianteiros','Volante em pele',
+  'Climatização bi-zona','Tecto de abrir/correr elétrico'])
+  assert.equal(mota.includes(proibido),false,proibido);
+ assert.equal(mota.includes('Quickshifter'),true);
+ assert.equal(mota.includes('Punhos aquecidos'),true);
+ // Os extras de mota continuam a agrupar-se na ficha pública.
+ const grupos=groupExtras(['Quickshifter','Punhos aquecidos']);
+ assert.equal(grupos.some(g=>g.title==='Outros equipamentos'),false,
+  'equipamento de mota não cai em "Outros"');
+ // E o carro mantém o catálogo de sempre.
+ assert.equal(extrasCatalog('car').flatMap(g=>g.items).includes('Volante em pele'),true);
+});
+
+const {worklogHours}=load('src/lib/operations.ts');
+await test('workshop hours reject zero duration and never guess a night shift',()=>{
+ // Do relatório: 10:53–10:53 foi aceite como 0 h; 11:00–10:00 virou 23 h.
+ assert.ok('error' in worklogHours('10:53','10:53',false),'0 h é recusado');
+ assert.ok('error' in worklogHours('11:00','10:00',false),'intervalo invertido é recusado');
+ // Trabalho nocturno só quando é declarado.
+ assert.equal(worklogHours('22:00','02:00',true).hours,4);
+ // Turno normal e turno em aberto.
+ assert.equal(worklogHours('09:00','17:30',false).hours,8.5);
+ assert.equal(worklogHours('09:00','',false).hours,0,'sem fim fica em aberto');
 });

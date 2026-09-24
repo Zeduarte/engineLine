@@ -83,9 +83,80 @@ export const EXTRAS_CATALOG: ExtrasGroup[] = [
   },
 ];
 
+/**
+ * Catálogo de equipamento de MOTA. Uma mota não tem vidros elétricos, volante
+ * nem climatização bi-zona; oferecer essas opções no formulário só convidava a
+ * publicar equipamento que a mota não tem.
+ */
+export const MOTORCYCLE_EXTRAS_CATALOG: ExtrasGroup[] = [
+  {
+    title: "Travagem e controlo",
+    items: [
+      "ABS",
+      "ABS em curva",
+      "Controlo de tração",
+      "Controlo de wheelie",
+      "Modos de condução",
+      "Travão de motor regulável",
+      "Embraiagem anti-dribbling",
+    ],
+  },
+  {
+    title: "Motor e ciclística",
+    items: [
+      "Quickshifter",
+      "Suspensão regulável",
+      "Suspensão eletrónica",
+      "Escape desportivo",
+      "Jantes de liga leve",
+      "Jantes de raios",
+      "Pneus novos",
+    ],
+  },
+  {
+    title: "Conforto e touring",
+    items: [
+      "Punhos aquecidos",
+      "Assento aquecido",
+      "Para-brisas regulável",
+      "Cruise control",
+      "Cavalete central",
+      "Malas laterais",
+      "Top case",
+      "Protetores de motor",
+      "Tomada USB",
+      "Tomada 12V",
+    ],
+  },
+  {
+    title: "Eletrónica e iluminação",
+    items: [
+      "Ecrã TFT",
+      "Faróis LED",
+      "Luz diurna (DRL)",
+      "Piscas sequenciais",
+      "Navegação",
+      "Bluetooth",
+      "Alarme",
+      "Keyless",
+    ],
+  },
+];
+
+/** Catálogo de equipamento adequado ao tipo de viatura. */
+export function extrasCatalog(
+  vehicleType: "car" | "motorcycle",
+): ExtrasGroup[] {
+  return vehicleType === "motorcycle"
+    ? MOTORCYCLE_EXTRAS_CATALOG
+    : EXTRAS_CATALOG;
+}
+
 /** Mapa item→categoria construído a partir do catálogo (correspondência exata). */
 const CATALOG_INDEX = new Map<string, string>();
-for (const g of EXTRAS_CATALOG) {
+/** Ordem de apresentação: primeiro os grupos de carro, depois os de mota. */
+const ALL_GROUPS = [...EXTRAS_CATALOG, ...MOTORCYCLE_EXTRAS_CATALOG];
+for (const g of ALL_GROUPS) {
   for (const item of g.items) CATALOG_INDEX.set(item.toLowerCase(), g.title);
 }
 
@@ -155,7 +226,7 @@ export function groupExtras(extras: string[] | undefined): ExtrasGroup[] {
   }
 
   const groups: ExtrasGroup[] = [];
-  for (const g of EXTRAS_CATALOG) {
+  for (const g of ALL_GROUPS) {
     const items = buckets.get(g.title);
     if (items && items.length) groups.push({ title: g.title, items });
   }

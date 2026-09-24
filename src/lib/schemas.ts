@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MOTORCYCLE_BODIES, isMotorcycleBody } from "./vehicle-categories";
+import { canonicalBrand } from "./brand-name";
 
 /**
  * Esquemas de validação partilhados (cliente + servidor).
@@ -47,17 +48,34 @@ export const CHANNELS = [
 export const CHANNEL_IDS = CHANNELS.map((c) => c.id);
 export type ChannelId = (typeof CHANNELS)[number]["id"];
 
+/**
+ * Número inteiro OPCIONAL vindo de um `<input type="number">` vazio.
+ *
+ * `z.coerce.number()` sozinho transforma `""` em `0` (é o que `Number("")`
+ * devolve), pelo que um campo em branco ficava gravado como zero e o anúncio
+ * passava a afirmar, por exemplo, "Nº de donos 0". Aqui o vazio é nulo:
+ * desconhecido e zero deixam de se confundir.
+ */
+function optionalInt(min: number, max: number) {
+  return z
+    .preprocess(
+      (v) => (v === "" || v == null ? null : v),
+      z.coerce.number().int().min(min).max(max).nullable(),
+    )
+    .optional();
+}
+
 export const carFormSchema = z
   .object({
     vehicle_type: z.enum(["car", "motorcycle"]).default("car"),
-    registration_month: z
-      .preprocess(
-        (v) => (v === "" || v == null ? null : v),
-        z.coerce.number().int().min(1).max(12).nullable(),
-      )
-      .optional(),
+    registration_month: optionalInt(1, 12),
     point_of_sale_id: z.string().trim().max(80).nullable().optional(),
-    make: z.string().trim().min(1, "Indique a marca"),
+    // Grafia canónica: senão "BMW" e "Bmw" ficavam como marcas distintas.
+    make: z
+      .string()
+      .trim()
+      .min(1, "Indique a marca")
+      .transform(canonicalBrand),
     model: z.string().trim().min(1, "Indique o modelo"),
     variant: z.string().trim().max(80).optional().or(z.literal("")),
     year: z.coerce
@@ -78,7 +96,7 @@ export const carFormSchema = z
     seats: z.coerce.number().int().min(1).max(9).default(5),
 
     price_on_request: z.boolean().default(false),
-    price: z.coerce.number().int().min(0).nullable().optional(),
+    price: optionalInt(0, 99999999),
     status: z.enum(CAR_STATUSES).default("draft"),
     featured: z.boolean().default(false),
 
@@ -88,18 +106,19 @@ export const carFormSchema = z
     location: z.string().trim().max(120).optional().or(z.literal("")),
 
     // Transparência / badges
-    previous_price: z.coerce.number().int().min(0).nullable().optional(),
+    previous_price: optionalInt(0, 99999999),
     national: z.boolean().default(false),
-    owners: z.coerce.number().int().min(0).max(20).nullable().optional(),
+    // Zero também é "não sei": aceita-se para não travar anúncios antigos
+    // gravados com o campo em branco, mas fica nulo.
+    owners: z
+      .preprocess(
+        (v) => (v === "" || v == null || v === 0 || v === "0" ? null : v),
+        z.coerce.number().int().min(1).max(20).nullable(),
+      )
+      .optional(),
     first_owner: z.boolean().default(false),
     service_book: z.boolean().default(false),
-    warranty_months: z.coerce
-      .number()
-      .int()
-      .min(0)
-      .max(120)
-      .nullable()
-      .optional(),
+    warranty_months: optionalInt(0, 120),
     last_inspection: z.string().optional().or(z.literal("")),
 
     // Exportação multi-canal (portais externos onde publicar)
@@ -127,6 +146,12 @@ export const carFormSchema = z
         code: "custom",
         path: ["doors"],
         message: "Uma mota deve ter 0 portas.",
+      });
+    if (v.vehicle_type === "motorcycle" && v.seats > 2)
+      ctx.addIssue({
+        code: "custom",
+        path: ["seats"],
+        message: "Uma mota leva no máximo 2 lugares.",
       });
   });
 
@@ -246,11 +271,17 @@ export const companySchema = z.object({
     .email("Email inválido")
     .optional()
     .or(z.literal("")),
+  // O wa.me só funciona com indicativo: "916193337" gerava um link morto.
+  // Um número nacional de 9 dígitos é completado com o 351.
   whatsapp: z
     .string()
     .trim()
     .max(20)
     .regex(/^\d*$/, "Só dígitos, com indicativo (ex.: 351910000000)")
+    .transform((v) => (/^[29]\d{8}$/.test(v) ? `351${v}` : v))
+    .refine((v) => v === "" || v.length >= 11, {
+      message: "Falta o indicativo do país (ex.: 351910000000).",
+    })
     .optional()
     .or(z.literal("")),
   messenger: z.string().trim().max(200).optional().or(z.literal("")),

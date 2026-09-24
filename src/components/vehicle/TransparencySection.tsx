@@ -9,7 +9,8 @@ export function TransparencySection({ vehicle }: { vehicle: Vehicle }) {
 
   if (vehicle.national) items.push({ label: "Nacional", value: "Sim" });
   if (vehicle.firstOwner) items.push({ label: "Primeiro dono", value: "Sim" });
-  if (vehicle.owners != null)
+  // Anúncios antigos podem ter zero gravado por um campo deixado em branco.
+  if (vehicle.owners != null && vehicle.owners > 0)
     items.push({ label: "Nº de donos", value: String(vehicle.owners) });
   if (vehicle.serviceBook)
     items.push({ label: "Livro de revisões", value: "Completo" });

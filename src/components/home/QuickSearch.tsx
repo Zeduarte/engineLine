@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { brandOptions, sameBrand } from "@/lib/brand-name";
 import { useRouter } from "next/navigation";
 
 type Item = { make: string; model: string; fuel: string };
@@ -16,15 +17,15 @@ export function QuickSearch({ vehicles }: { vehicles: Item[] }) {
 
   const makes = useMemo(
     () =>
-      [...new Set(vehicles.map((v) => v.make))].sort((a, b) =>
-        a.localeCompare(b, "pt"),
-      ),
+      // Agrupado sem olhar a maiúsculas, senão "BMW" e "Bmw" apareciam como
+      // duas marcas ao visitante.
+      brandOptions(vehicles.map((v) => v.make)),
     [vehicles],
   );
   const models = useMemo(
     () =>
       make
-        ? [...new Set(vehicles.filter((v) => v.make === make).map((v) => v.model))].sort(
+        ? [...new Set(vehicles.filter((v) => sameBrand(v.make, make)).map((v) => v.model))].sort(
             (a, b) => a.localeCompare(b, "pt"),
           )
         : [],
@@ -34,7 +35,7 @@ export function QuickSearch({ vehicles }: { vehicles: Item[] }) {
   const count = useMemo(
     () =>
       vehicles.filter(
-        (v) => (!make || v.make === make) && (!model || v.model === model),
+        (v) => (!make || sameBrand(v.make, make)) && (!model || v.model === model),
       ).length,
     [vehicles, make, model],
   );

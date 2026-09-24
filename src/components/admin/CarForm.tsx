@@ -30,14 +30,16 @@ import {
   yearOptions,
 } from "@/lib/car-brands";
 import { CAR_MODELS } from "@/lib/car-models";
-import { EXTRAS_CATALOG } from "@/lib/extras";
+import { extrasCatalog, MOTORCYCLE_EXTRAS_CATALOG } from "@/lib/extras";
 
 // Lista de anos calculada uma vez (o ano corrente é estável na sessão).
 const YEARS = yearOptions();
 
-// Opções fixas para portas e lugares.
+// Opções fixas para portas e lugares. Uma mota leva o condutor e, no máximo,
+// um passageiro — oferecer 4 a 9 lugares só convidava ao erro.
 const DOOR_OPTIONS = [0, 2, 3, 4, 5];
-const SEAT_OPTIONS = [1, 2, 4, 5, 6, 7, 8, 9];
+const CAR_SEAT_OPTIONS = [1, 2, 4, 5, 6, 7, 8, 9];
+const MOTORCYCLE_SEAT_OPTIONS = [1, 2];
 
 /**
  * Formata a matrícula em grupos de 2 separados por hífen (ex.: "44vs23" →
@@ -98,8 +100,10 @@ export function CarForm({
       fuel: "Gasolina",
       transmission: "Manual",
       body: "Berlina",
-      power: 0,
-      displacement: 0,
+      // Vazios de propósito: um zero pré-preenchido lia-se como "0 cv" no
+      // anúncio quando o vendedor não indicava a potência.
+      power: undefined,
+      displacement: undefined,
       color: "",
       doors: 5,
       seats: 5,
@@ -140,11 +144,19 @@ export function CarForm({
       setValue("make", "", { shouldDirty: true });
       setValue("model", "", { shouldDirty: true });
       setValue("variant", "", { shouldDirty: true });
+      // O equipamento já marcado era do outro tipo de viatura: um carro não
+      // leva quickshifter nem uma mota vidros elétricos.
+      setExtras([]);
+      setValue("extras", [], { shouldDirty: true });
     }
     setTypeChosen(true);
   }
-  // Sugestões de extras que ainda não foram adicionadas.
-  const extraSuggestions = COMMON_EXTRAS.filter((e) => !extras.includes(e));
+  // Sugestões de extras que ainda não foram adicionadas, do tipo certo.
+  const extraPool =
+    vehicleType === "motorcycle"
+      ? MOTORCYCLE_EXTRAS_CATALOG.flatMap((g) => g.items)
+      : COMMON_EXTRAS;
+  const extraSuggestions = extraPool.filter((e) => !extras.includes(e));
 
   function addExtraValue(raw: string) {
     const v = raw.trim();
@@ -462,7 +474,10 @@ export function CarForm({
           )}
           <Field label="Lugares" error={errors.seats?.message}>
             <select className="field" {...register("seats")}>
-              {SEAT_OPTIONS.map((n) => (
+              {(vehicleType === "motorcycle"
+                ? MOTORCYCLE_SEAT_OPTIONS
+                : CAR_SEAT_OPTIONS
+              ).map((n) => (
                 <option key={n} value={n}>
                   {n}
                 </option>
@@ -606,7 +621,7 @@ export function CarForm({
             {/* Catálogo por categoria — marcar os que a viatura tem. Aparecem
                 no site agrupados exatamente por estas categorias. */}
             <div className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              {EXTRAS_CATALOG.map((group) => (
+              {extrasCatalog(vehicleType === "motorcycle" ? "motorcycle" : "car").map((group) => (
                 <div key={group.title}>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-paper/50">
                     {group.title}

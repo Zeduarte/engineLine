@@ -182,3 +182,19 @@ export function assignableRoles(managerRole: string): Role[] {
     (r) => ROLE_RANK[r] < m,
   );
 }
+
+/**
+ * Papel pré-selecionado ao criar uma conta.
+ *
+ * Nunca o primeiro da lista: essa era "admin", e bastava não tocar no campo
+ * para criar outro administrador sem intenção. Começa-se pelo papel com menos
+ * poder e quem cria sobe-o de propósito, se for o caso.
+ */
+export function defaultAssignableRole(managerRole: string): Role | null {
+  const roles = assignableRoles(managerRole);
+  if (roles.length === 0) return null;
+  return (
+    roles.find((r) => r === "vendedor") ??
+    roles.reduce((low, r) => (ROLE_RANK[r] < ROLE_RANK[low] ? r : low), roles[0]!)
+  );
+}

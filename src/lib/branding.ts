@@ -1,4 +1,7 @@
 import { site } from "@/lib/site";
+import { normalizeWhatsApp } from "@/lib/phone";
+
+export { normalizeWhatsApp };
 
 /** Dados de contacto/empresa, editáveis no backoffice (site_settings). */
 export interface Company {
@@ -56,7 +59,7 @@ export function telHref(phone: string): string {
 
 /** Constrói o link do WhatsApp com mensagem pré-preenchida. */
 export function waHref(whatsapp: string, message: string): string {
-  return `https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${normalizeWhatsApp(whatsapp)}?text=${encodeURIComponent(message)}`;
 }
 
 /** Empresa por defeito — vinda de `site.ts`. */

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireSection } from "@/lib/guard";
+import { worklogHours } from "@/lib/operations";
 
 export interface ActionResult {
   ok: boolean;
@@ -20,13 +21,9 @@ const logSchema = z.object({
   start_time: z.string().regex(HHMM, "Hora de início inválida"),
   end_time: z.string().regex(HHMM, "Hora de fim inválida").optional().or(z.literal("")),
   description: z.string().trim().max(2000).optional().or(z.literal("")),
+  /** Marcado quando o trabalho passou da meia-noite. */
+  overnight: z.boolean().default(false),
 });
-
-/** Minutos desde 00:00 de uma hora "HH:MM". */
-function toMinutes(t: string): number {
-  const [h, m] = t.split(":").map(Number);
-  return (h ?? 0) * 60 + (m ?? 0);
-}
 
 /** Cria um registo de horas para uma viatura. */
 export async function createWorklog(formData: FormData): Promise<ActionResult> {
@@ -37,19 +34,16 @@ export async function createWorklog(formData: FormData): Promise<ActionResult> {
     start_time: formData.get("start_time"),
     end_time: formData.get("end_time") ?? "",
     description: formData.get("description") ?? "",
+    overnight: formData.get("overnight") === "on",
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
   }
   const v = parsed.data;
 
-  // Horas = fim − início (se cruzar a meia-noite, soma 24h). Sem fim → 0.
-  let hours = 0;
-  if (v.end_time) {
-    let diff = toMinutes(v.end_time) - toMinutes(v.start_time);
-    if (diff < 0) diff += 24 * 60;
-    hours = Math.round((diff / 60) * 100) / 100;
-  }
+  const duracao = worklogHours(v.start_time, v.end_time || "", v.overnight);
+  if ("error" in duracao) return { ok: false, error: duracao.error };
+  const hours = duracao.hours;
 
   const supabase = await createClient();
   const { error } = await supabase.from("vehicle_tasks").insert({

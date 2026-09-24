@@ -3,6 +3,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireSection } from "@/lib/guard";
+import { worklogHours } from "@/lib/operations";
 
 const uuid = z.string().uuid();
 const optionalId = z.union([uuid, z.literal("")]).transform(v => v || null);
@@ -107,10 +108,17 @@ export async function savePreparationTask(data: FormData) {
 }
 export async function finishWorklog(data: FormData) {
   await requireSection("oficina");
-  const parsed = z.object({id:uuid,end_time:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)}).safeParse(Object.fromEntries(data));
+  const parsed = z.object({id:uuid,end_time:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),overnight:z.coerce.boolean().default(false)}).safeParse({...Object.fromEntries(data),overnight:data.get("overnight")==="on"});
   if (!parsed.success) return {ok:false,error:"Hora inválida"};
   const db = await createClient();
-  const {error} = await db.from("vehicle_tasks").update({end_time:parsed.data.end_time}).eq("id",parsed.data.id).is("end_time",null).select("id").single();
+  // As horas TÊM de ser recalculadas aqui: antes só se gravava o fim, e o
+  // turno fechado ficava a 0 h — a mão de obra dessa viatura nunca entrava nos
+  // custos.
+  const {data:registo} = await db.from("vehicle_tasks").select("start_time").eq("id",parsed.data.id).is("end_time",null).maybeSingle();
+  if (!registo) return {ok:false,error:"Registo não encontrado ou já fechado."};
+  const duracao = worklogHours(String(registo.start_time).slice(0,5),parsed.data.end_time,parsed.data.overnight);
+  if ("error" in duracao) return {ok:false,error:duracao.error};
+  const {error} = await db.from("vehicle_tasks").update({end_time:parsed.data.end_time,hours:duracao.hours}).eq("id",parsed.data.id).is("end_time",null).select("id").single();
   refresh(); return result(error);
 }
 export async function reserveVehicle(data: FormData) {

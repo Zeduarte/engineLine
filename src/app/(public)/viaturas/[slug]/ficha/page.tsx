@@ -56,7 +56,7 @@ export default async function FichaPage({ params }: { params: Params }) {
     ["Cor", vehicle.color || "—"],
     ["Portas", String(vehicle.doors)],
     ["Lugares", String(vehicle.seats)],
-    ["Nº de donos", vehicle.owners != null ? String(vehicle.owners) : "—"],
+    ["Nº de donos", vehicle.owners ? String(vehicle.owners) : "—"],
     ["Livro de revisões", vehicle.serviceBook ? "Sim" : "—"],
     [
       "Garantia",

@@ -1,3 +1,5 @@
+import { normalizeWhatsApp } from "./phone";
+
 /** Constantes de marca e contactos — um único sítio para editar. */
 
 export const site = {
@@ -23,5 +25,5 @@ export const site = {
 } as const;
 
 export function whatsappHref(message: string): string {
-  return `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${normalizeWhatsApp(site.whatsapp)}?text=${encodeURIComponent(message)}`;
 }

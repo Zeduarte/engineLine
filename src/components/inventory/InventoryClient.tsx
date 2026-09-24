@@ -8,7 +8,9 @@ import {
   sortVehicles,
   emptyFilters,
   distinctValues,
+  distinctMakes,
 } from "@/lib/vehicles";
+import { sameBrand } from "@/lib/brand-name";
 import { Filters } from "./Filters";
 import { VehicleCard } from "@/components/vehicle/VehicleCard";
 
@@ -52,11 +54,11 @@ export function InventoryClient({
             ]),
         ).values(),
       ),
-      makes: distinctValues(vehicles, "make") as string[],
+      makes: distinctMakes(vehicles),
       // Os modelos acompanham a marca selecionada, se houver.
       models: distinctValues(
         filters.make
-          ? vehicles.filter((v) => v.make === filters.make)
+          ? vehicles.filter((v) => sameBrand(v.make, filters.make!))
           : vehicles,
         "model",
       ) as string[],

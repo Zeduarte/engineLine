@@ -20,6 +20,7 @@ import {
   toggleFeatured,
 } from "@/lib/actions/cars";
 import { CAR_STATUS_LABEL } from "./StatusBadge";
+import { brandOptions, sameBrand } from "@/lib/brand-name";
 
 export interface CarListItem {
   vehicleType: "car" | "motorcycle";
@@ -53,17 +54,16 @@ export function CarsTable({ items }: { items: CarListItem[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
 
-  const makes = useMemo(
-    () => [...new Set(items.map((i) => i.make))].sort(),
-    [items],
-  );
+  // Agrupado sem olhar a maiúsculas: anúncios antigos com "Bmw" caem na
+  // mesma opção que os gravados como "BMW".
+  const makes = useMemo(() => brandOptions(items.map((i) => i.make)), [items]);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     const list = items.filter((i) => {
       if (status && i.status !== status) return false;
       if (fuel && i.fuel !== fuel) return false;
-      if (make && i.make !== make) return false;
+      if (make && !sameBrand(i.make, make)) return false;
       if (
         term &&
         !`${i.make} ${i.model} ${i.variant ?? ""} ${i.year} ${i.plate ?? ""}`

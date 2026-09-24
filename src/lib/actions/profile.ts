@@ -67,11 +67,17 @@ export async function saveMyProfile(
     const faltaMigracao =
       error.code === "PGRST204" ||
       /column .* does not exist|schema cache/i.test(error.message);
+    // As colunas existem mas o Postgres recusa escrevê-las: falta o grant
+    // por coluna da 0023. Sem esta distinção, a 0021 era apontada em vão.
+    const faltaGrant =
+      error.code === "42501" || /permission denied/i.test(error.message);
     return {
       ok: false,
       error: faltaMigracao
         ? "A base de dados ainda não tem os campos do perfil. Aplique a migração 0021_profile_and_leave.sql."
-        : "Não foi possível guardar os seus dados.",
+        : faltaGrant
+          ? "A base de dados não autoriza gravar estes campos. Aplique a migração 0023_profile_write_grants.sql."
+          : "Não foi possível guardar os seus dados.",
     };
   }
 

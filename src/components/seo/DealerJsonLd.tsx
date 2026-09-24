@@ -1,5 +1,5 @@
 import { site } from "@/lib/site";
-import type { Branding } from "@/lib/branding";
+import { normalizeWhatsApp, type Branding } from "@/lib/branding";
 
 /**
  * JSON-LD schema.org/AutoDealer — identidade do negócio para o Google
@@ -41,7 +41,7 @@ export function DealerJsonLd({ branding }: { branding: Branding }) {
       : {}),
     ...(openingHours && { openingHours }),
     ...(company.whatsapp && {
-      sameAs: [`https://wa.me/${company.whatsapp}`],
+      sameAs: [`https://wa.me/${normalizeWhatsApp(company.whatsapp)}`],
     }),
   };
 

@@ -11,6 +11,7 @@ import {
 import type { UserRole } from "@/lib/supabase/database.types";
 import {
   assignableRoles,
+  defaultAssignableRole,
   canManage,
   effectiveSections,
   effectiveVehicleTypes,
@@ -73,7 +74,9 @@ export function UsersManager({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>(roles[0] ?? "vendedor");
+  const [role, setRole] = useState<Role>(
+    defaultAssignableRole(currentUser.role) ?? "vendedor",
+  );
 
   function submitNew(e: React.FormEvent) {
     e.preventDefault();
@@ -84,7 +87,7 @@ export function UsersManager({
         setName("");
         setEmail("");
         setPassword("");
-        setRole(roles[0] ?? "vendedor");
+        setRole(defaultAssignableRole(currentUser.role) ?? "vendedor");
         setShowNew(false);
       } else {
         toast.error(res.error ?? "Erro ao criar.");

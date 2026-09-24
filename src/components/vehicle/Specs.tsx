@@ -17,7 +17,11 @@ export function Specs({ vehicle }: { vehicle: Vehicle }) {
     { label: "Combustível", value: vehicle.fuel },
     { label: "Caixa", value: vehicle.transmission },
     { label: "Carroçaria", value: vehicle.body },
-    { label: "Potência", value: `${vehicle.power} cv` },
+    // Só o que o vendedor indicou: um zero aqui não é "zero cavalos", é um
+    // campo em branco — mostrá-lo seria informação falsa no anúncio.
+    ...(vehicle.power > 0
+      ? [{ label: "Potência", value: `${vehicle.power} cv` }]
+      : []),
     ...(vehicle.displacement > 0
       ? [
           {
@@ -26,8 +30,10 @@ export function Specs({ vehicle }: { vehicle: Vehicle }) {
           },
         ]
       : []),
-    { label: "Cor", value: vehicle.color },
-    { label: "Portas", value: String(vehicle.doors) },
+    ...(vehicle.color ? [{ label: "Cor", value: vehicle.color }] : []),
+    ...(vehicle.doors > 0
+      ? [{ label: "Portas", value: String(vehicle.doors) }]
+      : []),
     { label: "Lugares", value: String(vehicle.seats) },
   ];
 

@@ -108,6 +108,14 @@ export function TaskManager({
             />
           </div>
         </div>
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-paper/70">
+          <input
+            type="checkbox"
+            name="overnight"
+            className="h-4 w-4 shrink-0 accent-accent"
+          />
+          Terminou no dia seguinte (trabalho passou da meia-noite)
+        </label>
         <div>
           <span className="field-label">Trabalho realizado (opcional)</span>
           <textarea
@@ -166,7 +174,7 @@ export function TaskManager({
                   <p className="mt-1 text-sm text-paper/60">{t.description}</p>
                 )}
               </div>
-              {!t.end_time && <ActionForm action={finishWorklog} label="Terminar" className="space-y-2"><input type="hidden" name="id" value={t.id}/><Field label="Hora de fim"><input className="field" type="time" name="end_time" defaultValue={nowHM()} required/></Field></ActionForm>}
+              {!t.end_time && <ActionForm action={finishWorklog} label="Terminar" className="space-y-2"><input type="hidden" name="id" value={t.id}/><Field label="Hora de fim"><input className="field" type="time" name="end_time" defaultValue={nowHM()} required/></Field><label className="flex cursor-pointer items-center gap-2 text-sm text-paper/70"><input type="checkbox" name="overnight" className="h-4 w-4 shrink-0 accent-accent"/>Terminou no dia seguinte</label></ActionForm>}
               <button
                 type="button"
                 disabled={pending}

@@ -1,5 +1,6 @@
 import { isCampaign } from "./vehicle-categories";
 import type { Vehicle, VehicleFilters, SortKey } from "@/types/vehicle";
+import { brandOptions, sameBrand } from "./brand-name";
 
 /**
  * Helpers PUROS de inventário (filtros, ordenação).
@@ -10,6 +11,11 @@ import type { Vehicle, VehicleFilters, SortKey } from "@/types/vehicle";
  */
 
 /** Lista ordenada e sem duplicados de valores de um campo — alimenta os filtros. */
+/** Marcas presentes na lista, agrupadas sem olhar a maiúsculas. */
+export function distinctMakes(list: Vehicle[]): string[] {
+  return brandOptions(list.map((v) => v.make));
+}
+
 export function distinctValues<K extends keyof Vehicle>(
   list: Vehicle[],
   key: K,
@@ -53,7 +59,8 @@ export function applyFilters(
       !`${v.make} ${v.model} ${v.variant ?? ""}`.toLowerCase().includes(q)
     )
       return false;
-    if (filters.make && v.make !== filters.make) return false;
+    // Sem olhar a maiúsculas: "BMW" e "Bmw" são a mesma marca.
+    if (filters.make && !sameBrand(v.make, filters.make)) return false;
     if (filters.model && v.model !== filters.model) return false;
     if (filters.fuel && v.fuel !== filters.fuel) return false;
     if (filters.transmission && v.transmission !== filters.transmission)
