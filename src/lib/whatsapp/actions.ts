@@ -168,3 +168,38 @@ export function buildHours(
     },
   };
 }
+
+/**
+ * Validação de uma acção lida da base de dados.
+ *
+ * A linha foi escrita por nós, já validada, mas uma proposta que tenha sido
+ * mexida à mão não deve poder ser executada — e a confirmação é o momento em que
+ * se grava de verdade, por isso vale a pena a rede.
+ */
+export const PendingActionSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("register_vehicle"),
+    nome: z.string().min(1).max(120),
+    matricula: z.string().min(2).max(20),
+    tipo: z.enum(["car", "motorcycle"]),
+  }),
+  z.object({
+    kind: z.literal("add_cost"),
+    carId: z.string().uuid(),
+    veiculo: z.string().min(1),
+    categoria: z.enum(COST_CATEGORIES),
+    descricao: z.string().min(1).max(500),
+    valor: z.number().positive().max(9_999_999),
+    data: z.string().regex(DIA),
+  }),
+  z.object({
+    kind: z.literal("log_hours"),
+    carId: z.string().uuid(),
+    veiculo: z.string().min(1),
+    data: z.string().regex(DIA),
+    inicio: z.string().regex(HHMM),
+    fim: z.string().regex(HHMM),
+    horas: z.number().nonnegative(),
+    descricao: z.string().max(2000),
+  }),
+]);

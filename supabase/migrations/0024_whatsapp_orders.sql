@@ -252,7 +252,7 @@ create table if not exists public.wa_messages (
   received_at   timestamptz not null default now(),
   processed_at  timestamptz,
   reply_sent_at timestamptz,
-  error         text
+  last_error    text
 );
 create index if not exists wa_messages_received_idx on public.wa_messages(received_at);
 

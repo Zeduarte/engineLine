@@ -441,9 +441,91 @@ type ChannelListingsInsert = {
 };
 type ChannelListingsUpdate = Partial<ChannelListingsInsert>;
 
+/**
+ * Valor JSON, para colunas `jsonb`.
+ */
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+/**
+ * Tipos das tabelas do WhatsApp.
+ *
+ * São `type` e não `interface` de propósito, como todas as outras deste
+ * ficheiro: o supabase-js exige que cada `Row` seja atribuível a
+ * `Record<string, unknown>`, e um `interface` sem index signature não o é. Com
+ * um `interface` aqui, o esquema INTEIRO passa a resolver para `never` — sem um
+ * único erro neste ficheiro, e com erros em todas as páginas que usam o cliente.
+ */
+
+/** Mensagens do WhatsApp já vistas (idempotência). */
+export type WaMessageRow = {
+  wam_id: string;
+  from_phone: string;
+  actor_id: string | null;
+  received_at: string;
+  processed_at: string | null;
+  reply_sent_at: string | null;
+  last_error: string | null;
+};
+
+/** Proposta à espera de confirmação. `payload` é a acção já validada. */
+export type WaPendingRow = {
+  id: string;
+  actor_id: string;
+  from_phone: string;
+  kind: string;
+  payload: Json;
+  summary: string;
+  created_at: string;
+  expires_at: string;
+  status: string;
+  settled_at: string | null;
+  result_id: string | null;
+};
+
+/** Viatura que um colaborador pode ver (já filtrada pelas permissões). */
+export type WaVehicleRow = {
+  id: string;
+  make: string;
+  model: string;
+  variant: string | null;
+  color: string | null;
+  license_plate: string | null;
+  status: string;
+  vehicle_type: string;
+};
+
+export type WaVehicleSummary = {
+  costs: number;
+  cost_count: number;
+  hours: number;
+  status: string;
+};
+
 export type Database = {
   public: {
     Tables: {
+      wa_messages: {
+        Row: WaMessageRow;
+        Insert: { wam_id: string; from_phone: string; actor_id?: string | null;
+          received_at?: string; processed_at?: string | null;
+          reply_sent_at?: string | null; last_error?: string | null };
+        Update: { processed_at?: string | null; reply_sent_at?: string | null;
+          actor_id?: string | null; last_error?: string | null };
+        Relationships: [];
+      };
+      wa_pending_actions: {
+        Row: WaPendingRow;
+        Insert: { id?: string; actor_id: string; from_phone: string; kind: string;
+          payload: Json; summary: string; expires_at?: string; status?: string };
+        Update: { status?: string; settled_at?: string | null; result_id?: string | null };
+        Relationships: [];
+      };
       company_days: {
         Row: { id: string; day: string; kind: string; label: string };
         Insert: { id?: string; day: string; kind: string; label?: string };
@@ -570,6 +652,30 @@ export type Database = {
         Returns: undefined;
       };
       has_section: { Args: { section: string }; Returns: boolean };
+      has_section_for: { Args: { uid: string; section: string }; Returns: boolean };
+      has_vehicle_type_for: { Args: { uid: string; vtype: string }; Returns: boolean };
+      normalize_phone: { Args: { raw: string }; Returns: string };
+      prune_whatsapp: { Args: Record<string, never>; Returns: undefined };
+      wa_actor_for_phone: { Args: { raw_phone: string }; Returns: string | null };
+      wa_vehicles_for_actor: { Args: { actor: string }; Returns: WaVehicleRow[] };
+      wa_vehicle_summary: {
+        Args: { actor: string; car: string };
+        Returns: WaVehicleSummary | null;
+      };
+      wa_create_workshop_vehicle: {
+        Args: { actor: string; vehicle_name: string; plate: string; selected_type: string };
+        Returns: string;
+      };
+      wa_add_cost: {
+        Args: { actor: string; car: string; kind: string; note: string;
+          value: number; incurred: string };
+        Returns: string;
+      };
+      wa_log_hours: {
+        Args: { actor: string; car: string; work_day: string; starts: string;
+          ends: string | null; note: string | null };
+        Returns: string;
+      };
       can_approve_leave: { Args: Record<string, never>; Returns: boolean };
       leave_directory: {
         Args: Record<string, never>;
