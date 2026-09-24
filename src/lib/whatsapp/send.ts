@@ -9,11 +9,12 @@ import "server-only";
  * em duplicado.
  *
  * A versão do Graph API vem de `WHATSAPP_GRAPH_VERSION` porque a Meta a
- * descontinua periodicamente; o valor por defeito deve ser confirmado no painel
- * da app antes de ir para produção.
+ * descontinua periodicamente. O valor por defeito é o que o painel da app
+ * mostrava em setembro de 2026 (no exemplo de envio do "Step 1. Try it out");
+ * quando a Meta o descontinuar, basta mudar a variável no Netlify.
  */
 
-const DEFAULT_GRAPH_VERSION = "v21.0";
+const DEFAULT_GRAPH_VERSION = "v25.0";
 /** O WhatsApp aceita mais, mas uma ordem nunca precisa de tanto. */
 const MAX_BODY = 4000;
 
