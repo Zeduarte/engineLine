@@ -3,7 +3,13 @@ import { headers } from "next/headers";
 import { createHmac } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-type SubmissionKind = "lead" | "testimonial" | "view" | "reviews" | "chat";
+type SubmissionKind =
+  | "lead"
+  | "testimonial"
+  | "view"
+  | "reviews"
+  | "chat"
+  | "whatsapp";
 
 /** Tetos por janela de 10 minutos: [global, por IP, por identidade]. */
 const QUOTAS: Record<SubmissionKind, [number, number, number]> = {
@@ -14,6 +20,11 @@ const QUOTAS: Record<SubmissionKind, [number, number, number]> = {
   // O chat custa dinheiro por mensagem — teto mais alto que um formulário,
   // mas bem abaixo do que seria preciso para inflacionar a fatura.
   chat: [300, 30, 30],
+  // Ordens do WhatsApp: a identidade é o telefone (fica em hash, como as
+  // outras). O teto por IP é igual ao global de propósito — quem chama é
+  // sempre a Meta, e um teto por IP baixo bloquearia todos os colaboradores de
+  // uma vez.
+  whatsapp: [500, 500, 40],
 };
 
 /** Only the server can write public submissions; RLS denies direct anonymous inserts. */

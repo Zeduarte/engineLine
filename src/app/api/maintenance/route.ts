@@ -14,5 +14,8 @@ export async function POST(request: Request) {
   if (error) return NextResponse.json({error:"Maintenance failed"},{status:503});
   const result = await processNotificationJobs();
   await db.rpc("prune_submission_limits");
+  // Mensagens do WhatsApp já vistas (7 dias) e propostas resolvidas (1 dia).
+  // A expiração das propostas é decidida no código; isto só recupera espaço.
+  await db.rpc("prune_whatsapp");
   return NextResponse.json(result,{status:result.ok ? 200 : 503});
 }
