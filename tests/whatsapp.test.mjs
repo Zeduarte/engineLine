@@ -153,6 +153,8 @@ await test('money in a receipt keeps its cents',()=>{
  assert.equal(formatDay('2026-09-24'),'24/09/2026');
  assert.equal(vehicleLabel({make:'BMW',model:'320',license_plate:'33AD22'}),'BMW 320, matrícula 33-AD-22');
  assert.equal(vehicleLabel({make:'BMW',model:'320'}),'BMW 320');
+ // Uma viatura antiga gravada como "Bmw" sai com a grafia certa no recibo.
+ assert.equal(vehicleLabel({make:'Bmw',model:'320d'}),'BMW 320d');
 });
 await test('the sentence the person reads is the record that gets written',()=>{
  const despesa={kind:'add_cost',carId:'a',veiculo:'BMW 320, matrícula 33-AD-22',

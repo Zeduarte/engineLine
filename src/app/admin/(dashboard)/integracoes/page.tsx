@@ -7,6 +7,7 @@ import {
   type IntegrationsInitial,
 } from "@/components/admin/IntegrationsForm";
 import { FeedUrls } from "@/components/admin/FeedUrls";
+import { WhatsAppPanel } from "@/components/admin/WhatsAppPanel";
 import { site } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,7 @@ export default async function IntegrationsPage() {
         />
         <IntegrationsForm initial={integrations as IntegrationsInitial} />
         <FeedUrls baseUrl={baseUrl} />
+        <WhatsAppPanel baseUrl={baseUrl} />
         <NotificationStatus />
       </div>
     </>

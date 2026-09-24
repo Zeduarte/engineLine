@@ -5,7 +5,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import { effectiveSections, effectiveVehicleTypes } from "@/lib/permissions";
 import { COST_CATEGORIES, PendingActionSchema, buildCost, buildHours, buildRegister, canUseCategory, type CostCategory, type PendingAction } from "@/lib/whatsapp/actions";
 import { isUsable, readConfirmation } from "@/lib/whatsapp/confirm";
-import { confirmationMessage, receiptMessage, vehicleLabel } from "@/lib/whatsapp/describe";
+import { confirmationMessage, formatMoney, receiptMessage, vehicleLabel } from "@/lib/whatsapp/describe";
 import { formatPlate } from "@/lib/plate";
 import { rankVehicles, type Candidate } from "@/lib/whatsapp/match";
 import { REPLIES, SECTION_LABEL } from "@/lib/whatsapp/replies";
@@ -30,6 +30,14 @@ const MAX_REPLY = 600;
 const TIMEOUT_MS = 8000;
 /** Quantas candidatas se mostram quando há ambiguidade. */
 const MAX_CANDIDATES = 5;
+
+/** O estado da viatura como aparece no backoffice, não o valor interno. */
+const STATUS_LABEL: Record<string, string> = {
+  draft: "rascunho",
+  published: "publicada",
+  reserved: "reservada",
+  sold: "vendida",
+};
 
 export interface Actor {
   id: string;
@@ -379,7 +387,7 @@ async function runRead(
       handles.set(key, v);
       const cor = v.color ? ` ${v.color.toLowerCase()}` : "";
       const mat = v.license_plate ? ` · ${formatPlate(v.license_plate)}` : " · sem matrícula";
-      return `- ${key} · ${v.make} ${v.model}${cor}${mat} · ${v.status ?? ""}`;
+      return `- ${key} · ${v.make} ${v.model}${cor}${mat} · ${STATUS_LABEL[v.status ?? ""] ?? v.status ?? ""}`;
     });
     const total =
       found.length > shown.length
@@ -398,10 +406,13 @@ async function runRead(
     });
     if (error || !data) return { content: "Não consegui ler essa viatura.", is_error: true };
     const s = data as { costs: number; cost_count: number; hours: number; status: string };
+    // Já formatado em pt-PT: o modelo repete o que recebe, e "12.5" com ponto
+    // chegaria assim ao colaborador.
+    const lancamentos = `${s.cost_count} ${Number(s.cost_count) === 1 ? "lançamento" : "lançamentos"}`;
     return {
       content:
-        `${vehicleLabel(car)} · custos: ${s.costs} € em ${s.cost_count} lançamentos · ` +
-        `horas: ${s.hours} · estado: ${s.status}`,
+        `${vehicleLabel(car)} · custos: ${formatMoney(Number(s.costs))} em ${lancamentos} · ` +
+        `horas: ${Number(s.hours).toLocaleString("pt-PT")} h · estado: ${STATUS_LABEL[s.status] ?? s.status}`,
     };
   }
 

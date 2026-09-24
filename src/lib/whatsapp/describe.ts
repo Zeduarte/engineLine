@@ -1,3 +1,4 @@
+import { canonicalBrand } from "@/lib/brand-name";
 import { COST_LABELS } from "@/lib/operations";
 import { formatPlate } from "@/lib/plate";
 import type { PendingAction } from "@/lib/whatsapp/actions";
@@ -37,13 +38,18 @@ export function formatDay(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
-/** Como referir uma viatura numa frase: sempre com a matrícula, quando existe. */
+/**
+ * Como referir uma viatura numa frase: sempre com a matrícula, quando existe.
+ *
+ * A marca sai na grafia do catálogo: anúncios antigos foram gravados como
+ * "Bmw", e o recibo não deve repetir o erro de quem os escreveu.
+ */
 export function vehicleLabel(v: {
   make: string;
   model: string;
   license_plate?: string | null;
 }): string {
-  const nome = `${v.make} ${v.model}`.trim();
+  const nome = `${canonicalBrand(v.make)} ${v.model}`.trim();
   return v.license_plate
     ? `${nome}, matrícula ${formatPlate(v.license_plate)}`
     : nome;

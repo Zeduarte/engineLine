@@ -43,7 +43,14 @@ export default async function ProfileDataPage() {
               defaultValue={me.phone ?? ""}
               maxLength={30}
               inputMode="tel"
+              placeholder="Ex.: 912 345 678"
             />
+            {/* O campo existia sem se perceber para que servia: é este número
+                que identifica a pessoa quando ela dá ordens por WhatsApp. */}
+            <span className="mt-1 block text-xs text-paper/50">
+              É por este número que as suas ordens por WhatsApp são reconhecidas.
+              Escreva só o número, sem notas.
+            </span>
           </Field>
           <Field label="Data de nascimento">
             <input
