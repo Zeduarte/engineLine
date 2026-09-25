@@ -3,7 +3,7 @@ import type { VehicleType } from "@/lib/vehicle-categories";
 /**
  * Fotografias e vídeos fixos do site, em `public/media/`:
  *  - `carros/` e `motas/` — o que muda com o mundo escolhido na entrada;
- *  - `comum/` — o que aparece igual nos dois.
+ *  - `comum/` — o que aparece igual nos dois (páginas Sobre e Contactos).
  *
  * Para trocar uma imagem basta substituir o ficheiro mantendo o nome (ver
  * `public/media/LEIA-ME.txt`). O topo da página inicial não está aqui: é
@@ -27,6 +27,20 @@ export interface WorldMedia {
   quiz: string;
 }
 
+/**
+ * Ficheiros opcionais de cada mundo: só são usados se existirem na pasta
+ * (ver `existingMedia` em `hero-media.ts`). Sem eles fica o fundo escuro.
+ */
+export const OPTIONAL_MEDIA = {
+  /** Fundo subtil do rodapé. */
+  rodape: "rodape.jpg",
+  /** Fundo da secção "Vamos falar". */
+  contacto: "contacto.jpg",
+  /** Vídeo da secção de confiança e a imagem enquanto carrega. */
+  confianca: "confianca.mp4",
+  confiancaPoster: "confianca.jpg",
+} as const;
+
 export function mediaFor(type: VehicleType): WorldMedia {
   const dir = mediaDir(type);
   return {
@@ -37,12 +51,7 @@ export function mediaFor(type: VehicleType): WorldMedia {
 }
 
 export const COMMON_MEDIA = {
-  rodape: "/media/comum/rodape.jpg",
-  contacto: "/media/comum/contacto.jpg",
   sobre: "/media/comum/sobre.jpg",
   /** Ainda não existe: se faltar, a faixa fica com fundo escuro. */
   contactos: "/media/comum/contactos.jpg",
-  confianca: "/media/comum/confianca.mp4",
-  /** Ainda não existe: sem ele o vídeo mostra o primeiro fotograma. */
-  confiancaPoster: "/media/comum/confianca.jpg",
 } as const;

@@ -20,6 +20,19 @@ export type HeroMedia =
   // (cross-fade). Útil p/ efeitos tipo "semáforo vermelho -> verde".
   | { type: "image"; src: string; src2?: string };
 
+/**
+ * Caminho público de um ficheiro opcional do mundo (`OPTIONAL_MEDIA`), ou null
+ * se não existir — para o site não pedir ficheiros que não estão lá.
+ */
+export function existingMedia(type: VehicleType, file: string): string | null {
+  const rel = `${mediaDir(type)}/${file}`;
+  try {
+    return fs.existsSync(path.join(process.cwd(), "public", rel)) ? rel : null;
+  } catch {
+    return null;
+  }
+}
+
 const EXTENSIONS = ["jpg", "jpeg", "png", "webp", "avif"];
 
 function firstExisting(dir: string, base: string): string | null {

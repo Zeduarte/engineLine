@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { COMMON_MEDIA } from "@/lib/media";
 import {
   DEFAULT_HOME_CONTENT,
   type TrustContent,
@@ -12,7 +11,7 @@ import {
 /**
  * Secção pinned: enquanto o utilizador desce, a coluna esquerda (texto)
  * fixa-se e os pilares de confiança trocam por etapas; a coluna direita mostra
- * um painel de média (vídeo/imagem, definível em `public/media/comum/`) com o KPI do
+ * um painel de média (vídeo/imagem, definível em `public/media/carros|motas/`) com o KPI do
  * pilar ativo em sobreposição. Se não houver média, mostra-se um visual
  * animado — a secção nunca fica vazia.
  *
@@ -42,8 +41,13 @@ const BADGES = [
 
 export function PinnedTrust({
   content = DEFAULT_HOME_CONTENT.trust,
+  video = null,
+  poster = null,
 }: {
   content?: TrustContent;
+  /** confianca.mp4 do mundo escolhido, se existir. */
+  video?: string | null;
+  poster?: string | null;
 }) {
   const PILLARS = content.pillars;
   const [active, setActive] = useState(0);
@@ -161,18 +165,20 @@ export function PinnedTrust({
 
             {/*
               Vídeo OPCIONAL: cai para o fundo animado se os ficheiros não
-              existirem em public/media/comum/. Silencioso e em loop.
+              existirem em public/media/carros|motas/. Silencioso e em loop.
             */}
-            <video
-              className="absolute inset-0 h-full w-full object-cover"
-              autoPlay
-              muted
-              loop
-              playsInline
-              poster={COMMON_MEDIA.confiancaPoster}
-            >
-              <source src={COMMON_MEDIA.confianca} type="video/mp4" />
-            </video>
+            {video && (
+              <video
+                className="absolute inset-0 h-full w-full object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+                poster={poster ?? undefined}
+              >
+                <source src={video} type="video/mp4" />
+              </video>
+            )}
 
             {/* Scrim para legibilidade do texto sobreposto. */}
             <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-transparent" />

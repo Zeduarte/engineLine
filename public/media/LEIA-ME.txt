@@ -5,7 +5,7 @@ Tudo o que é fotografia ou vídeo fixo do site está aqui, em três pastas:
 
   carros/  -> o que aparece quando o visitante escolhe CARROS
   motas/   -> o que aparece quando o visitante escolhe MOTAS
-  comum/   -> o que aparece igual nos dois
+  comum/   -> o que aparece igual nos dois (páginas Sobre e Contactos)
 
 PARA TROCAR UMA IMAGEM: substitui o ficheiro mantendo EXATAMENTE o mesmo nome.
 Depois faz commit + push (o Netlify reconstrói e aplica). Localmente: para o
@@ -28,6 +28,16 @@ carros/ e motas/ (os mesmos nomes nas duas pastas)
   retoma.jpg       Fundo do cartão "Retoma & Encomenda". Larga.
   quiz.jpg         Faixa do questionário. Larga.
 
+  Opcionais (se o ficheiro não existir, fica só o fundo escuro):
+  rodape.jpg       Fundo subtil do rodapé (fim de todas as páginas). Larga,
+                   aparece escurecida.
+  contacto.jpg     Fundo da secção "Vamos falar" (fim da página inicial).
+  confianca.mp4    Vídeo da secção de confiança na página inicial (loop, sem som).
+  confianca.jpg    Imagem mostrada enquanto esse vídeo carrega.
+
+  Por agora estes opcionais só existem em carros/ (menos o confianca.jpg).
+  Nas motas aparece o fundo escuro até lá pores os teus ficheiros.
+
   VÍDEO OU IMAGEM NO TOPO?
     Se existir topo.mp4, é usado o vídeo (mesmo que haja topo.jpg).
     Para passar a imagem: apaga o topo.mp4. Para voltar ao vídeo: põe-no.
@@ -39,16 +49,11 @@ carros/ e motas/ (os mesmos nomes nas duas pastas)
   pela tua.
 
 
-comum/
+comum/  (igual nos carros e nas motas)
 ------
-  rodape.jpg       Fundo subtil do rodapé (fim de todas as páginas). Larga,
-                   aparece escurecida.
-  contacto.jpg     Fundo da secção "Vamos falar" (fim da página inicial).
   sobre.jpg        Faixa da página "Sobre".
   contactos.jpg    Faixa da página "Contactos". AINDA NÃO EXISTE: põe-na aqui
                    e aparece sozinha (até lá fica um fundo escuro).
-  confianca.mp4    Vídeo da secção de confiança na página inicial (loop, sem som).
-  confianca.jpg    Imagem mostrada enquanto esse vídeo carrega. AINDA NÃO EXISTE.
 
 
 extra/

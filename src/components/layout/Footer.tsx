@@ -3,7 +3,6 @@ import Image from "next/image";
 import { site } from "@/lib/site";
 import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
 import { LEGAL_NAME, NIF } from "@/lib/legal";
-import { COMMON_MEDIA } from "@/lib/media";
 
 // Links obrigatórios do rodapé. As políticas são páginas internas do site; o
 // Livro de Reclamações é o portal oficial (externo).
@@ -20,18 +19,23 @@ const LEGAL_LINKS: { label: string; href: string; external?: boolean }[] = [
 
 export function Footer({
   branding = DEFAULT_BRANDING,
+  background = null,
 }: {
   branding?: Branding;
+  /** rodape.jpg do mundo escolhido, se existir. */
+  background?: string | null;
 }) {
   return (
     <footer className="relative overflow-hidden border-t border-white/10 bg-ink">
-      {/* Imagem de fundo subtil (public/media/comum/rodape.jpg) + escurecimento
+      {/* Imagem de fundo subtil (rodape.jpg em public/media/carros|motas/) + escurecimento
           forte para manter o texto legível. Fallback: fica só o fundo escuro. */}
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${COMMON_MEDIA.rodape})` }}
-      />
+      {background && (
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${background})` }}
+        />
+      )}
       <div
         aria-hidden
         className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/70 to-ink/55"

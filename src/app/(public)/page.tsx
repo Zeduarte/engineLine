@@ -21,7 +21,8 @@ import {
   getVehicles,
   getSoldVehicles,
 } from "@/lib/queries";
-import { getHeroMedia } from "@/lib/hero-media";
+import { existingMedia, getHeroMedia } from "@/lib/hero-media";
+import { OPTIONAL_MEDIA } from "@/lib/media";
 
 // ISR: revalida a cada 60s — novos destaques e edições de conteúdo aparecem
 // sem rebuild manual.
@@ -66,7 +67,11 @@ export default async function HomePage() {
       <BrandMarquee brands={type === "motorcycle" ? [...new Set(allVehicles.map(v=>v.make))] : content.brands} />
       <FeaturedVehicles vehicles={recent} />
       <SellCTA vehicleType={type} />
-      <PinnedTrust content={content.trust} />
+      <PinnedTrust
+        content={content.trust}
+        video={existingMedia(type, OPTIONAL_MEDIA.confianca)}
+        poster={existingMedia(type, OPTIONAL_MEDIA.confiancaPoster)}
+      />
       <SoldShowcase vehicles={sold} />
       <div className="container-px">
         <ServiceCards items={showroom.services} />
@@ -76,7 +81,11 @@ export default async function HomePage() {
         />
       </div>
       <Testimonials items={testimonials} />
-      <ContactCTA content={content.cta} company={branding.company} />
+      <ContactCTA
+        content={content.cta}
+        company={branding.company}
+        background={existingMedia(type, OPTIONAL_MEDIA.contacto)}
+      />
     </>
   );
 }

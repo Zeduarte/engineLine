@@ -12,6 +12,8 @@ import { CompareBar } from "@/components/inventory/CompareBar";
 import { DealerJsonLd } from "@/components/seo/DealerJsonLd";
 import { getBranding } from "@/lib/queries";
 import { WorldEntrance } from "@/components/site/WorldEntrance";
+import { existingMedia } from "@/lib/hero-media";
+import { OPTIONAL_MEDIA } from "@/lib/media";
 
 /**
  * Chrome do site PÚBLICO: smooth scroll (Lenis), barra de progresso, grão,
@@ -43,7 +45,7 @@ export default async function PublicLayout({
         <ScrollProgress />
         <Header branding={branding} />
         <main id="conteudo" className="pt-16">{children}</main>
-        <Footer branding={branding} />
+        <Footer branding={branding} background={existingMedia(type, OPTIONAL_MEDIA.rodape)} />
         {/* Assistente virtual + canais de contacto no mesmo botão flutuante.
             Na ficha de viatura o botão dá lugar à barra fixa do fundo.
             Sem chave da Anthropic configurada, fica só o contacto humano. */}
