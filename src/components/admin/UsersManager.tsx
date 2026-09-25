@@ -30,6 +30,7 @@ export interface UserItem {
   role: UserRole;
   allowed_sections: string[] | null;
   allowed_vehicle_types: string[] | null;
+  is_owner: boolean;
   created_at: string;
 }
 
@@ -60,7 +61,7 @@ export function UsersManager({
   canManageAuth,
 }: {
   users: UserItem[];
-  currentUser: { id: string; role: UserRole };
+  currentUser: { id: string; role: UserRole; is_owner: boolean };
   managerSections: Section[];
   canManageAuth: boolean;
 }) {
@@ -170,7 +171,9 @@ export function UsersManager({
             user={u}
             isSelf={u.id === currentUser.id}
             editable={
-              u.id !== currentUser.id && canManage(currentUser.role, u.role)
+              u.id !== currentUser.id &&
+              !u.is_owner &&
+              canManage(currentUser.role, u.role, currentUser.is_owner)
             }
             assignable={roles}
             managerSections={managerSections}
@@ -309,7 +312,7 @@ function UserRow({
             </>
           ) : (
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-paper/70">
-              {ROLE_LABEL[user.role as Role] ?? user.role}
+              {user.is_owner ? "Dono" : (ROLE_LABEL[user.role as Role] ?? user.role)}
             </span>
           )}
         </div>

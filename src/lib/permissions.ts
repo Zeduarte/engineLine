@@ -161,8 +161,17 @@ export function leaveSelfApproves(role: string): boolean {
   return role === "admin";
 }
 
-/** `manager` pode gerir (editar) `target`? (rank estritamente superior). */
-export function canManage(managerRole: string, targetRole: string): boolean {
+/**
+ * `manager` pode gerir (editar) `target`? Rank estritamente superior — com uma
+ * exceção: outro administrador só é gerível pelo dono da conta, que também é
+ * admin mas está acima dos restantes.
+ */
+export function canManage(
+  managerRole: string,
+  targetRole: string,
+  managerIsOwner = false,
+): boolean {
+  if (targetRole === "admin") return managerRole === "admin" && managerIsOwner;
   if (targetRole === "mecanico" && managerRole !== "admin") return false;
   const m = isRole(managerRole) ? ROLE_RANK[managerRole] : 0;
   const t = isRole(targetRole) ? ROLE_RANK[targetRole] : 0;

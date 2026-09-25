@@ -16,6 +16,7 @@ export default async function UsersPage() {
     role: p.role,
     allowed_sections: p.allowed_sections,
     allowed_vehicle_types: p.allowed_vehicle_types,
+    is_owner: !!p.is_owner,
     created_at: p.created_at,
   }));
 
@@ -27,12 +28,13 @@ export default async function UsersPage() {
         <h1 className="text-2xl font-bold text-paper">Utilizadores</h1>
         <p className="mt-1 text-sm text-paper/50">
           Faça a gestão de quem acede ao backoffice e dos separadores a que cada
-          um tem acesso. Só pode gerir utilizadores de nível inferior ao seu.
+          um tem acesso. Só pode gerir utilizadores de nível inferior ao seu; outros
+          administradores só são geridos pelo dono da conta.
         </p>
       </div>
       <UsersManager
         users={users}
-        currentUser={{ id: me.id, role: me.role }}
+        currentUser={{ id: me.id, role: me.role, is_owner: !!me.is_owner }}
         managerSections={effectiveSections(me.role, me.allowed_sections)}
         canManageAuth={canManageAuth}
       />

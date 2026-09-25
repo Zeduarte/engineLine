@@ -87,6 +87,8 @@ type ProfilesRow = {
   phone: string | null;
   birth_date: string | null;
   job_title: string | null;
+  /** Dono da conta: o único admin que gere outros admins. */
+  is_owner: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -100,6 +102,7 @@ type ProfilesInsert = {
   phone?: string | null;
   birth_date?: string | null;
   job_title?: string | null;
+  is_owner?: boolean;
 };
 type ProfilesUpdate = {
   id?: string;
@@ -111,6 +114,7 @@ type ProfilesUpdate = {
   phone?: string | null;
   birth_date?: string | null;
   job_title?: string | null;
+  is_owner?: boolean;
 };
 
 // ---- cars ------------------------------------------------------------------

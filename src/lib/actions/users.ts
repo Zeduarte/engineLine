@@ -23,15 +23,31 @@ export interface UserResult {
   error?: string;
 }
 
-/** Papel atual de um utilizador. */
-async function roleOf(id: string): Promise<Role | null> {
+/** Papel atual de um utilizador e se é o dono da conta. */
+async function targetOf(id: string): Promise<{ role: Role; isOwner: boolean } | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, is_owner")
     .eq("id", id)
     .maybeSingle();
-  return (data?.role as Role) ?? null;
+  return data ? { role: data.role as Role, isOwner: !!data.is_owner } : null;
+}
+
+/**
+ * Pode `me` gerir este alvo? Devolve a razão da recusa, ou null. O dono nunca
+ * é alvo de ninguém; outro admin só é gerível pelo dono.
+ */
+function refusal(
+  me: { role: string; is_owner: boolean },
+  target: { role: Role; isOwner: boolean },
+  verbo = "gerir",
+): string | null {
+  if (target.isOwner) return "O dono da conta não pode ser alterado por outro utilizador.";
+  if (canManage(me.role, target.role, me.is_owner)) return null;
+  return target.role === "admin"
+    ? `Só o dono da conta pode ${verbo} outros administradores.`
+    : `Só pode ${verbo} utilizadores de nível inferior.`;
 }
 
 /**
@@ -160,11 +176,10 @@ export async function updateUserAccess(
     return { ok: false, error: "Não pode alterar as suas próprias permissões." };
   }
 
-  const targetRole = await roleOf(id);
-  if (!targetRole) return { ok: false, error: "Utilizador não encontrado." };
-  if (!canManage(me.role, targetRole)) {
-    return { ok: false, error: "Só pode gerir utilizadores de nível inferior." };
-  }
+  const target = await targetOf(id);
+  if (!target) return { ok: false, error: "Utilizador não encontrado." };
+  const recusa = refusal(me, target);
+  if (recusa) return { ok: false, error: recusa };
   if (!assignableRoles(me.role).includes(role)) {
     return { ok: false, error: "Sem permissão para atribuir esse papel." };
   }
@@ -213,10 +228,10 @@ export async function resetUserPassword(
 
   // Sobre si próprio pode sempre; sobre outros só se estiver acima.
   if (me.id !== id) {
-    const targetRole = await roleOf(id);
-    if (!targetRole || !canManage(me.role, targetRole)) {
-      return { ok: false, error: "Só pode gerir utilizadores de nível inferior." };
-    }
+    const target = await targetOf(id);
+    if (!target) return { ok: false, error: "Utilizador não encontrado." };
+    const recusa = refusal(me, target);
+    if (recusa) return { ok: false, error: recusa };
   }
 
   const admin = createAdminClient();
@@ -242,10 +257,10 @@ export async function deleteUser(id: string): Promise<UserResult> {
     return { ok: false, error: "Não pode apagar a sua própria conta." };
   }
 
-  const targetRole = await roleOf(id);
-  if (!targetRole || !canManage(me.role, targetRole)) {
-    return { ok: false, error: "Só pode apagar utilizadores de nível inferior." };
-  }
+  const target = await targetOf(id);
+  if (!target) return { ok: false, error: "Utilizador não encontrado." };
+  const recusa = refusal(me, target, "apagar");
+  if (recusa) return { ok: false, error: recusa };
 
   const admin = createAdminClient();
   if (!admin) {

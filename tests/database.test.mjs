@@ -54,6 +54,14 @@ await test('seller cannot promote self, but can edit own name',async()=>asUser(s
  await db.query("update profiles set full_name='Vendedor' where id=$1",[seller]);
  await assert.rejects(db.query("update profiles set allowed_sections=array['financeiro'] where id=$1",[seller]),/permission denied/);
 }));
+await test('no staff member can make themselves the account owner',async()=>{
+ for(const id of [seller,admin])await asUser(id,async()=>{
+  await assert.rejects(db.query("update profiles set is_owner=true where id=$1",[id]),/permission denied/);
+ });
+ await db.query("update profiles set is_owner=true where id=$1",[admin]);
+ await assert.rejects(db.query("update profiles set is_owner=true where id=$1",[seller]),/duplicate key|unique/);
+ await db.query("update profiles set is_owner=false where id=$1",[admin]);
+});
 await test('mechanic and limited seller cannot read leads or modify cars through SQL/API',async()=>{
  for(const id of [mechanic,limited])await asUser(id,async()=>{
   assert.equal((await db.query('select * from leads')).rows.length,0);

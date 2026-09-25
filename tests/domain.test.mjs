@@ -33,6 +33,10 @@ await test('CSV exports neutralize spreadsheet formulas and quote delimiters',()
 await test('financial and mechanical access matches business roles',()=>{
  assert.equal(canAccess('mecanico',['leads'],'leads'),false);assert.equal(canAccess('vendedor',null,'financeiro'),false);assert.equal(canAccess('chefe',null,'financeiro'),true);assert.equal(canAccess('admin',[],'financeiro'),true);assert.equal(canManage('chefe','mecanico'),false);
 });
+await test('only the account owner manages other admins',()=>{
+ assert.equal(canManage('admin','admin'),false);assert.equal(canManage('admin','admin',false),false);assert.equal(canManage('admin','admin',true),true);
+ assert.equal(canManage('chefe','admin',true),false);assert.equal(canManage('admin','chefe'),true);assert.equal(canManage('admin','mecanico'),true);assert.equal(canManage('chefe','vendedor'),true);
+});
 await test('pagination reads every row and propagates failures',async()=>{
  const rows=Array.from({length:1203},(_,i)=>i);assert.equal((await allRows(async(a,b)=>({data:rows.slice(a,b+1),error:null}))).length,1203);
  await assert.rejects(allRows(async()=>({data:null,error:{message:'offline'}})),/offline/);
