@@ -32,7 +32,7 @@ export type BodyType =
   | "Chopper/Cruiser"
   | "Enduro";
 
-export type VehicleStatus = "draft" | "published" | "reserved" | "sold";
+export type VehicleStatus = "workshop" | "draft" | "prepared" | "published" | "reserved" | "sold";
 
 export interface VehicleVideo {
   src: string;

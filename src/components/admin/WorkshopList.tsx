@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createWorkshopVehicle } from "@/lib/actions/workshop";
 import type { WorkshopVehicle } from "@/lib/workshop";
+import type { CarStatus } from "@/lib/supabase/database.types";
+import { StatusBadge } from "./StatusBadge";
 
 export function WorkshopList({ vehicles }: { vehicles: WorkshopVehicle[] }) {
   const router = useRouter();
@@ -16,8 +18,12 @@ export function WorkshopList({ vehicles }: { vehicles: WorkshopVehicle[] }) {
 
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
-    if (!t) return vehicles;
-    return vehicles.filter((v) =>
+    // As que ainda estão na oficina primeiro: são as que o mecânico trabalha.
+    const ordered = [...vehicles].sort(
+      (a, b) => Number(b.status === "workshop") - Number(a.status === "workshop"),
+    );
+    if (!t) return ordered;
+    return ordered.filter((v) =>
       `${v.make} ${v.model} ${v.plate ?? ""}`.toLowerCase().includes(t),
     );
   }, [vehicles, q]);
@@ -109,9 +115,12 @@ export function WorkshopList({ vehicles }: { vehicles: WorkshopVehicle[] }) {
                   <p className="mt-1 font-mono text-sm text-paper/70">
                     {v.plate || "— sem matrícula —"}
                   </p>
-                  <p className="mt-2 text-xs text-paper/40">
-                    {v.logCount} {v.logCount === 1 ? "registo" : "registos"}
-                  </p>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="text-xs text-paper/40">
+                      {v.logCount} {v.logCount === 1 ? "registo" : "registos"}
+                    </p>
+                    <StatusBadge status={v.status as CarStatus} />
+                  </div>
                 </div>
               </Link>
             </li>

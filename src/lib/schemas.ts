@@ -31,7 +31,12 @@ export const BODY_TYPES = [
   ...MOTORCYCLE_BODIES,
 ] as const;
 
-export const CAR_STATUSES = ["draft", "published", "reserved", "sold"] as const;
+export const CAR_STATUSES = ["workshop", "draft", "prepared", "published", "reserved", "sold"] as const;
+/**
+ * Estados que se escolhem em Viaturas. "Na oficina" fica de fora: uma viatura
+ * na oficina não aparece em Viaturas, e voltar para lá é um botão próprio.
+ */
+export const LISTING_STATUSES = CAR_STATUSES.filter((s) => s !== "workshop");
 
 /**
  * Plataformas/portais externos para onde o inventário pode ser exportado.

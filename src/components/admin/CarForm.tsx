@@ -500,7 +500,9 @@ export function CarForm({
           </div>
           <Field label="Estado" error={errors.status?.message}>
             <select className="field" {...register("status")}>
-              {CAR_STATUSES.map((s) => (
+              {CAR_STATUSES.filter(
+                (s) => s !== "workshop" || defaults?.status === "workshop",
+              ).map((s) => (
                 <option key={s} value={s}>
                   {CAR_STATUS_LABEL[s]}
                 </option>

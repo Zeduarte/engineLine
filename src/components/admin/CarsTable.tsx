@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
 import { formatKm, priceLabel } from "@/lib/format";
-import { CAR_STATUSES, FUEL_TYPES } from "@/lib/schemas";
+import { LISTING_STATUSES, FUEL_TYPES } from "@/lib/schemas";
 import type {
   CarStatus,
   FuelType,
@@ -127,7 +127,7 @@ export function CarsTable({ items }: { items: CarListItem[] }) {
           aria-label="Filtrar por estado"
         >
           <option value="">Todos os estados</option>
-          {CAR_STATUSES.map((s) => (
+          {LISTING_STATUSES.map((s) => (
             <option key={s} value={s}>
               {CAR_STATUS_LABEL[s]}
             </option>
@@ -317,7 +317,7 @@ export function CarsTable({ items }: { items: CarListItem[] }) {
                         className="rounded-lg border border-white/10 bg-ink px-2 py-1 text-xs text-paper"
                         aria-label="Mudar estado"
                       >
-                        {CAR_STATUSES.map((s) => (
+                        {LISTING_STATUSES.map((s) => (
                           <option key={s} value={s}>
                             {CAR_STATUS_LABEL[s]}
                           </option>

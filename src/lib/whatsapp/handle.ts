@@ -33,7 +33,9 @@ const MAX_CANDIDATES = 5;
 
 /** O estado da viatura como aparece no backoffice, não o valor interno. */
 const STATUS_LABEL: Record<string, string> = {
+  workshop: "na oficina",
   draft: "rascunho",
+  prepared: "preparada",
   published: "publicada",
   reserved: "reservada",
   sold: "vendida",

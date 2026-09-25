@@ -1,14 +1,18 @@
 import type { CarStatus, LeadStatus } from "@/lib/supabase/database.types";
 
 const CAR_LABELS: Record<CarStatus, string> = {
+  workshop: "Na oficina",
   draft: "Rascunho",
+  prepared: "Preparado",
   published: "Publicado",
   reserved: "Reservado",
   sold: "Vendido",
 };
 
 const CAR_STYLES: Record<CarStatus, string> = {
+  workshop: "bg-orange-500/15 text-orange-300",
   draft: "bg-white/10 text-paper/70",
+  prepared: "bg-sky-500/15 text-sky-300",
   published: "bg-emerald-500/15 text-emerald-300",
   reserved: "bg-amber-500/15 text-amber-300",
   sold: "bg-red-500/15 text-red-300",

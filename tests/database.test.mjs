@@ -82,8 +82,27 @@ await test('financial data cannot be read by public, seller or mechanic',async()
 await test('workshop intake has unknown specs and cannot be published prematurely',async()=>{
  const id=await asUser(mechanic,async()=>(await db.query("select create_workshop_intake('BMW por identificar','AA-00-AA') id")).rows[0].id);
  const row=(await db.query('select * from cars where id=$1',[id])).rows[0];
- assert.equal(row.fuel,null);assert.equal(row.transmission,null);assert.equal(row.year,null);assert.equal(row.status,'draft');
+ assert.equal(row.fuel,null);assert.equal(row.transmission,null);assert.equal(row.year,null);assert.equal(row.status,'workshop');
  await asUser(admin,async()=>assert.rejects(db.query("update cars set status='published' where id=$1",[id]),/complete_public_car/));
+});
+await test('workshop vehicle becomes prepared, can go back, and only the right people move it',async()=>{
+ const id=await asUser(mechanic,async()=>(await db.query("select create_workshop_intake_for_type('Yamaha R6','AA-11-BB','motorcycle') id")).rows[0].id);
+ const status=async()=>(await db.query('select status from cars where id=$1',[id])).rows[0].status;
+ assert.equal(await status(),'workshop');
+ // Sem o separador Oficina não se dá como preparada.
+ await asUser(seller,async()=>assert.rejects(db.query('select mark_vehicle_prepared($1)',[id]),/Sem permissão/));
+ await asUser(limited,async()=>assert.rejects(db.query('select return_vehicle_to_workshop($1)',[id]),/Sem permissão/));
+ // O mecânico não escreve na tabela cars diretamente — só pela função.
+ await asUser(mechanic,async()=>assert.equal((await db.query("update cars set status='prepared' where id=$1 returning id",[id])).rows.length,0));
+ await asUser(mechanic,()=>db.query('select mark_vehicle_prepared($1)',[id]));
+ assert.equal(await status(),'prepared');
+ // Preparada com a ficha incompleta é permitido; publicar continua a exigir os dados.
+ await asUser(admin,async()=>assert.rejects(db.query("update cars set status='published' where id=$1",[id]),/complete_public_car/));
+ await asUser(mechanic,async()=>assert.rejects(db.query('select mark_vehicle_prepared($1)',[id]),/não está na oficina/));
+ await asUser(seller,()=>db.query('select return_vehicle_to_workshop($1)',[id]));
+ assert.equal(await status(),'workshop');
+ await asUser(admin,async()=>assert.rejects(db.query('select return_vehicle_to_workshop($1)',[car]),/preparada ou em rascunho/));
+ await db.query('delete from cars where id=$1',[id]);
 });
 await test('workshop hours are recalculated even when API submits forged totals',async()=>asUser(mechanic,async()=>{
  const row=(await db.query("insert into vehicle_tasks(car_id,work_date,start_time,end_time,hours) values($1,current_date,'22:00','01:30',999) returning *",[car])).rows[0];
@@ -194,7 +213,7 @@ await test('vehicle worlds retain lead classification and separate reporting',as
 await test('workshop creates the selected category and keeps existing permission checks',async()=>{
  const id=await asUser(mechanic,async()=>(await db.query("select create_workshop_intake_for_type('Honda por identificar','AA-11-AA','motorcycle') id")).rows[0].id);
  const row=(await db.query('select vehicle_type,doors,status from cars where id=$1',[id])).rows[0];
- assert.deepEqual(row,{vehicle_type:'motorcycle',doors:0,status:'draft'});
+ assert.deepEqual(row,{vehicle_type:'motorcycle',doors:0,status:'workshop'});
  await asUser(mechanic,async()=>assert.rejects(db.query("select create_workshop_intake_for_type('Invalid','AA-11-AA','truck')"),/Tipo inválido/));
  await asUser(limited,async()=>assert.rejects(db.query("select create_workshop_intake_for_type('Honda','AA-11-AA','motorcycle')"),/Sem permissão/));
  await asUser(null,async()=>assert.rejects(db.query("select create_workshop_intake_for_type('Honda','AA-11-AA','motorcycle')"),/permission denied/),'anon');
