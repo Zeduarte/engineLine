@@ -53,7 +53,7 @@ export async function GET(request: Request) {
   if (!db) return done("erro", "SUPABASE_SERVICE_ROLE_KEY em falta");
 
   try {
-    const tokens = await exchangeCode(code, olxRedirectUri(request));
+    const tokens = await exchangeCode(code, olxRedirectUri());
     const { error } = await db.from("olx_connection").upsert({
       id: 1,
       access_token: tokens.access_token,

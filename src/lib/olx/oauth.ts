@@ -13,14 +13,21 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
  */
 
 const TTL_MS = 10 * 60 * 1000;
+/**
+ * Só letras minúsculas e algarismos, com `z` a separar as partes (não é
+ * hexadecimal nem base 36, por isso nunca aparece dentro delas). O formato
+ * anterior tinha `.`, `-` e `_`, que as firewalls às vezes tratam como
+ * suspeitos; assim o `state` passa em qualquer filtro sem perder a proteção.
+ */
+const SEP = "z";
 
 function sign(payload: string, secret: string): string {
-  return createHmac("sha256", secret).update(payload).digest("base64url");
+  return createHmac("sha256", secret).update(payload).digest("hex");
 }
 
 export function createState(secret: string, now = Date.now()): string {
-  const payload = `${randomBytes(16).toString("base64url")}.${now + TTL_MS}`;
-  return `${payload}.${sign(payload, secret)}`;
+  const payload = `${randomBytes(16).toString("hex")}${SEP}${(now + TTL_MS).toString(36)}`;
+  return `${payload}${SEP}${sign(payload, secret)}`;
 }
 
 export function verifyState(
@@ -30,16 +37,17 @@ export function verifyState(
   now = Date.now(),
 ): boolean {
   if (!state || !cookie || !secret) return false;
-  // Tem de ser exactamente o que este navegador recebeu ao iniciar.
+  if (!/^[a-z0-9]+$/.test(state)) return false;
+  // Tem de ser exatamente o que este navegador recebeu ao iniciar.
   const a = Buffer.from(state);
   const b = Buffer.from(cookie);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return false;
-  const parts = state.split(".");
+  const parts = state.split(SEP);
   if (parts.length !== 3) return false;
   const [nonce, exp, sig] = parts as [string, string, string];
-  const expected = sign(`${nonce}.${exp}`, secret);
+  const expected = sign(`${nonce}${SEP}${exp}`, secret);
   const s = Buffer.from(sig);
   const e = Buffer.from(expected);
   if (s.length !== e.length || !timingSafeEqual(s, e)) return false;
-  return Number(exp) > now;
+  return parseInt(exp, 36) > now;
 }

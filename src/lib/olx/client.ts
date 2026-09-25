@@ -60,12 +60,13 @@ async function tokenRequest(body: Record<string, string>): Promise<TokenResponse
 }
 
 /** Troca o `code` do retorno do OAuth por tokens. */
-export function exchangeCode(code: string, redirectUri: string): Promise<TokenResponse> {
+export function exchangeCode(code: string, redirectUri: string | null): Promise<TokenResponse> {
+  // O `redirect_uri` só é obrigatório aqui se tiver ido na autorização.
   return tokenRequest({
     grant_type: "authorization_code",
     code,
     scope: "v2 read write",
-    redirect_uri: redirectUri,
+    ...(redirectUri ? { redirect_uri: redirectUri } : {}),
   });
 }
 

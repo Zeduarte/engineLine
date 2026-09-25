@@ -25,7 +25,8 @@ export async function GET(request: Request) {
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", "read write v2");
   url.searchParams.set("state", state);
-  url.searchParams.set("redirect_uri", olxRedirectUri(request));
+  const redirectUri = olxRedirectUri();
+  if (redirectUri) url.searchParams.set("redirect_uri", redirectUri);
 
   const response = NextResponse.redirect(url);
   // O retorno só é aceite neste navegador: é o cookie que o prova.

@@ -107,6 +107,11 @@ await test('the OAuth state binds the return to the browser that started it',()=
  assert.equal(O.verifyState(s,O.createState('segredo',1000),'segredo',2000),false,'outro navegador');
  assert.equal(O.verifyState(s,s,'outro',2000),false,'assinatura');
  assert.equal(O.verifyState(s,s,'segredo',1000+11*60*1000),false,'expirado');
- const forjado=s.replace(/\.\d+\./,'.99999999999999.');
+ // Só letras e algarismos: passa na firewall do OLX (o formato antigo não).
+ assert.match(s,/^[a-z0-9]+$/);
+ const [n,,sig]=s.split('z');
+ const forjado=`${n}z${(9e15).toString(36)}z${sig}`;
  assert.equal(O.verifyState(forjado,forjado,'segredo',2000),false,'prazo adulterado');
+ const antigo='abc.123.def';
+ assert.equal(O.verifyState(antigo,antigo,'segredo',2000),false,'formato antigo recusado');
 });
