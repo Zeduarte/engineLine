@@ -4,6 +4,7 @@ import { AnimatedText } from "@/components/ui/AnimatedText";
 import { Reveal } from "@/components/ui/Reveal";
 import { Parallax } from "@/components/ui/Parallax";
 import { getBranding } from "@/lib/queries";
+import { COMMON_MEDIA } from "@/lib/media";
 
 export const metadata: Metadata = {
   title: "Sobre",
@@ -56,7 +57,7 @@ export default async function AboutPage() {
         </p>
       </section>
 
-      {/* Banner com parallax subtil (≤12%). A foto (public/images/sobre.jpg) é
+      {/* Banner com parallax subtil (≤12%). A foto (public/media/comum/sobre.jpg) é
           opcional: se faltar, fica o gradiente por baixo — nunca dá imagem
           partida. Basta colocar o ficheiro para aparecer automaticamente. */}
       <section className="container-px mt-20">
@@ -66,7 +67,7 @@ export default async function AboutPage() {
               role="img"
               aria-label={`${companyName} — a nossa paixão por duas rodas`}
               className="h-full w-full bg-cover bg-center"
-              style={{ backgroundImage: "url(/images/sobre.jpg)" }}
+              style={{ backgroundImage: `url(${COMMON_MEDIA.sobre})` }}
             />
           </Parallax>
         </div>

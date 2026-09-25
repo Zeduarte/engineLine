@@ -28,12 +28,16 @@ import {
 export function Hero({
   content = DEFAULT_HOME_CONTENT.hero,
   search,
-  media = { type: "video", poster: "/hero/hero-poster.jpg" },
+  media = {
+    type: "video",
+    src: "/media/carros/topo.mp4",
+    poster: "/media/carros/topo-poster.jpg",
+  },
 }: {
   content?: HeroContent;
   /** Cartão de pesquisa rápida, mostrado por baixo dos CTAs, sobre o vídeo. */
   search?: React.ReactNode;
-  /** Vídeo (scroll) ou imagem fixa — detetado pelo ficheiro em public/hero/. */
+  /** Vídeo (scroll) ou imagem fixa — detetado pelo ficheiro em public/media/carros|motas/. */
   media?: HeroMedia;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
@@ -70,7 +74,11 @@ export function Hero({
         {/* Fundo: vídeo controlado pelo scroll OU imagem (fixa ou cross-fade) */}
         <div className="absolute inset-0 overflow-hidden bg-ink">
           {isVideo ? (
-            <HeroVideo triggerRef={sectionRef} poster={asset(media.poster)} />
+            <HeroVideo
+              triggerRef={sectionRef}
+              sources={[{ src: asset(media.src), type: "video/mp4" }]}
+              poster={asset(media.poster)}
+            />
           ) : (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -1,0 +1,62 @@
+IMAGENS E VÍDEOS DO SITE
+========================
+
+Tudo o que é fotografia ou vídeo fixo do site está aqui, em três pastas:
+
+  carros/  -> o que aparece quando o visitante escolhe CARROS
+  motas/   -> o que aparece quando o visitante escolhe MOTAS
+  comum/   -> o que aparece igual nos dois
+
+PARA TROCAR UMA IMAGEM: substitui o ficheiro mantendo EXATAMENTE o mesmo nome.
+Depois faz commit + push (o Netlify reconstrói e aplica). Localmente: para o
+servidor e corre  npm run dev:clean
+
+As fotografias das viaturas NÃO estão aqui: essas carregam-se no backoffice.
+
+
+carros/ e motas/ (os mesmos nomes nas duas pastas)
+--------------------------------------------------
+  entrada.jpg      Metade do ecrã de entrada (primeira visita, "Escolhe a tua
+                   liberdade"). Horizontal, ~1920x1080. O centro é o que se vê:
+                   as margens são cortadas.
+  topo.mp4         Topo da página inicial em VÍDEO (percorrido com o scroll).
+  topo.jpg         Topo da página inicial em IMAGEM (aceita .png/.webp/.avif).
+  topo-poster.jpg  Imagem mostrada enquanto o vídeo carrega (só com vídeo).
+  topo-2.jpg       Opcional, só com imagem: 2ª imagem que aparece por cima ao
+                   fazer scroll (cross-fade). Tem de ter o MESMO enquadramento
+                   que topo.jpg (ex.: semáforo vermelho -> verde).
+  retoma.jpg       Fundo do cartão "Retoma & Encomenda". Larga.
+  quiz.jpg         Faixa do questionário. Larga.
+
+  VÍDEO OU IMAGEM NO TOPO?
+    Se existir topo.mp4, é usado o vídeo (mesmo que haja topo.jpg).
+    Para passar a imagem: apaga o topo.mp4. Para voltar ao vídeo: põe-no.
+    Nos carros, o backoffice (Página inicial -> Fundo do topo) pode forçar um
+    dos dois. As motas seguem sempre o ficheiro que existir.
+
+  Hoje as quatro fotos de motas/ são a mesma (fotografia do Unsplash,
+  https://images.unsplash.com/photo-1558981806-ec527fa84c39): troca cada uma
+  pela tua.
+
+
+comum/
+------
+  rodape.jpg       Fundo subtil do rodapé (fim de todas as páginas). Larga,
+                   aparece escurecida.
+  contacto.jpg     Fundo da secção "Vamos falar" (fim da página inicial).
+  sobre.jpg        Faixa da página "Sobre".
+  contactos.jpg    Faixa da página "Contactos". AINDA NÃO EXISTE: põe-na aqui
+                   e aparece sozinha (até lá fica um fundo escuro).
+  confianca.mp4    Vídeo da secção de confiança na página inicial (loop, sem som).
+  confianca.jpg    Imagem mostrada enquanto esse vídeo carrega. AINDA NÃO EXISTE.
+
+
+extra/
+------
+  Ficheiros que o site NÃO usa (guardados por precaução). Podes apagá-los.
+
+
+TAMANHOS
+--------
+  Fotografias: JPG, horizontais, ~1920x1080, idealmente < 400 KB.
+  Vídeos: MP4, horizontal (16:9), curto, idealmente < 10 MB.

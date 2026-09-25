@@ -79,18 +79,19 @@ export function HomeContentForm({ initial }: { initial: HomeContentValues }) {
           >
             <select className="field" {...register("hero.media")}>
               <option value="auto">
-                Automático (deteta o ficheiro em public/hero/)
+                Automático (deteta o ficheiro em public/media/carros/)
               </option>
-              <option value="video">Vídeo (public/hero/hero.mp4)</option>
+              <option value="video">Vídeo (public/media/carros/topo.mp4)</option>
               <option value="image">
-                Imagem (public/hero/hero.jpg)
+                Imagem (public/media/carros/topo.jpg)
               </option>
             </select>
             <p className="mt-1.5 text-xs text-paper/50">
-              Coloque o ficheiro na pasta <code>public/hero/</code>: vídeo em{" "}
-              <code>hero.mp4</code> ou imagem em <code>hero.jpg</code> (também
+              Coloque o ficheiro na pasta <code>public/media/carros/</code>: vídeo em{" "}
+              <code>topo.mp4</code> ou imagem em <code>topo.jpg</code> (também
               aceita png/webp/avif). &quot;Automático&quot; escolhe o vídeo se
-              existir, senão a imagem.
+              existir, senão a imagem. As motas usam sempre o ficheiro que
+              estiver em <code>public/media/motas/</code>.
             </p>
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">

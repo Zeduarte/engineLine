@@ -20,9 +20,9 @@ export interface HeroContent {
   secondaryCta: CtaContent;
   /**
    * O que mostrar no fundo do hero:
-   *  - "auto"  → deteta pelo ficheiro em public/hero/ (mp4 → vídeo, senão imagem)
-   *  - "video" → força o vídeo (public/hero/hero.mp4)
-   *  - "image" → força a imagem (public/hero/hero.jpg|png|webp|avif)
+   *  - "auto"  → deteta pelo ficheiro em public/media/carros/ (mp4 → vídeo, senão imagem)
+   *  - "video" → força o vídeo (public/media/carros/topo.mp4)
+   *  - "image" → força a imagem (public/media/carros/topo.jpg|png|webp|avif)
    */
   media: "auto" | "video" | "image";
 }

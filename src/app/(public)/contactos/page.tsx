@@ -7,6 +7,7 @@ import { Parallax } from "@/components/ui/Parallax";
 import { ContactForm } from "@/components/forms/ContactForm";
 import { waHref } from "@/lib/branding";
 import { getBranding } from "@/lib/queries";
+import { COMMON_MEDIA } from "@/lib/media";
 
 export const metadata: Metadata = {
   title: "Contactos",
@@ -38,7 +39,7 @@ export default async function ContactsPage() {
       <div className="container-px">
         <Locations items={(await getShowroomContent()).locations} />
       </div>
-      {/* Banner com parallax subtil. A foto (public/images/contactos.jpg) é
+      {/* Banner com parallax subtil. A foto (public/media/comum/contactos.jpg) é
           opcional: se faltar, fica o gradiente por baixo — nunca dá imagem
           partida. Basta colocar o ficheiro para aparecer automaticamente. */}
       <section className="container-px mt-12">
@@ -47,7 +48,7 @@ export default async function ContactsPage() {
             <div
               aria-hidden
               className="h-full w-full bg-cover bg-center"
-              style={{ backgroundImage: "url(/images/contactos.jpg)" }}
+              style={{ backgroundImage: `url(${COMMON_MEDIA.contactos})` }}
             />
           </Parallax>
         </div>

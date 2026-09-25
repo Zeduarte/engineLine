@@ -2,6 +2,7 @@
 
 import { useVehicleWorld } from "@/components/site/VehicleWorld";
 import { MOTORCYCLE_BODIES } from "@/lib/vehicle-categories";
+import { mediaFor } from "@/lib/media";
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { VehicleCard } from "@/components/vehicle/VehicleCard";
@@ -233,10 +234,10 @@ export function CarQuiz({ vehicles }: { vehicles: Vehicle[] }) {
           </div>
 
           {/* Banner do quiz (em todos os passos) — imagem definível em
-              public/images/quiz.jpg (fallback: fundo sólido). */}
+              quiz.jpg em public/media/carros|motas/ (fallback: fundo sólido). */}
           <div
             className="relative mt-6 h-40 overflow-hidden rounded-2xl border border-white/10 bg-ink-soft bg-cover bg-center md:h-56"
-            style={{ backgroundImage: world === "motorcycle" ? "url(/entrance/motorcycle.jpg)" : "url(/images/quiz.jpg)" }}
+            style={{ backgroundImage: `url(${mediaFor(world).quiz})` }}
           >
             <div
               aria-hidden

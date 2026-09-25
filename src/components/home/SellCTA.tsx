@@ -1,8 +1,9 @@
 import type { VehicleType } from "@/lib/vehicle-categories";
 import Link from "next/link";
+import { mediaFor } from "@/lib/media";
 
 /**
- * Chamada para retoma / encomenda. A foto (public/images/showcase.jpg) é o
+ * Chamada para retoma / encomenda. A foto (retoma.jpg em public/media/carros|motas/) é o
  * FUNDO do card, com um escurecimento diagonal para o texto se manter legível.
  * Se a imagem não existir, fica o fundo sólido (bg-ink-soft) — nada parte.
  */
@@ -14,7 +15,7 @@ export function SellCTA({vehicleType = "car"}:{vehicleType?:VehicleType}) {
         <div
           aria-hidden
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: vehicleType === "motorcycle" ? "url(/entrance/motorcycle.jpg)" : "url(/images/showcase.jpg)" }}
+          style={{ backgroundImage: `url(${mediaFor(vehicleType).retoma})` }}
         />
         {/* Escurecimento para contraste do texto (mais escuro à esquerda). */}
         <div

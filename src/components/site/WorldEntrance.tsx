@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } fr
 import { usePathname } from "next/navigation";
 import type { VehicleType } from "@/lib/vehicle-categories";
 import { asset } from "@/lib/asset";
+import { mediaFor } from "@/lib/media";
 import styles from "./WorldEntrance.module.css";
 
 /** First visit selects the persistent public vehicle category. */
@@ -94,7 +95,7 @@ export function WorldEntrance({ name, selected }: { name: string; selected: Vehi
         <span className={styles.opening} aria-hidden />
         <button className={`${styles.world} ${styles.moto}`} onPointerMove={move} onPointerLeave={reset} onClick={() => enter("motorcycle", "Liberdade sobre duas rodas")} aria-label="Escolher motas e entrar no site">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={asset("/entrance/motorcycle.jpg")} alt="" fetchPriority="high" className={styles.photo} />
+          <img src={asset(mediaFor("motorcycle").entrada)} alt="" fetchPriority="high" className={styles.photo} />
           <span className={styles.shade} />
           <span className={styles.light} aria-hidden />
           <span className={styles.speedLines} aria-hidden><i /><i /><i /></span>
@@ -109,7 +110,7 @@ export function WorldEntrance({ name, selected }: { name: string; selected: Vehi
         <span className={styles.divider} aria-hidden><span>&</span></span>
         <button className={`${styles.world} ${styles.car}`} onPointerMove={move} onPointerLeave={reset} onClick={() => enter("car", "Paixão em quatro rodas")} aria-label="Escolher carros e entrar no site">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={asset("/hero/porse.jpeg")} alt="" fetchPriority="high" className={styles.photo} />
+          <img src={asset(mediaFor("car").entrada)} alt="" fetchPriority="high" className={styles.photo} />
           <span className={styles.shade} />
           <span className={styles.light} aria-hidden />
           <span className={styles.speedLines} aria-hidden><i /><i /><i /></span>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { Reveal } from "@/components/ui/Reveal";
 import { waHref, DEFAULT_COMPANY, type Company } from "@/lib/branding";
+import { COMMON_MEDIA } from "@/lib/media";
 import {
   DEFAULT_HOME_CONTENT,
   type CtaSectionContent,
@@ -17,12 +18,12 @@ export function ContactCTA({
   return (
     <section className="container-px py-24 md:py-40">
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-ink-soft px-6 py-20 text-center md:px-16 md:py-32">
-        {/* Imagem de fundo (public/images/contacto-cta.jpg) + escurecimento
+        {/* Imagem de fundo (public/media/comum/contacto.jpg) + escurecimento
             para o texto se manter legível. Fallback: fundo sólido. */}
         <div
           aria-hidden
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url(/images/contacto-cta.jpg)" }}
+          style={{ backgroundImage: `url(${COMMON_MEDIA.contacto})` }}
         />
         <div
           aria-hidden
