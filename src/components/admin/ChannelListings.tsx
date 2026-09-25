@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { CHANNELS } from "@/lib/schemas";
 import { saveListing } from "@/lib/actions/channels";
+import { retryOlxListing } from "@/lib/actions/olx";
+import { REMOTE_STATUS_LABEL } from "@/lib/olx/lifecycle";
 import type {
   ChannelListingRow,
   ChannelListingStatus,
@@ -70,7 +72,12 @@ export function ChannelListings({
         </p>
       ) : (
         <div className="space-y-4">
-          {selected.map((c) => (
+          {selected.map((c) =>
+            // O OLX é publicado pelo próprio sistema: mostra-se o estado real,
+            // não um formulário para o registar à mão.
+            c.id === "olx" ? (
+              <OlxRow key={c.id} carId={carId} listing={byChannel.get(c.id) ?? null} />
+            ) : (
             <ChannelRow
               key={c.id}
               carId={carId}
@@ -78,7 +85,8 @@ export function ChannelListings({
               channelLabel={c.label}
               listing={byChannel.get(c.id) ?? null}
             />
-          ))}
+            ),
+          )}
         </div>
       )}
     </section>
@@ -196,6 +204,68 @@ function ChannelRow({
           </a>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Estado da publicação automática no OLX. */
+function OlxRow({ carId, listing }: { carId: string; listing: ChannelListingRow | null }) {
+  const [pending, startTransition] = useTransition();
+  const estado = listing?.remote_status
+    ? REMOTE_STATUS_LABEL[listing.remote_status] ?? listing.remote_status
+    : listing?.sync_state === "pending"
+      ? "a publicar…"
+      : "ainda não publicado";
+  const erro = listing?.sync_state === "error" || listing?.remote_status === "limited";
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-paper">OLX</span>
+          <span
+            className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+              erro
+                ? "bg-red-500/20 text-red-300"
+                : listing?.remote_status === "active"
+                  ? "bg-emerald-500/20 text-emerald-300"
+                  : "bg-white/10 text-paper/70"
+            }`}
+          >
+            {estado}
+          </span>
+          <span className="text-xs text-paper/40">automático</span>
+        </div>
+        <div className="flex items-center gap-3 text-xs">
+          {listing?.external_url && (
+            <a href={listing.external_url} target="_blank" rel="noopener noreferrer" className="text-paper/70 hover:text-paper">
+              ↗ Ver no OLX
+            </a>
+          )}
+          <button
+            type="button"
+            disabled={pending}
+            className="btn-ghost px-3 py-1.5 text-xs"
+            onClick={() =>
+              startTransition(async () => {
+                const r = await retryOlxListing(carId);
+                if (r.ok) toast.success(r.message ?? "Sincronizado.");
+                else toast.error(r.error ?? "Não foi possível sincronizar.");
+              })
+            }
+          >
+            {pending ? "A sincronizar…" : "Sincronizar agora"}
+          </button>
+        </div>
+      </div>
+      {listing?.last_error && (
+        <p className="mt-3 text-sm text-red-300">{listing.last_error}</p>
+      )}
+      {listing?.last_synced_at && (
+        <p className="mt-2 text-xs text-paper/40">
+          Última sincronização: {new Date(listing.last_synced_at).toLocaleString("pt-PT")}
+        </p>
+      )}
     </div>
   );
 }

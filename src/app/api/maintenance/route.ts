@@ -2,6 +2,8 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { processNotificationJobs } from "@/lib/notifications";
+import { refreshIfNeeded } from "@/lib/olx/client";
+import { syncPending } from "@/lib/olx/sync";
 export const runtime = "nodejs";
 export async function POST(request: Request) {
   const secret = process.env.MAINTENANCE_SECRET;
@@ -17,5 +19,13 @@ export async function POST(request: Request) {
   // Mensagens do WhatsApp já vistas (7 dias) e propostas resolvidas (1 dia).
   // A expiração das propostas é decidida no código; isto só recupera espaço.
   await db.rpc("prune_whatsapp");
+  // OLX: mantém o token vivo e repete as sincronizações que falharam. Uma
+  // falha do OLX não pode fazer falhar a manutenção do resto.
+  try {
+    await refreshIfNeeded(db);
+    await syncPending(db);
+  } catch (e) {
+    console.error("maintenance olx:", e);
+  }
   return NextResponse.json(result,{status:result.ok ? 200 : 503});
 }

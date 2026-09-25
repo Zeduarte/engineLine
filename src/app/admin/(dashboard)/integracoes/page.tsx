@@ -8,12 +8,19 @@ import {
 } from "@/components/admin/IntegrationsForm";
 import { FeedUrls } from "@/components/admin/FeedUrls";
 import { WhatsAppPanel } from "@/components/admin/WhatsAppPanel";
+import { OlxPanel } from "@/components/admin/OlxPanel";
 import { site } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
-export default async function IntegrationsPage() {
+export default async function IntegrationsPage({
+  searchParams,
+}: {
+  // O retorno do OAuth do OLX volta aqui com ?olx=ligado|erro|… para avisar.
+  searchParams: Promise<{ olx?: string; detalhe?: string }>;
+}) {
   await requireSection("integracoes");
+  const { olx, detalhe } = await searchParams;
 
   const [settings, integrations] = await Promise.all([
     getSiteSettings(),
@@ -43,6 +50,7 @@ export default async function IntegrationsPage() {
         />
         <IntegrationsForm initial={integrations as IntegrationsInitial} />
         <FeedUrls baseUrl={baseUrl} />
+        <OlxPanel status={olx} detalhe={detalhe} />
         <WhatsAppPanel baseUrl={baseUrl} />
         <NotificationStatus />
       </div>

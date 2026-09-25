@@ -8,6 +8,7 @@ import { carFormSchema } from "@/lib/schemas";
 import { vehicleSlug } from "@/lib/slug";
 import { MEDIA_BUCKET } from "@/lib/storage";
 import type { CarInsert, CarStatus } from "@/lib/supabase/database.types";
+import { queueOlxSync, retireOlxAdverts } from "@/lib/olx/queue";
 
 export interface SaveResult {
   ok: boolean;
@@ -124,6 +125,8 @@ export async function createCar(input: unknown): Promise<SaveResult> {
   }
 
   revalidatePublic(data.slug);
+  // O anúncio do OLX acompanha a viatura (se tiver OLX marcado nos canais).
+  await queueOlxSync([data.id]);
   return { ok: true, id: data.id, slug: data.slug };
 }
 
@@ -155,6 +158,8 @@ export async function updateCar(
   }
 
   revalidatePublic(data.slug);
+  // O anúncio do OLX acompanha a viatura (se tiver OLX marcado nos canais).
+  await queueOlxSync([data.id]);
   return { ok: true, id: data.id, slug: data.slug };
 }
 
@@ -172,6 +177,8 @@ export async function setCarStatus(
     .single();
   if (error) return { ok: false, error: error.message };
   revalidatePublic(data.slug);
+  // Vendida sai do OLX; publicada volta a entrar.
+  await queueOlxSync([id]);
   return { ok: true };
 }
 
@@ -251,6 +258,7 @@ export async function deleteCar(id: string): Promise<SaveResult> {
   const paths = (media ?? [])
     .map((m) => m.storage_path)
     .filter((p) => !/^https?:\/\//i.test(p));
+  await retireOlxAdverts([id]);
   const { error } = await supabase.from("cars").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
   if (paths.length) {
@@ -278,6 +286,7 @@ export async function bulkSetStatus(
     .in("id", ids);
   if (error) return { ok: false, error: error.message };
   revalidatePublic();
+  await queueOlxSync(ids);
   return { ok: true };
 }
 
@@ -293,6 +302,7 @@ export async function bulkDelete(ids: string[]): Promise<SaveResult> {
   const paths = (media ?? [])
     .map((m) => m.storage_path)
     .filter((p) => !/^https?:\/\//i.test(p));
+  await retireOlxAdverts(ids);
   const { error } = await supabase.from("cars").delete().in("id", ids);
   if (error) return { ok: false, error: error.message };
   if (paths.length) {

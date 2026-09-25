@@ -343,4 +343,20 @@ await test('the WhatsApp state tables are unreachable from a logged-in session',
  });
 });
 
+await test('OLX tokens and cache are unreachable from any logged-in session',async()=>{
+ // Os tokens dão acesso total à conta do OLX do stand: nem um administrador
+ // os pode ler pela API.
+ for(const t of ['olx_connection','olx_category_cache'])
+  await asUser(admin,async()=>assert.rejects(db.query(`select * from public.${t}`),/permission denied/,t));
+ // O servidor sim, e só há uma ligação.
+ await asServer(async()=>{
+  await db.query("insert into olx_connection(access_token,refresh_token,expires_at) values('a','r',now())");
+  await assert.rejects(db.query("insert into olx_connection(id,access_token,refresh_token,expires_at) values(2,'a','r',now())"),/check/i);
+ });
+ // A sincronização guarda o estado na tabela que já existia.
+ const r=(await db.query(`insert into channel_listings(car_id,channel,sync_state) values($1,'olx','pending') returning sync_state,attempts`,[car])).rows[0];
+ assert.deepEqual(r,{sync_state:'pending',attempts:0});
+ await assert.rejects(db.query(`update channel_listings set sync_state='qualquer' where car_id=$1`,[car]),/check/i);
+});
+
 await db.close();

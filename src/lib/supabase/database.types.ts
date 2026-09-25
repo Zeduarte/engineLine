@@ -427,6 +427,12 @@ type ChannelListingsRow = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  /** Sincronização automática (0025): só o OLX a usa por agora. */
+  sync_state: "idle" | "pending" | "syncing" | "error";
+  last_error: string | null;
+  last_synced_at: string | null;
+  remote_status: string | null;
+  attempts: number;
 };
 type ChannelListingsInsert = {
   id?: string;
@@ -438,6 +444,11 @@ type ChannelListingsInsert = {
   published_at?: string | null;
   notes?: string | null;
   created_by?: string | null;
+  sync_state?: "idle" | "pending" | "syncing" | "error";
+  last_error?: string | null;
+  last_synced_at?: string | null;
+  remote_status?: string | null;
+  attempts?: number;
 };
 type ChannelListingsUpdate = Partial<ChannelListingsInsert>;
 
@@ -507,9 +518,45 @@ export type WaVehicleSummary = {
   status: string;
 };
 
+/** Ligação à conta do OLX. Só o servidor lê esta linha (tem os tokens). */
+export type OlxConnectionRow = {
+  id: number;
+  access_token: string;
+  refresh_token: string;
+  expires_at: string;
+  olx_user_id: string | null;
+  olx_user_name: string | null;
+  city_id: number | null;
+  district_id: number | null;
+  connected_by: string | null;
+  connected_at: string;
+  updated_at: string;
+};
+
+export type OlxCategoryCacheRow = {
+  vehicle_type: string;
+  category_id: number;
+  category_name: string;
+  photos_limit: number;
+  attributes: Json;
+  fetched_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
+      olx_connection: {
+        Row: OlxConnectionRow;
+        Insert: Partial<OlxConnectionRow> & { access_token: string; refresh_token: string; expires_at: string };
+        Update: Partial<OlxConnectionRow>;
+        Relationships: [];
+      };
+      olx_category_cache: {
+        Row: OlxCategoryCacheRow;
+        Insert: Partial<OlxCategoryCacheRow> & { vehicle_type: string; category_id: number };
+        Update: Partial<OlxCategoryCacheRow>;
+        Relationships: [];
+      };
       wa_messages: {
         Row: WaMessageRow;
         Insert: { wam_id: string; from_phone: string; actor_id?: string | null;
