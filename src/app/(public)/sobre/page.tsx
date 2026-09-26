@@ -31,7 +31,7 @@ const VALUES = [
 
 const STATS = [
   { kpi: "12", label: "anos de experiência" },
-  { kpi: "2 400+", label: "viaturas entregues" },
+  { kpi: "400+", label: "viaturas entregues" },
   { kpi: "4,9/5", label: "satisfação de clientes" },
   { kpi: "150", label: "pontos de inspeção" },
 ];
