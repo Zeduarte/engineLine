@@ -52,9 +52,11 @@ export async function getCurrentProfile(): Promise<ProfileRow | null> {
 export async function getAdminCars(): Promise<CarWithMedia[]> {
   const supabase = await createClient();
   const vehicleType = await getAdminVehicleType();
-  return await allRows((a,b) => supabase.from("cars").select("*, car_media(*)").eq("vehicle_type", vehicleType)
-    // As que estão na oficina só aparecem lá; entram aqui ao serem preparadas.
-    .neq("status", "workshop").order("updated_at", {ascending:false}).order("id").range(a,b)) as unknown as CarWithMedia[];
+  const cars = await allRows((a,b) => supabase.from("cars").select("*, car_media(*)").eq("vehicle_type", vehicleType).order("updated_at", {ascending:false}).order("id").range(a,b)) as unknown as CarWithMedia[];
+  // As que estão na oficina só aparecem lá; entram aqui ao serem preparadas.
+  // Filtra-se aqui e não na query: pedir `status <> 'workshop'` à BD rebenta
+  // se a migração 0027 (que cria esse estado) ainda não tiver sido aplicada.
+  return cars.filter((c) => c.status !== "workshop");
 }
 
 /** Um carro por id, com media ordenada. */
