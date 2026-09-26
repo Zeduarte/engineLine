@@ -33,6 +33,10 @@ await test('CSV exports neutralize spreadsheet formulas and quote delimiters',()
 await test('financial and mechanical access matches business roles',()=>{
  assert.equal(canAccess('mecanico',['leads'],'leads'),false);assert.equal(canAccess('vendedor',null,'financeiro'),false);assert.equal(canAccess('chefe',null,'financeiro'),true);assert.equal(canAccess('admin',[],'financeiro'),true);assert.equal(canManage('chefe','mecanico'),false);
 });
+await test('everyone has the personal Hours section, including mechanics',()=>{
+ for(const [role,allowed] of [['mecanico',null],['vendedor',null],['vendedor',['leads']],['chefe',null],['admin',[]]]) assert.equal(canAccess(role,allowed,'horas'),true,role);
+ assert.equal(canAccess('mecanico',null,'leads'),false);
+});
 await test('only the account owner manages other admins',()=>{
  assert.equal(canManage('admin','admin'),false);assert.equal(canManage('admin','admin',false),false);assert.equal(canManage('admin','admin',true),true);
  assert.equal(canManage('chefe','admin',true),false);assert.equal(canManage('admin','chefe'),true);assert.equal(canManage('admin','mecanico'),true);assert.equal(canManage('chefe','vendedor'),true);

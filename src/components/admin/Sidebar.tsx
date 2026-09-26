@@ -24,6 +24,7 @@ const NAV: {
   { href: "/admin/definicoes", label: "Definições", icon: "⚙", exact: false, section: "definicoes" },
   { href: "/admin/financeiro", label: "Custos e margens", icon: "€", exact: false, section: "financeiro" },
   { href: "/admin/oficina", label: "Oficina", icon: "⚒", exact: false, section: "oficina" },
+  { href: "/admin/horas", label: "Horas", icon: "◷", exact: false, section: "horas" },
 ];
 
 export function Sidebar({

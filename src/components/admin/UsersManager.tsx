@@ -18,6 +18,7 @@ import {
   ROLE_LABEL,
   SECTIONS,
   ALWAYS,
+  PERSONAL,
   type Role,
   type Section,
 } from "@/lib/permissions";
@@ -361,7 +362,8 @@ function UserRow({
                 Escolha os separadores a que este utilizador tem acesso.
               </p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {managerSections.map((s) => {
+                {/* As Horas são pessoais: toda a gente as tem, não se atribuem. */}
+                {managerSections.filter((s) => s !== PERSONAL).map((s) => {
                   const locked = s === ALWAYS;
                   return (
                     <label

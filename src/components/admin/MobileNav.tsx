@@ -19,6 +19,7 @@ const NAV: { href: string; label: string; exact: boolean; section: Section }[] =
   { href: "/admin/definicoes", label: "Definições", exact: false, section: "definicoes" },
   { href: "/admin/financeiro", label: "Custos e margens", exact: false, section: "financeiro" },
   { href: "/admin/oficina", label: "Oficina", exact: false, section: "oficina" },
+  { href: "/admin/horas", label: "Horas", exact: false, section: "horas" },
 ];
 
 export function MobileNav({

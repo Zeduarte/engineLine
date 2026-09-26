@@ -412,6 +412,29 @@ type VehicleTasksInsert = {
 };
 type VehicleTasksUpdate = Partial<VehicleTasksInsert>;
 
+// ---- time_entries (horas fora das viaturas, por utilizador) ----------------
+type TimeEntriesRow = {
+  id: string;
+  profile_id: string;
+  work_date: string; // "YYYY-MM-DD"
+  start_time: string; // "HH:MM:SS"
+  end_time: string | null;
+  hours: number;
+  description: string;
+  created_at: string;
+  updated_at: string;
+};
+type TimeEntriesInsert = {
+  id?: string;
+  profile_id?: string;
+  work_date?: string;
+  start_time: string;
+  end_time?: string | null;
+  hours?: number;
+  description: string;
+};
+type TimeEntriesUpdate = Partial<TimeEntriesInsert>;
+
 // ---- channel_listings (estado de publicação por portal) --------------------
 export type ChannelListingStatus =
   | "pending"
@@ -685,6 +708,12 @@ export type Database = {
         Update: VehicleTasksUpdate;
         Relationships: [];
       };
+      time_entries: {
+        Row: TimeEntriesRow;
+        Insert: TimeEntriesInsert;
+        Update: TimeEntriesUpdate;
+        Relationships: [];
+      };
       channel_listings: {
         Row: ChannelListingsRow;
         Insert: ChannelListingsInsert;
@@ -802,6 +831,7 @@ export type CarMediaRow = CarMediaRowT;
 export type LeadRow = LeadsRow;
 export type ProfileRow = ProfilesRow;
 export type VehicleTaskRow = VehicleTasksRow;
+export type TimeEntryRow = TimeEntriesRow;
 export type ChannelListingRow = ChannelListingsRow;
 export type ChannelListingInsert = ChannelListingsInsert;
 

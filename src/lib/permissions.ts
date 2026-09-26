@@ -25,6 +25,7 @@ export type Section =
   | "utilizadores"
   | "definicoes"
   | "oficina"
+  | "horas"
   | "financeiro";
 
 export const ROLE_RANK: Record<Role, number> = {
@@ -59,6 +60,7 @@ export const SECTIONS: {
   { key: "definicoes", label: "Definições", href: "/admin/definicoes", exact: false },
   { key: "financeiro", label: "Custos e margens", href: "/admin/financeiro", exact: false },
   { key: "oficina", label: "Oficina", href: "/admin/oficina", exact: false },
+  { key: "horas", label: "Horas", href: "/admin/horas", exact: false },
 ];
 
 export const ALL_SECTIONS: Section[] = SECTIONS.map((s) => s.key);
@@ -81,20 +83,28 @@ function isRole(x: string): x is Role {
 /** O Dashboard está sempre acessível (evita bloqueios/loops de redireção). */
 export const ALWAYS: Section = "dashboard";
 
+/**
+ * As Horas são pessoais: toda a gente as tem (cada um regista as suas), por
+ * isso não são um separador que se atribui em Utilizadores.
+ */
+export const PERSONAL: Section = "horas";
+
 /** Separadores efetivos de um utilizador. Admin → todos. */
 export function effectiveSections(
   role: string,
   allowed?: string[] | null,
 ): Section[] {
   if (role === "admin") return ALL_SECTIONS;
-  // O mecânico é um caso especial: só a Oficina, sem forçar o dashboard.
-  if (role === "mecanico") return ["oficina"];
+  // O mecânico é um caso especial: só a Oficina (e as suas Horas), sem forçar
+  // o dashboard.
+  if (role === "mecanico") return ["oficina", PERSONAL];
   const r: Role = isRole(role) ? role : "vendedor";
   const base =
     allowed && allowed.length
       ? ALL_SECTIONS.filter((s) => allowed.includes(s))
       : DEFAULT_SECTIONS[r];
-  return base.includes(ALWAYS) ? base : [ALWAYS, ...base];
+  const withDashboard = base.includes(ALWAYS) ? base : [ALWAYS, ...base];
+  return withDashboard.includes(PERSONAL) ? withDashboard : [...withDashboard, PERSONAL];
 }
 
 /** O utilizador tem acesso a um separador? */

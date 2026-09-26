@@ -104,6 +104,24 @@ await test('workshop vehicle becomes prepared, can go back, and only the right p
  await asUser(admin,async()=>assert.rejects(db.query('select return_vehicle_to_workshop($1)',[car]),/preparada ou em rascunho/));
  await db.query('delete from cars where id=$1',[id]);
 });
+await test('personal hours: each person sees and edits only their own, admin sees all, totals are computed',async()=>{
+ const mine=await asUser(seller,async()=>(await db.query("insert into time_entries(work_date,start_time,end_time,hours,description) values(current_date,'09:00','10:30',99,'Atendimento') returning id,hours,profile_id")).rows[0]);
+ assert.equal(Number(mine.hours),1.5);assert.equal(mine.profile_id,seller);
+ // Ninguém regista em nome de outro.
+ await asUser(seller,async()=>assert.rejects(db.query("insert into time_entries(profile_id,start_time,description) values($1,'09:00','x')",[mechanic]),/row-level security/));
+ // Outro utilizador não vê nem apaga.
+ await asUser(mechanic,async()=>{
+  assert.equal((await db.query('select * from time_entries where id=$1',[mine.id])).rows.length,0);
+  assert.equal((await db.query('delete from time_entries where id=$1 returning id',[mine.id])).rows.length,0);
+ });
+ await asUser(null,async()=>assert.rejects(db.query('select * from time_entries'),/permission denied/),'anon');
+ // O administrador vê e corrige.
+ await asUser(admin,async()=>{
+  assert.equal((await db.query('select * from time_entries where id=$1',[mine.id])).rows.length,1);
+  assert.equal(Number((await db.query("update time_entries set end_time='11:00' where id=$1 returning hours",[mine.id])).rows[0].hours),2);
+ });
+ await asUser(seller,async()=>assert.equal((await db.query('delete from time_entries where id=$1 returning id',[mine.id])).rows.length,1));
+});
 await test('workshop hours are recalculated even when API submits forged totals',async()=>asUser(mechanic,async()=>{
  const row=(await db.query("insert into vehicle_tasks(car_id,work_date,start_time,end_time,hours) values($1,current_date,'22:00','01:30',999) returning *",[car])).rows[0];
  assert.equal(Number(row.hours),3.5);
