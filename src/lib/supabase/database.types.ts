@@ -51,7 +51,7 @@ export type BodyType =
   | "Touring"
   | "Chopper/Cruiser"
   | "Enduro";
-export type CarStatus = "draft" | "published" | "reserved" | "sold";
+export type CarStatus = "workshop" | "draft" | "prepared" | "published" | "reserved" | "sold";
 export type MediaKind = "image" | "video";
 export type LeadKind =
   | "contact"
@@ -739,6 +739,14 @@ export type Database = {
       create_workshop_intake_for_type: {
         Args: {vehicle_name:string;plate:string;selected_type:string};
         Returns:string;
+      };
+      mark_vehicle_prepared: {
+        Args: { vehicle: string };
+        Returns: undefined;
+      };
+      return_vehicle_to_workshop: {
+        Args: { vehicle: string };
+        Returns: undefined;
       };
       analytics_summary_by_type: {
         Args: {selected_type:string};

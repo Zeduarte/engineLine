@@ -10,6 +10,7 @@ import { CarForm } from "@/components/admin/CarForm";
 import { MediaManager, type MediaItem } from "@/components/admin/MediaManager";
 import { ChannelListings } from "@/components/admin/ChannelListings";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { WorkshopStage } from "@/components/admin/WorkshopStage";
 import type { CarFormValues } from "@/lib/schemas";
 
 export const dynamic = "force-dynamic";
@@ -87,6 +88,9 @@ export default async function EditCarPage({ params }: { params: Params }) {
             <StatusBadge status={car.status} />
           </div>
         </div>
+        {(car.status === "prepared" || car.status === "draft") && (
+          <WorkshopStage carId={car.id} status={car.status} leaveTo="/admin/carros" />
+        )}
         {car.status === "published" && (
           <Link
             prefetch={false}

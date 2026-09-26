@@ -52,7 +52,9 @@ export async function getCurrentProfile(): Promise<ProfileRow | null> {
 export async function getAdminCars(): Promise<CarWithMedia[]> {
   const supabase = await createClient();
   const vehicleType = await getAdminVehicleType();
-  return await allRows((a,b) => supabase.from("cars").select("*, car_media(*)").eq("vehicle_type", vehicleType).order("updated_at", {ascending:false}).order("id").range(a,b)) as unknown as CarWithMedia[];
+  return await allRows((a,b) => supabase.from("cars").select("*, car_media(*)").eq("vehicle_type", vehicleType)
+    // As que estão na oficina só aparecem lá; entram aqui ao serem preparadas.
+    .neq("status", "workshop").order("updated_at", {ascending:false}).order("id").range(a,b)) as unknown as CarWithMedia[];
 }
 
 /** Um carro por id, com media ordenada. */

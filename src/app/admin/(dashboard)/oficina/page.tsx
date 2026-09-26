@@ -14,7 +14,8 @@ export default async function OficinaPage() {
         <h1 className="text-2xl font-bold text-paper">Oficina</h1>
         <p className="mt-1 text-sm text-paper/50">
           Registe as horas de trabalho de cada viatura. Escolha uma viatura ou
-          adicione uma nova pela matrícula.
+          adicione uma nova pela matrícula. Quando estiver pronta, dê-a como
+          preparada: passa para Viaturas.
         </p>
       </div>
       <WorkshopList vehicles={vehicles} />

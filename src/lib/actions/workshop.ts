@@ -6,6 +6,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireSection } from "@/lib/guard";
 import { worklogHours } from "@/lib/operations";
+import { getCurrentProfile } from "@/lib/admin-queries";
+import { canAccess } from "@/lib/permissions";
 
 export interface ActionResult {
   ok: boolean;
@@ -153,8 +155,8 @@ const newVehicleSchema = z.object({
 
 /**
  * O mecânico cria uma viatura mínima (só nome + matrícula). Os restantes campos
- * obrigatórios recebem valores por defeito; fica em rascunho (não aparece no
- * site) até alguém completar a ficha.
+ * obrigatórios recebem valores por defeito; fica "Na oficina" (só aparece na
+ * Oficina) até ser dada como preparada.
  */
 export async function createWorkshopVehicle(
   formData: FormData,
@@ -176,4 +178,44 @@ export async function createWorkshopVehicle(
   if (error || !data) return { ok: false, error: "Não foi possível criar a viatura." };
   revalidatePath("/admin/oficina");
   return { ok: true, id: data };
+}
+
+/**
+ * Oficina → Preparado: a viatura sai da oficina e passa a aparecer em
+ * Viaturas, para o vendedor completar a ficha e publicar.
+ */
+export async function markVehiclePrepared(id: string): Promise<ActionResult> {
+  await requireSection("oficina");
+  if (!z.string().uuid().safeParse(id).success) return { ok: false, error: "Viatura inválida." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("mark_vehicle_prepared", { vehicle: id });
+  if (error) return { ok: false, error: rpcMessage(error.message, "Não foi possível dar a viatura como preparada.") };
+  revalidateVehicle(id);
+  return { ok: true };
+}
+
+/** Preparado (ou rascunho) → volta para a oficina e sai de Viaturas. */
+export async function returnVehicleToWorkshop(id: string): Promise<ActionResult> {
+  const profile = await getCurrentProfile();
+  if (!profile) return { ok: false, error: "Sem sessão." };
+  if (!canAccess(profile.role, profile.allowed_sections, "oficina") && !canAccess(profile.role, profile.allowed_sections, "carros"))
+    return { ok: false, error: "Sem permissão." };
+  if (!z.string().uuid().safeParse(id).success) return { ok: false, error: "Viatura inválida." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("return_vehicle_to_workshop", { vehicle: id });
+  if (error) return { ok: false, error: rpcMessage(error.message, "Não foi possível devolver a viatura à oficina.") };
+  revalidateVehicle(id);
+  return { ok: true };
+}
+
+/** As mensagens das funções da BD já estão em português; o resto não se mostra. */
+function rpcMessage(message: string, fallback: string): string {
+  return /oficina|preparada|rascunho|permissão|não encontrada/i.test(message) ? message : fallback;
+}
+
+function revalidateVehicle(id: string) {
+  revalidatePath("/admin/oficina");
+  revalidatePath(`/admin/oficina/${id}`);
+  revalidatePath("/admin/carros");
+  revalidatePath(`/admin/carros/${id}`);
 }

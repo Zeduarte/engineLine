@@ -6,6 +6,9 @@ import { requireSection } from "@/lib/guard";
 import { getWorkshopVehicle, getWorkshopCosts } from "@/lib/workshop";
 import { TaskManager } from "@/components/admin/TaskManager";
 import { WorkshopCostsPanel } from "@/components/admin/WorkshopCostsPanel";
+import { WorkshopStage } from "@/components/admin/WorkshopStage";
+import { StatusBadge } from "@/components/admin/StatusBadge";
+import type { CarStatus } from "@/lib/supabase/database.types";
 
 export const dynamic = "force-dynamic";
 
@@ -42,10 +45,21 @@ export default async function OficinaVehiclePage({
             {vehicle.plate || "— sem matrícula —"}
           </p>
         </div>
-        <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-paper/60">
-          {vehicle.year}
-        </span>
+        {vehicle.year && (
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-paper/60">
+            {vehicle.year}
+          </span>
+        )}
+        <StatusBadge status={vehicle.status as CarStatus} />
+        <div className="sm:ml-auto">
+          <WorkshopStage carId={vehicle.id} status={vehicle.status as CarStatus} />
+        </div>
       </div>
+      {vehicle.status === "prepared" && (
+        <p className="-mt-3 mb-6 text-sm text-paper/50">
+          Preparada: já aparece em Viaturas para ser completada e publicada.
+        </p>
+      )}
 
       {/* Fotos (só ver) */}
       {vehicle.photos.length > 0 && (
