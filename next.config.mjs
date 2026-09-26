@@ -23,6 +23,11 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["framer-motion", "gsap"],
   },
+  // As imagens e vídeos de public/ são servidos pela CDN; nunca devem ir dentro
+  // da função do servidor (o Netlify recusa funções com mais de 250 MB).
+  outputFileTracingExcludes: {
+    "*": ["public/**/*"],
+  },
 };
 
 export default nextConfig;

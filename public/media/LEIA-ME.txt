@@ -13,6 +13,10 @@ servidor e corre  npm run dev:clean
 
 As fotografias das viaturas NÃO estão aqui: essas carregam-se no backoffice.
 
+A lista de ficheiros (src/lib/media-manifest.json) atualiza-se sozinha no
+build e no  npm run dev. Se correres os testes depois de mudar ficheiros aqui,
+corre antes:  node scripts/media-manifest.mjs
+
 
 carros/ e motas/ (os mesmos nomes nas duas pastas)
 --------------------------------------------------

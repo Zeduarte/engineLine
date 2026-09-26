@@ -1,7 +1,6 @@
 import "server-only";
-import fs from "node:fs";
-import path from "node:path";
 import { mediaDir } from "@/lib/media";
+import manifest from "@/lib/media-manifest.json";
 import type { VehicleType } from "@/lib/vehicle-categories";
 
 /**
@@ -12,7 +11,9 @@ import type { VehicleType } from "@/lib/vehicle-categories";
  *  - nada                               → vídeo, que mostra o `topo-poster.jpg`
  *
  * Assim o dono do site troca entre vídeo e imagem só substituindo o ficheiro,
- * sem mexer no código. A deteção corre no servidor (build/render).
+ * sem mexer no código. A deteção usa `media-manifest.json`, gerado no build
+ * (scripts/media-manifest.mjs) — nunca o disco: ler `public/` com um caminho
+ * variável fazia o Next meter a pasta inteira na função do Netlify (>250 MB).
  */
 export type HeroMedia =
   | { type: "video"; src: string; poster: string }
@@ -20,17 +21,15 @@ export type HeroMedia =
   // (cross-fade). Útil p/ efeitos tipo "semáforo vermelho -> verde".
   | { type: "image"; src: string; src2?: string };
 
+const EXISTING = new Set<string>(manifest);
+
 /**
  * Caminho público de um ficheiro opcional do mundo (`OPTIONAL_MEDIA`), ou null
  * se não existir — para o site não pedir ficheiros que não estão lá.
  */
 export function existingMedia(type: VehicleType, file: string): string | null {
   const rel = `${mediaDir(type)}/${file}`;
-  try {
-    return fs.existsSync(path.join(process.cwd(), "public", rel)) ? rel : null;
-  } catch {
-    return null;
-  }
+  return EXISTING.has(rel) ? rel : null;
 }
 
 const EXTENSIONS = ["jpg", "jpeg", "png", "webp", "avif"];
@@ -38,7 +37,7 @@ const EXTENSIONS = ["jpg", "jpeg", "png", "webp", "avif"];
 function firstExisting(dir: string, base: string): string | null {
   for (const ext of EXTENSIONS) {
     const name = `${base}.${ext}`;
-    if (fs.existsSync(path.join(process.cwd(), "public", dir, name))) return `${dir}/${name}`;
+    if (EXISTING.has(`${dir}/${name}`)) return `${dir}/${name}`;
   }
   return null;
 }
@@ -66,21 +65,10 @@ export function getHeroMedia(
   type: VehicleType = "car",
 ): HeroMedia {
   const dir = mediaDir(type);
-  try {
-    if (mode === "video") return video(dir);
+  if (mode === "video") return video(dir);
 
-    if (mode === "image") {
-      // A deteção corre no build, onde public/ está disponível — por isso uma
-      // imagem commitada é sempre encontrada.
-      return imageMedia(dir) ?? video(dir);
-    }
-
-    // auto
-    if (fs.existsSync(path.join(process.cwd(), "public", dir, "topo.mp4"))) return video(dir);
-    const img = imageMedia(dir);
-    if (img) return img;
-  } catch {
-    // fs indisponível (ambiente sem acesso ao disco) — usa o vídeo por defeito.
-  }
-  return video(dir);
+  if (mode === "image") return imageMedia(dir) ?? video(dir);
+  // auto
+  if (EXISTING.has(`${dir}/topo.mp4`)) return video(dir);
+  return imageMedia(dir) ?? video(dir);
 }
