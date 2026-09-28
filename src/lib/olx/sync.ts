@@ -7,6 +7,7 @@ import type { OlxAttributeDef } from "@/lib/olx/attributes";
 import { categoryCandidates, unwrap, type OlxCategory } from "@/lib/olx/categories";
 import { getConnection, olxFetch } from "@/lib/olx/client";
 import { desiredAction } from "@/lib/olx/lifecycle";
+import { parseStats, wantsStats } from "@/lib/olx/stats";
 import type { Database } from "@/lib/supabase/database.types";
 
 /**
@@ -275,6 +276,58 @@ export async function syncPending(db: Db, limit = 20): Promise<number> {
     .limit(limit);
   for (const row of data ?? []) await syncListing(db, row.car_id);
   return data?.length ?? 0;
+}
+
+export interface StatsRefresh {
+  updated: number;
+  failed: number;
+  /** Primeiro erro, para mostrar no backoffice. */
+  error?: string;
+}
+
+/**
+ * Lê as estatísticas dos anúncios no OLX e guarda-as em `channel_listings`.
+ * `carIds` limita a algumas viaturas; sem ele, todas as que têm anúncio.
+ * Nunca lança: um anúncio que falhe não impede os outros.
+ */
+export async function refreshStats(db: Db, carIds?: string[]): Promise<StatsRefresh> {
+  const result: StatsRefresh = { updated: 0, failed: 0 };
+  if (!(await getConnection(db))) return { ...result, error: "A conta do OLX não está ligada." };
+
+  let q = db
+    .from("channel_listings")
+    .select("id, external_id, status")
+    .eq("channel", CHANNEL)
+    .not("external_id", "is", null);
+  if (carIds?.length) q = q.in("car_id", carIds);
+  const { data, error } = await q;
+  if (error) return { ...result, error: error.message };
+
+  for (const listing of (data ?? []).filter(wantsStats)) {
+    try {
+      const r = await olxFetch<unknown>(db, `/adverts/${listing.external_id}/statistics`);
+      if (!r.ok) {
+        result.failed += 1;
+        result.error ??= r.error ?? "falha ao ler estatísticas";
+        continue;
+      }
+      const s = parseStats(r.data);
+      await db
+        .from("channel_listings")
+        .update({
+          views: s.views,
+          phone_views: s.phoneViews,
+          observers: s.observers,
+          stats_at: new Date().toISOString(),
+        })
+        .eq("id", listing.id);
+      result.updated += 1;
+    } catch (e) {
+      result.failed += 1;
+      result.error ??= e instanceof Error ? e.message : "falha inesperada";
+    }
+  }
+  return result;
 }
 
 export interface CategoryLoadResult {

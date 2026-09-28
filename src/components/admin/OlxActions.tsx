@@ -7,6 +7,7 @@ import {
   chooseOlxCategory,
   disconnectOlx,
   loadOlxCategories,
+  refreshOlxStats,
   syncOlxNow,
   type OlxActionResult,
 } from "@/lib/actions/olx";
@@ -42,6 +43,9 @@ export function OlxActions({ configured, connected }: { configured: boolean; con
             </button>
             <button type="button" className="btn-ghost" disabled={pending} onClick={() => run(syncOlxNow)}>
               Sincronizar agora
+            </button>
+            <button type="button" className="btn-ghost" disabled={pending} onClick={() => run(() => refreshOlxStats())}>
+              Atualizar estatísticas
             </button>
             <button
               type="button"

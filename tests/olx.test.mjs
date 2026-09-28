@@ -21,6 +21,17 @@ function load(path){
  new Function('module','exports','require',outputText)(mod,mod.exports,localRequire);
  cache.set(path,mod.exports);return mod.exports;}
 
+const S=load('src/lib/olx/stats.ts');
+await test('OLX statistics parse direct or wrapped responses; junk becomes unknown, not zero',()=>{
+ assert.deepEqual(S.parseStats({advert_views:123,phone_views:100,users_observing:10}),{views:123,phoneViews:100,observers:10});
+ assert.deepEqual(S.parseStats({data:{advert_views:'45',phone_views:0,users_observing:null}}),{views:45,phoneViews:0,observers:null});
+ assert.deepEqual(S.parseStats({advert_views:-1,phone_views:1.5,users_observing:'x'}),{views:null,phoneViews:null,observers:null});
+ assert.deepEqual(S.parseStats(null),{views:null,phoneViews:null,observers:null});
+ assert.equal(S.wantsStats({external_id:'1',status:'published'}),true);
+ assert.equal(S.wantsStats({external_id:'1',status:'removed'}),false);
+ assert.equal(S.wantsStats({external_id:null,status:'published'}),false);
+});
+
 const T=load('src/lib/olx/text.ts');
 await test('title and description always pass OLX text rules',()=>{
  // "BMW 320d 2018": curto demais e 75% maiúsculas.

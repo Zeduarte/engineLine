@@ -460,6 +460,11 @@ type ChannelListingsRow = {
   last_synced_at: string | null;
   remote_status: string | null;
   attempts: number;
+  /** Estatísticas do anúncio no portal (0030): só o OLX as dá por agora. */
+  views: number | null;
+  phone_views: number | null;
+  observers: number | null;
+  stats_at: string | null;
 };
 type ChannelListingsInsert = {
   id?: string;
@@ -476,6 +481,10 @@ type ChannelListingsInsert = {
   last_synced_at?: string | null;
   remote_status?: string | null;
   attempts?: number;
+  views?: number | null;
+  phone_views?: number | null;
+  observers?: number | null;
+  stats_at?: string | null;
 };
 type ChannelListingsUpdate = Partial<ChannelListingsInsert>;
 

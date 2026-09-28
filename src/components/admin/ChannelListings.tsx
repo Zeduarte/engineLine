@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { CHANNELS } from "@/lib/schemas";
 import { saveListing } from "@/lib/actions/channels";
-import { retryOlxListing } from "@/lib/actions/olx";
+import { refreshOlxStats, retryOlxListing } from "@/lib/actions/olx";
 import { REMOTE_STATUS_LABEL } from "@/lib/olx/lifecycle";
 import type {
   ChannelListingRow,
@@ -208,6 +208,45 @@ function ChannelRow({
   );
 }
 
+const fmt = (n: number | null) => (n === null ? "—" : n.toLocaleString("pt-PT"));
+
+/** Visualizações, telefone e seguidores do anúncio no OLX. */
+function OlxStats({ carId, listing }: { carId: string; listing: ChannelListingRow }) {
+  const [pending, startTransition] = useTransition();
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+      {[
+        ["Visualizações", listing.views],
+        ["Viram o telefone", listing.phone_views],
+        ["A seguir", listing.observers],
+      ].map(([label, value]) => (
+        <span key={label as string} className="rounded-lg bg-white/5 px-3 py-1.5 text-paper/70">
+          {label}: <strong className="text-paper">{fmt(value as number | null)}</strong>
+        </span>
+      ))}
+      <button
+        type="button"
+        disabled={pending}
+        className="text-xs text-paper/50 hover:text-paper"
+        onClick={() =>
+          startTransition(async () => {
+            const r = await refreshOlxStats(carId);
+            if (r.ok) toast.success(r.message ?? "Estatísticas atualizadas.");
+            else toast.error(r.error ?? "Não foi possível atualizar.");
+          })
+        }
+      >
+        {pending ? "A atualizar…" : "↻ Atualizar"}
+      </button>
+      <span className="text-xs text-paper/40">
+        {listing.stats_at
+          ? `atualizado ${new Date(listing.stats_at).toLocaleString("pt-PT")}`
+          : "ainda sem estatísticas"}
+      </span>
+    </div>
+  );
+}
+
 /** Estado da publicação automática no OLX. */
 function OlxRow({ carId, listing }: { carId: string; listing: ChannelListingRow | null }) {
   const [pending, startTransition] = useTransition();
@@ -261,6 +300,7 @@ function OlxRow({ carId, listing }: { carId: string; listing: ChannelListingRow 
       {listing?.last_error && (
         <p className="mt-3 text-sm text-red-300">{listing.last_error}</p>
       )}
+      {listing?.external_id && <OlxStats carId={carId} listing={listing} />}
       {listing?.last_synced_at && (
         <p className="mt-2 text-xs text-paper/40">
           Última sincronização: {new Date(listing.last_synced_at).toLocaleString("pt-PT")}

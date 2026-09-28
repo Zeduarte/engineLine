@@ -13,7 +13,7 @@ import { OlxActions } from "./OlxActions";
 export async function OlxPanel({ status, detalhe }: { status?: string; detalhe?: string }) {
   const configured = olxConfigured();
   const db = createAdminClient();
-  const [conn, cats, erros, contagem] = db
+  const [conn, cats, erros, contagem, estatisticas] = db
     ? await Promise.all([
         db.from("olx_connection").select("olx_user_name,expires_at,city_id,updated_at").eq("id", 1).maybeSingle(),
         db.from("olx_category_cache").select("vehicle_type,category_id,category_name,fetched_at"),
@@ -24,8 +24,28 @@ export async function OlxPanel({ status, detalhe }: { status?: string; detalhe?:
           .not("last_error", "is", null)
           .limit(20),
         db.from("channel_listings").select("remote_status").eq("channel", "olx"),
+        // Anúncios que existem no OLX, dos mais vistos para os menos.
+        db
+          .from("channel_listings")
+          .select("car_id,views,phone_views,observers,stats_at,remote_status,external_url,cars(make,model,license_plate)")
+          .eq("channel", "olx")
+          .not("external_id", "is", null)
+          .order("views", { ascending: false, nullsFirst: false })
+          .limit(100),
       ])
-    : [null, null, null, null];
+    : [null, null, null, null, null];
+
+  const anuncios = (estatisticas?.data ?? []).map((l) => ({
+    ...l,
+    car: l.cars as unknown as { make: string; model: string; license_plate: string | null } | null,
+  }));
+  const soma = (k: "views" | "phone_views" | "observers") =>
+    anuncios.reduce((s, l) => s + (l[k] ?? 0), 0).toLocaleString("pt-PT");
+  const ultima = anuncios
+    .map((l) => l.stats_at)
+    .filter(Boolean)
+    .sort()
+    .at(-1);
 
   const ligado = !!conn?.data;
   const ativos = (contagem?.data ?? []).filter((l) => l.remote_status === "active").length;
@@ -112,6 +132,69 @@ export async function OlxPanel({ status, detalhe }: { status?: string; detalhe?:
       )}
 
       <OlxActions configured={configured} connected={ligado} />
+
+      {ligado && anuncios.length > 0 && (
+        <div>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-paper/50">
+              Estatísticas dos anúncios
+            </h3>
+            <span className="text-xs text-paper/40">
+              {ultima
+                ? `Atualizadas ${new Date(ultima).toLocaleString("pt-PT")} · todos os dias automaticamente`
+                : "Ainda não atualizadas — carregue em «Atualizar estatísticas»."}
+            </span>
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+            {[
+              ["Visualizações", soma("views")],
+              ["Viram o telefone", soma("phone_views")],
+              ["A seguir", soma("observers")],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                <p className="text-xs text-paper/50">{label}</p>
+                <p className="mt-1 text-lg font-semibold text-paper">{value}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs uppercase tracking-wider text-paper/50">
+                <tr>
+                  <th className="py-2 pr-3">Viatura</th>
+                  <th className="px-3 py-2 text-right">Visualizações</th>
+                  <th className="px-3 py-2 text-right">Telefone</th>
+                  <th className="px-3 py-2 text-right">A seguir</th>
+                  <th className="py-2 pl-3">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {anuncios.map((l) => (
+                  <tr key={l.car_id} className="border-t border-white/10">
+                    <td className="py-2 pr-3">
+                      <a href={`/admin/carros/${l.car_id}`} className="text-paper hover:text-accent">
+                        {l.car ? `${l.car.make} ${l.car.model}` : "Viatura"}
+                        {l.car?.license_plate ? ` · ${l.car.license_plate}` : ""}
+                      </a>
+                      {l.external_url && (
+                        <a href={l.external_url} target="_blank" rel="noopener noreferrer" className="ml-2 text-xs text-paper/40 hover:text-paper">
+                          ↗ OLX
+                        </a>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right text-paper">{l.views?.toLocaleString("pt-PT") ?? "—"}</td>
+                    <td className="px-3 py-2 text-right text-paper/70">{l.phone_views?.toLocaleString("pt-PT") ?? "—"}</td>
+                    <td className="px-3 py-2 text-right text-paper/70">{l.observers?.toLocaleString("pt-PT") ?? "—"}</td>
+                    <td className="py-2 pl-3 text-xs text-paper/50">
+                      {l.remote_status ? REMOTE_STATUS_LABEL[l.remote_status] ?? l.remote_status : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {ligado && (
         <div>

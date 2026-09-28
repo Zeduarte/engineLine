@@ -26,6 +26,11 @@ const server=http.createServer(async(req,res)=>{
  }
  if(req.headers.version!=='2.0')return send(400,{error:{detail:"Missing required 'Version' header!"}});
  if(req.headers.authorization!==`Bearer ${olx.token}`||olx.expireNext){olx.expireNext=false;return send(401,{error:'invalid_token'});}
+ const st=url.pathname.match(/^\/api\/partner\/adverts\/(\d+)\/statistics$/);
+ if(st&&req.method==='GET'){
+  const ad=olx.adverts.get(Number(st[1]));if(!ad)return send(404,{error:{detail:'Advert not found'}});
+  return send(200,{data:{advert_views:ad.id%100+120,phone_views:7,users_observing:3}});
+ }
  const m=url.pathname.match(/^\/api\/partner\/adverts(?:\/(\d+))?(\/commands)?$/);
  if(m&&req.method==='GET'&&!m[1]){
   const ext=url.searchParams.get('external_id');
@@ -111,7 +116,7 @@ function load(path){
  const r=(id)=>id in STUBS?STUBS[id]:id.startsWith('@/')?load(withExt(`src/${id.slice(2)}`)):id.startsWith('.')?load(withExt(new URL(id,new URL(path,'file:///')).pathname.slice(1))):require(id);
  new Function('module','exports','require',outputText)(mod,mod.exports,r);
  cache.set(path,mod.exports);return mod.exports;}
-const {markPending,syncListing}=load('src/lib/olx/sync.ts');
+const {markPending,syncListing,refreshStats}=load('src/lib/olx/sync.ts');
 
 const listing=(db)=>db._t.channel_listings.find(l=>l.channel==='olx');
 
@@ -193,6 +198,25 @@ await test('unticking OLX retires the advert; nothing happens without it',async(
  assert.equal(olx.adverts.get(id).sold,false,'retirada, não vendida');
  const limpo=makeDb();limpo._t.cars[0].channels=[];
  await markPending(limpo,CAR);assert.equal(limpo._t.channel_listings.length,0,'sem OLX e sem anúncio, nem cria linha');
+});
+
+await test('advert statistics are read from OLX and stored; retired adverts keep their last numbers',async()=>{
+ const db=makeDb();await markPending(db,CAR);await syncListing(db,CAR);
+ const id=Number(listing(db).external_id);
+ const r=await refreshStats(db);
+ assert.deepEqual({updated:r.updated,failed:r.failed},{updated:1,failed:0});
+ const l=listing(db);
+ assert.equal(l.views,id%100+120);assert.equal(l.phone_views,7);assert.equal(l.observers,3);assert.ok(l.stats_at);
+ assert.ok(olx.calls.includes(`GET /api/partner/adverts/${id}/statistics`));
+ // Retirado: não se volta a perguntar ao OLX, e os números ficam.
+ l.status='removed';const antes=olx.calls.length;
+ assert.equal((await refreshStats(db)).updated,0);
+ assert.equal(olx.calls.slice(antes).some(c=>c.includes('/statistics')),false);
+ assert.equal(listing(db).phone_views,7);
+ // Um anúncio que o OLX já não conhece conta como falha, sem parar os outros.
+ l.status='published';l.external_id='999999';
+ const f=await refreshStats(db);
+ assert.equal(f.failed,1);assert.match(f.error,/Advert not found/);
 });
 
 server.close();

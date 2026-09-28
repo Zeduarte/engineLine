@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { olxConfigured } from "@/lib/olx/client";
 import { unwrap, type OlxCategory } from "@/lib/olx/categories";
 import { olxFetch } from "@/lib/olx/client";
-import { loadCategories, storeCategory, syncListing, syncPending } from "@/lib/olx/sync";
+import { loadCategories, refreshStats, storeCategory, syncListing, syncPending } from "@/lib/olx/sync";
 
 /**
  * Ações do painel do OLX em Integrações e da ficha da viatura.
@@ -81,6 +81,31 @@ export async function syncOlxNow(): Promise<OlxActionResult> {
   const n = await syncPending(admin(), 50);
   revalidatePath("/admin/integracoes");
   return { ok: true, message: n ? `${n} anúncio(s) sincronizado(s).` : "Não havia nada por sincronizar." };
+}
+
+/**
+ * "Atualizar estatísticas": de todos os anúncios (Integrações) ou de uma
+ * viatura (ficha). A manutenção diária faz o mesmo sozinha.
+ */
+export async function refreshOlxStats(carId?: string): Promise<OlxActionResult> {
+  if (carId) {
+    await requireSection("carros");
+    if (!z.string().uuid().safeParse(carId).success) return { ok: false, error: "Viatura inválida." };
+  } else {
+    await requireSection("integracoes");
+  }
+  const r = await refreshStats(admin(), carId ? [carId] : undefined);
+  revalidatePath("/admin/integracoes");
+  if (carId) revalidatePath(`/admin/carros/${carId}`);
+  if (r.updated === 0 && r.error) return { ok: false, error: r.error };
+  return {
+    ok: true,
+    message: r.failed
+      ? `${r.updated} atualizado(s), ${r.failed} com erro (${r.error}).`
+      : r.updated
+        ? `Estatísticas de ${r.updated} anúncio(s) atualizadas.`
+        : "Ainda não há anúncios no OLX.",
+  };
 }
 
 /** "Tentar outra vez", na ficha da viatura. */
