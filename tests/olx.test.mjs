@@ -21,6 +21,24 @@ function load(path){
  new Function('module','exports','require',outputText)(mod,mod.exports,localRequire);
  cache.set(path,mod.exports);return mod.exports;}
 
+const C=load('src/lib/olx/categories.ts');
+await test('OLX categories are recognised by name, never parts or the parent branch',()=>{
+ const tree=[
+  {id:1,name:'Carros, motos e barcos',is_leaf:false},
+  {id:377,name:'Carros',is_leaf:false},
+  {id:378,name:'Motociclos - Scooters',is_leaf:true},
+  {id:379,name:'Peças e Acessórios para Carros',is_leaf:true},
+  {id:380,name:'Barcos',is_leaf:true},
+ ];
+ assert.deepEqual(C.categoryCandidates(tree,'car').map(c=>c.id),[377],'aceita "Carros" mesmo com subcategorias');
+ assert.deepEqual(C.categoryCandidates(tree,'motorcycle').map(c=>c.id),[378]);
+ // Havendo uma final, prefere-a à que tem subcategorias.
+ assert.deepEqual(C.categoryCandidates([...tree,{id:400,name:'Carros usados',is_leaf:true}],'car').map(c=>c.id),[400]);
+ // Para escolher à mão: veículos sim, peças não.
+ assert.deepEqual(tree.filter(C.isVehicleCategory).map(c=>c.id),[1,377,378]);
+ assert.deepEqual(C.categoryCandidates([{id:9,name:'Auto Peças',is_leaf:true}],'car'),[]);
+});
+
 const S=load('src/lib/olx/stats.ts');
 await test('OLX statistics parse direct or wrapped responses; junk becomes unknown, not zero',()=>{
  assert.deepEqual(S.parseStats({advert_views:123,phone_views:100,users_observing:10}),{views:123,phoneViews:100,observers:10});

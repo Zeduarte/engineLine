@@ -4,7 +4,7 @@ import { getBranding } from "@/lib/queries";
 import { publicMediaUrl } from "@/lib/storage";
 import { buildAdvert, type AdvertCar } from "@/lib/olx/advert";
 import type { OlxAttributeDef } from "@/lib/olx/attributes";
-import { categoryCandidates, unwrap, type OlxCategory } from "@/lib/olx/categories";
+import { categoryCandidates, isVehicleCategory, unwrap, type OlxCategory } from "@/lib/olx/categories";
 import { getConnection, olxFetch } from "@/lib/olx/client";
 import { desiredAction } from "@/lib/olx/lifecycle";
 import { parseStats, wantsStats } from "@/lib/olx/stats";
@@ -336,6 +336,8 @@ export interface CategoryLoadResult {
   /** Por tipo: a escolhida, ou as candidatas quando há dúvida. */
   chosen: Partial<Record<"car" | "motorcycle", OlxCategory>>;
   ambiguous: Partial<Record<"car" | "motorcycle", OlxCategory[]>>;
+  /** Alguns nomes lidos do OLX, para explicar quando não se encontra nada. */
+  seen?: string[];
 }
 
 /** Guarda a categoria e os seus atributos. */
@@ -382,6 +384,10 @@ export async function loadCategories(db: Db): Promise<CategoryLoadResult> {
     nivel = seguinte;
   }
 
+  if (!todas.length) return { ...result, ok: false, error: "O OLX não devolveu nenhuma categoria." };
+  // Para o diagnóstico, quando não se encontra nada de veículos.
+  result.seen = todas.slice(0, 12).map((c) => c.name);
+
   for (const tipo of ["car", "motorcycle"] as const) {
     const cands = categoryCandidates(todas, tipo);
     if (cands.length === 1) {
@@ -390,6 +396,11 @@ export async function loadCategories(db: Db): Promise<CategoryLoadResult> {
       result.chosen[tipo] = cands[0]!;
     } else if (cands.length > 1) {
       result.ambiguous[tipo] = cands;
+    } else {
+      // Nenhum nome conhecido: mostra as categorias de veículos que existem,
+      // para o administrador escolher em vez de ficar sem saída.
+      const veiculos = [...new Map(todas.filter(isVehicleCategory).map((c) => [c.id, c])).values()];
+      if (veiculos.length) result.ambiguous[tipo] = veiculos;
     }
   }
 

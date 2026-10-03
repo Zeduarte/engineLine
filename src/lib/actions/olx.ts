@@ -53,8 +53,8 @@ export async function loadOlxCategories(): Promise<OlxActionResult> {
       message: escolhidas.length
         ? `Categorias carregadas (${escolhidas.join(", ")}).${duvidas ? " Há categorias por escolher." : ""}`
         : duvidas
-          ? "Há mais de uma categoria possível — escolha abaixo."
-          : "Não encontrei categorias de carros nem de motas nesta conta do OLX.",
+          ? "Escolha abaixo a categoria do OLX para carros e para motas."
+          : `Não encontrei categorias de carros nem de motas. O OLX devolveu: ${(r.seen ?? []).join(", ") || "nada"}.`,
       candidates: r.ambiguous,
     };
   } catch (e) {
