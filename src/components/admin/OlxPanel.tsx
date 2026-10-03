@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { olxConfigured } from "@/lib/olx/client";
 import { REMOTE_STATUS_LABEL } from "@/lib/olx/lifecycle";
 import { OlxActions } from "./OlxActions";
+import { OlxDefaultCategories } from "./OlxDefaultCategories";
 
 /**
  * Ligação ao OLX, em Integrações.
@@ -52,7 +53,7 @@ export async function OlxPanel({ status, detalhe }: { status?: string; detalhe?:
   const categorias = new Map((cats?.data ?? []).map((c) => [c.vehicle_type, c]));
 
   const aviso: Record<string, string> = {
-    ligado: "Conta do OLX ligada. Carregue agora as categorias.",
+    ligado: "Conta do OLX ligada. Carregue em «Carregar categorias» (deteta as categorias e a cidade do stand) ou escolha-as abaixo.",
     "sem-credenciais": "Faltam OLX_CLIENT_ID e OLX_CLIENT_SECRET nas variáveis do Netlify.",
     recusado: "A autorização foi recusada no OLX.",
     "estado-invalido": "O pedido de ligação expirou ou não veio deste navegador. Tente outra vez.",
@@ -107,28 +108,12 @@ export async function OlxPanel({ status, detalhe }: { status?: string; detalhe?:
       </div>
 
       {ligado && (
-        <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-paper/50">
-            Categorias
-          </h3>
-          <ul className="mt-2 space-y-1 text-sm text-paper/70">
-            {(["car", "motorcycle"] as const).map((t) => {
-              const c = categorias.get(t);
-              return (
-                <li key={t}>
-                  {t === "car" ? "Carros" : "Motas"}:{" "}
-                  {c ? (
-                    <span className="text-paper">
-                      {c.category_name} (ID {c.category_id})
-                    </span>
-                  ) : (
-                    <span className="text-amber-300">por carregar</span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        <OlxDefaultCategories
+          current={{
+            car: categorias.get("car")?.category_name || null,
+            motorcycle: categorias.get("motorcycle")?.category_name || null,
+          }}
+        />
       )}
 
       <OlxActions configured={configured} connected={ligado} />

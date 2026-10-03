@@ -26,6 +26,16 @@ const server=http.createServer(async(req,res)=>{
  }
  if(req.headers.version!=='2.0')return send(400,{error:{detail:"Missing required 'Version' header!"}});
  if(req.headers.authorization!==`Bearer ${olx.token}`||olx.expireNext){olx.expireNext=false;return send(401,{error:'invalid_token'});}
+ const cat=url.pathname.match(/^\/api\/partner\/categories(?:\/(\d+))?(\/attributes)?$/);
+ if(cat&&req.method==='GET'){
+  const tree=[{id:1,name:'Carros, motos e barcos',parent_id:null,is_leaf:false},{id:2,name:'Motociclos - Scooters',parent_id:1,is_leaf:false},
+   {id:999,name:'Moto 4',parent_id:2,is_leaf:true,photos_limit:6},{id:181,name:'Carros',parent_id:1,is_leaf:true,photos_limit:8}];
+  if(cat[2])return send(200,{data:[{code:'make',label:'Marca',validation:{required:false},values:[{code:'bmw',label:'BMW'}]}]});
+  if(cat[1]){const c=tree.find(x=>x.id===Number(cat[1]));return c?send(200,{data:c}):send(404,{error:{detail:'Category not found'}});}
+  const p=url.searchParams.get('parent_id');
+  // Sem parent_id devolve a árvore toda, como algumas APIs fazem.
+  return send(200,{data:p?tree.filter(x=>x.parent_id===Number(p)):tree});
+ }
  const st=url.pathname.match(/^\/api\/partner\/adverts\/(\d+)\/statistics$/);
  if(st&&req.method==='GET'){
   const ad=olx.adverts.get(Number(st[1]));if(!ad)return send(404,{error:{detail:'Advert not found'}});
@@ -75,6 +85,7 @@ function makeDb(){
   olx_category_cache:[{vehicle_type:'car',category_id:181,category_name:'Carros',photos_limit:8,attributes:[
    {code:'make',label:'Marca',validation:{required:true},values:[{code:'bmw',label:'BMW'}]},
    {code:'fuel',label:'Combustível',validation:{required:true},values:[{code:'diesel',label:'Diesel'}]}]}],
+  olx_category_details:[],
  };
  let seq=1;
  const q=(table)=>{
@@ -93,7 +104,7 @@ function makeDb(){
    update(p){op='update';patch=p;return api;},delete(){op='delete';return api;},
    insert(row){t[table].push({id:`l${seq++}`,sync_state:'idle',attempts:0,status:'pending',external_id:null,external_url:null,
     remote_status:null,last_error:null,published_at:null,last_synced_at:null,...row});return Promise.resolve({data:null,error:null});},
-   upsert(row){const i=t[table].findIndex(r=>r.vehicle_type===row.vehicle_type);if(i>=0)t[table][i]={...t[table][i],...row};else t[table].push(row);return Promise.resolve({error:null});},
+   upsert(row){const key=table==='olx_category_details'?'category_id':'vehicle_type';const i=t[table].findIndex(r=>r[key]===row[key]);if(i>=0)t[table][i]={...t[table][i],...row};else t[table].push(row);return Promise.resolve({error:null});},
    async maybeSingle(){return {data:run().data[0]??null,error:null};},
    then(res,rej){return Promise.resolve(run()).then(res,rej);},
   };
@@ -116,7 +127,7 @@ function load(path){
  const r=(id)=>id in STUBS?STUBS[id]:id.startsWith('@/')?load(withExt(`src/${id.slice(2)}`)):id.startsWith('.')?load(withExt(new URL(id,new URL(path,'file:///')).pathname.slice(1))):require(id);
  new Function('module','exports','require',outputText)(mod,mod.exports,r);
  cache.set(path,mod.exports);return mod.exports;}
-const {markPending,syncListing,refreshStats}=load('src/lib/olx/sync.ts');
+const {markPending,syncListing,refreshStats,browseCategories,storeCategoryDetails}=load('src/lib/olx/sync.ts');
 
 const listing=(db)=>db._t.channel_listings.find(l=>l.channel==='olx');
 
@@ -198,6 +209,26 @@ await test('unticking OLX retires the advert; nothing happens without it',async(
  assert.equal(olx.adverts.get(id).sold,false,'retirada, não vendida');
  const limpo=makeDb();limpo._t.cars[0].channels=[];
  await markPending(limpo,CAR);assert.equal(limpo._t.channel_listings.length,0,'sem OLX e sem anúncio, nem cria linha');
+});
+
+await test('the category tree is browsed level by level; a car can use its own category',async()=>{
+ const db=makeDb();
+ const root=await browseCategories(db,null);
+ assert.deepEqual(root.categories.map(c=>c.name),['Carros, motos e barcos'],'só a raiz, mesmo que a API devolva tudo');
+ const nivel=await browseCategories(db,1);
+ assert.deepEqual(nivel.categories.map(c=>c.name),['Carros','Motociclos - Scooters'],'ordenado por nome');
+ assert.equal(nivel.categories.find(c=>c.id===2).is_leaf,false);
+ // Categoria só desta viatura: os atributos guardam-se e o anúncio vai para lá.
+ const r=await storeCategoryDetails(db,{id:999,photos_limit:6},'Carros, motos e barcos › Motociclos - Scooters › Moto 4');
+ assert.equal(r.error,null);
+ assert.equal(db._t.olx_category_details[0].category_name.endsWith('Moto 4'),true);
+ db._t.cars[0].olx_category_id=999;
+ await markPending(db,CAR);assert.equal((await syncListing(db,CAR)).ok,true);
+ assert.equal(olx.adverts.get(Number(listing(db).external_id)).category_id,999);
+ // Escolhida mas não carregada: erro claro, nada enviado ao OLX.
+ const db2=makeDb();db2._t.cars[0].olx_category_id=12345;
+ await markPending(db2,CAR);const f=await syncListing(db2,CAR);
+ assert.equal(f.ok,false);assert.match(f.error,/escolhida para esta viatura/);
 });
 
 await test('advert statistics are read from OLX and stored; retired adverts keep their last numbers',async()=>{

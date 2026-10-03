@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CHANNELS } from "@/lib/schemas";
 import { saveListing } from "@/lib/actions/channels";
-import { refreshOlxStats, retryOlxListing } from "@/lib/actions/olx";
+import { refreshOlxStats, retryOlxListing, setCarOlxCategory } from "@/lib/actions/olx";
+import { OlxCategoryPicker } from "./OlxCategoryPicker";
 import { REMOTE_STATUS_LABEL } from "@/lib/olx/lifecycle";
 import type {
   ChannelListingRow,
@@ -41,10 +43,13 @@ export function ChannelListings({
   carId,
   channels,
   listings,
+  olxCategory,
 }: {
   carId: string;
   channels: string[];
   listings: ChannelListingRow[];
+  /** Categoria do OLX desta viatura e a padrão do tipo (nomes legíveis). */
+  olxCategory?: { own: string | null; fallback: string | null };
 }) {
   const byChannel = new Map(listings.map((l) => [l.channel, l]));
   const selected = CHANNELS.filter((c) => channels.includes(c.id));
@@ -76,7 +81,7 @@ export function ChannelListings({
             // O OLX é publicado pelo próprio sistema: mostra-se o estado real,
             // não um formulário para o registar à mão.
             c.id === "olx" ? (
-              <OlxRow key={c.id} carId={carId} listing={byChannel.get(c.id) ?? null} />
+              <OlxRow key={c.id} carId={carId} listing={byChannel.get(c.id) ?? null} category={olxCategory} />
             ) : (
             <ChannelRow
               key={c.id}
@@ -247,8 +252,69 @@ function OlxStats({ carId, listing }: { carId: string; listing: ChannelListingRo
   );
 }
 
+/** Categoria do OLX desta viatura: a padrão do tipo, ou outra só para ela. */
+function OlxCategoryRow({
+  carId,
+  category,
+}: {
+  carId: string;
+  category?: { own: string | null; fallback: string | null };
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const save = (id: number | null, path?: string) =>
+    startTransition(async () => {
+      const r = await setCarOlxCategory(carId, id, path);
+      if (r.ok) {
+        toast.success(r.message ?? "Categoria guardada.");
+        setOpen(false);
+        router.refresh();
+      } else {
+        toast.error(r.error ?? "Não foi possível guardar.");
+      }
+    });
+
+  return (
+    <div className="mt-3 text-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-paper/60">Categoria no OLX:</span>
+        {category?.own ? (
+          <span className="text-paper">{category.own}</span>
+        ) : (
+          <span className="text-paper/80">
+            {category?.fallback ?? "por escolher em Integrações"}{" "}
+            <span className="text-xs text-paper/40">(padrão)</span>
+          </span>
+        )}
+        <button type="button" className="text-xs text-accent hover:underline" onClick={() => setOpen(!open)}>
+          {category?.own ? "Mudar" : "Usar outra só nesta viatura"}
+        </button>
+        {category?.own && (
+          <button type="button" disabled={pending} className="text-xs text-paper/50 hover:text-paper" onClick={() => save(null)}>
+            Voltar à padrão
+          </button>
+        )}
+      </div>
+      {open && (
+        <div className="mt-2">
+          <OlxCategoryPicker busy={pending} onCancel={() => setOpen(false)} onPick={(c, path) => save(c.id, path)} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Estado da publicação automática no OLX. */
-function OlxRow({ carId, listing }: { carId: string; listing: ChannelListingRow | null }) {
+function OlxRow({
+  carId,
+  listing,
+  category,
+}: {
+  carId: string;
+  listing: ChannelListingRow | null;
+  category?: { own: string | null; fallback: string | null };
+}) {
   const [pending, startTransition] = useTransition();
   const estado = listing?.remote_status
     ? REMOTE_STATUS_LABEL[listing.remote_status] ?? listing.remote_status
@@ -300,6 +366,7 @@ function OlxRow({ carId, listing }: { carId: string; listing: ChannelListingRow 
       {listing?.last_error && (
         <p className="mt-3 text-sm text-red-300">{listing.last_error}</p>
       )}
+      <OlxCategoryRow carId={carId} category={category} />
       {listing?.external_id && <OlxStats carId={carId} listing={listing} />}
       {listing?.last_synced_at && (
         <p className="mt-2 text-xs text-paper/40">

@@ -10,6 +10,7 @@ import { CarForm } from "@/components/admin/CarForm";
 import { MediaManager, type MediaItem } from "@/components/admin/MediaManager";
 import { ChannelListings } from "@/components/admin/ChannelListings";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { WorkshopStage } from "@/components/admin/WorkshopStage";
 import type { CarFormValues } from "@/lib/schemas";
 
@@ -24,6 +25,23 @@ export default async function EditCarPage({ params }: { params: Params }) {
   if (!car) notFound();
 
   const listings = await getCarListings(car.id);
+
+  // Categoria do OLX: as tabelas do OLX só se leem com o cliente de serviço.
+  const olxCategory = await (async () => {
+    const db = createAdminClient();
+    if (!db) return undefined;
+    const own = (car as { olx_category_id?: number | null }).olx_category_id ?? null;
+    const [{ data: fallback }, ownRow] = await Promise.all([
+      db.from("olx_category_cache").select("category_name").eq("vehicle_type", car.vehicle_type ?? "car").maybeSingle(),
+      own
+        ? db.from("olx_category_details").select("category_name").eq("category_id", own).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+    return {
+      own: own ? ownRow.data?.category_name || `Categoria ${own}` : null,
+      fallback: fallback?.category_name || null,
+    };
+  })();
 
   const showroom = await getShowroomContent();
   const defaults: Partial<CarFormValues> = {
@@ -114,6 +132,7 @@ export default async function EditCarPage({ params }: { params: Params }) {
           carId={car.id}
           channels={car.channels ?? []}
           listings={listings}
+          olxCategory={olxCategory}
         />
         {canAccess(profile.role, profile.allowed_sections, "financeiro") && (
           <Link className="btn-ghost" href={`/admin/financeiro/${car.id}`}>

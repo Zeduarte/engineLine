@@ -155,6 +155,8 @@ type CarsRow = {
   warranty_months: number | null;
   last_inspection: string | null;
   channels: string[];
+  /** Categoria do OLX só desta viatura (0031); nulo = a padrão do tipo. */
+  olx_category_id?: number | null;
   created_by: string | null;
   published_at: string | null;
   sold_at: string | null;
@@ -198,6 +200,7 @@ type CarsInsert = {
   warranty_months?: number | null;
   last_inspection?: string | null;
   channels?: string[];
+  olx_category_id?: number | null;
   created_by?: string | null;
 };
 type CarsUpdate = Partial<CarsInsert>;
@@ -578,6 +581,15 @@ export type OlxCategoryCacheRow = {
   fetched_at: string;
 };
 
+/** Atributos de uma categoria do OLX escolhida para alguma viatura (0031). */
+export type OlxCategoryDetailsRow = {
+  category_id: number;
+  category_name: string;
+  photos_limit: number;
+  attributes: Json;
+  fetched_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -591,6 +603,12 @@ export type Database = {
         Row: OlxCategoryCacheRow;
         Insert: Partial<OlxCategoryCacheRow> & { vehicle_type: string; category_id: number };
         Update: Partial<OlxCategoryCacheRow>;
+        Relationships: [];
+      };
+      olx_category_details: {
+        Row: OlxCategoryDetailsRow;
+        Insert: Partial<OlxCategoryDetailsRow> & { category_id: number };
+        Update: Partial<OlxCategoryDetailsRow>;
         Relationships: [];
       };
       wa_messages: {

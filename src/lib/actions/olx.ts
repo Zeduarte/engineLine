@@ -7,7 +7,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { olxConfigured } from "@/lib/olx/client";
 import { unwrap, type OlxCategory } from "@/lib/olx/categories";
 import { olxFetch } from "@/lib/olx/client";
-import { loadCategories, refreshStats, storeCategory, syncListing, syncPending } from "@/lib/olx/sync";
+import { browseCategories, loadCategories, refreshStats, storeCategory, storeCategoryDetails, syncListing, syncPending } from "@/lib/olx/sync";
+import { queueOlxSync } from "@/lib/olx/queue";
+import { getCurrentProfile } from "@/lib/admin-queries";
+import { canAccess } from "@/lib/permissions";
 
 /**
  * Ações do painel do OLX em Integrações e da ficha da viatura.
@@ -83,8 +86,7 @@ export async function syncOlxNow(): Promise<OlxActionResult> {
   return { ok: true, message: n ? `${n} anúncio(s) sincronizado(s).` : "Não havia nada por sincronizar." };
 }
 
-/**
- * "Atualizar estatísticas": de todos os anúncios (Integrações) ou de uma
+/** "Atualizar estatísticas": de todos os anúncios (Integrações) ou de uma
  * viatura (ficha). A manutenção diária faz o mesmo sozinha.
  */
 export async function refreshOlxStats(carId?: string): Promise<OlxActionResult> {
@@ -117,4 +119,96 @@ export async function retryOlxListing(carId: string): Promise<OlxActionResult> {
   const r = await syncListing(db, carId);
   revalidatePath(`/admin/carros/${carId}`);
   return r.ok ? { ok: true, message: "Sincronizado com o OLX." } : { ok: false, error: r.error };
+}
+
+// ---- Árvore de categorias -----------------------------------------------
+
+export interface CategoryBrowse {
+  ok: boolean;
+  error?: string;
+  categories?: OlxCategory[];
+}
+
+/** Um nível da árvore do OLX. Para quem gere Viaturas ou Integrações. */
+export async function browseOlxCategories(parentId: number | null): Promise<CategoryBrowse> {
+  const me = await getCurrentProfile();
+  if (!me || !(canAccess(me.role, me.allowed_sections, "carros") || canAccess(me.role, me.allowed_sections, "integracoes")))
+    return { ok: false, error: "Sem permissão." };
+  if (parentId !== null && !(Number.isInteger(parentId) && parentId > 0)) return { ok: false, error: "Categoria inválida." };
+  const r = await browseCategories(admin(), parentId);
+  return r.ok ? { ok: true, categories: r.categories } : { ok: false, error: r.error };
+}
+
+const pickSchema = z.object({
+  categoryId: z.number().int().positive(),
+  path: z.string().trim().min(1).max(300),
+});
+
+/**
+ * Confirma no OLX que a categoria existe e é final (só nas finais se pode
+ * publicar). Devolve-a com os dados do OLX, não os que vieram do browser.
+ */
+async function leafCategory(categoryId: number): Promise<OlxCategory | string> {
+  const c = await olxFetch<unknown>(admin(), `/categories/${categoryId}`);
+  if (!c.ok) return c.error ?? "Categoria inválida.";
+  const category = unwrap<OlxCategory>(c.data);
+  if (!category?.id) return "Categoria inválida.";
+  if (category.is_leaf === false) return "Escolha uma subcategoria: o OLX só aceita anúncios na última categoria.";
+  return category;
+}
+
+/** Categoria padrão de um tipo de viatura (Integrações → OLX). */
+export async function setDefaultOlxCategory(
+  vehicleType: "car" | "motorcycle",
+  categoryId: number,
+  path: string,
+): Promise<OlxActionResult> {
+  await requireSection("integracoes");
+  const parsed = pickSchema.safeParse({ categoryId, path });
+  if (!parsed.success || !["car", "motorcycle"].includes(vehicleType)) return { ok: false, error: "Escolha uma categoria." };
+  const category = await leafCategory(parsed.data.categoryId);
+  if (typeof category === "string") return { ok: false, error: category };
+  const erro = await storeCategory(admin(), vehicleType, category, parsed.data.path);
+  revalidatePath("/admin/integracoes");
+  return erro
+    ? { ok: false, error: erro }
+    : { ok: true, message: `Categoria dos ${vehicleType === "car" ? "carros" : "motas"} guardada. Carregue em «Sincronizar agora».` };
+}
+
+/**
+ * Categoria só desta viatura (na ficha). `categoryId` nulo volta à padrão.
+ * O anúncio é atualizado logo a seguir.
+ */
+export async function setCarOlxCategory(
+  carId: string,
+  categoryId: number | null,
+  path?: string,
+): Promise<OlxActionResult> {
+  await requireSection("carros");
+  if (!z.string().uuid().safeParse(carId).success) return { ok: false, error: "Viatura inválida." };
+  const db = admin();
+
+  if (categoryId === null) {
+    const { error } = await db.from("cars").update({ olx_category_id: null }).eq("id", carId);
+    if (error) return { ok: false, error: missing0031(error.message) };
+  } else {
+    const parsed = pickSchema.safeParse({ categoryId, path });
+    if (!parsed.success) return { ok: false, error: "Escolha uma categoria." };
+    const category = await leafCategory(parsed.data.categoryId);
+    if (typeof category === "string") return { ok: false, error: category };
+    const details = await storeCategoryDetails(db, category, parsed.data.path);
+    if (details.error) return { ok: false, error: details.error };
+    const { error } = await db.from("cars").update({ olx_category_id: category.id }).eq("id", carId);
+    if (error) return { ok: false, error: missing0031(error.message) };
+  }
+
+  await queueOlxSync([carId]);
+  revalidatePath(`/admin/carros/${carId}`);
+  return { ok: true, message: categoryId === null ? "A viatura volta à categoria padrão." : "Categoria do OLX guardada." };
+}
+
+function missing0031(message: string): string {
+  return /olx_category_id|olx_category_details|does not exist|schema cache/i.test(message)
+    ? "Falta aplicar a migração 0031 no Supabase."
+    : message;
 }

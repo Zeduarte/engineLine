@@ -145,14 +145,23 @@ export async function syncListing(db: Db, carId: string): Promise<SyncOutcome> {
 
     // create / update: é preciso montar o anúncio.
     const vehicleType = (car.vehicle_type ?? "car") as "car" | "motorcycle";
+    const ownCategory = (car as { olx_category_id?: number | null }).olx_category_id ?? null;
     const [{ data: category }, conn, branding] = await Promise.all([
-      db.from("olx_category_cache").select("*").eq("vehicle_type", vehicleType).maybeSingle(),
+      // A categoria própria da viatura, se tiver; senão a padrão do tipo.
+      ownCategory
+        ? db.from("olx_category_details").select("*").eq("category_id", ownCategory).maybeSingle()
+        : db.from("olx_category_cache").select("*").eq("vehicle_type", vehicleType).maybeSingle(),
       getConnection(db),
       getBranding(),
     ]);
     if (!conn) return fail(action, "A conta do OLX não está ligada (Integrações → Ligar conta OLX).");
     if (!category)
-      return fail(action, "Falta carregar as categorias do OLX (Integrações → Carregar categorias).");
+      return fail(
+        action,
+        ownCategory
+          ? "A categoria do OLX escolhida para esta viatura não está carregada. Escolha-a outra vez na ficha."
+          : "Falta escolher a categoria do OLX (Integrações → OLX).",
+      );
 
     // A relação cars→car_media não está nos tipos gerados; a forma é esta.
     type Media = { storage_path: string; kind: string; position: number; is_cover: boolean };
@@ -340,20 +349,67 @@ export interface CategoryLoadResult {
   seen?: string[];
 }
 
-/** Guarda a categoria e os seus atributos. */
+/**
+ * Um nível da árvore de categorias do OLX: os grupos principais (`parentId`
+ * nulo) ou as subcategorias de um. É assim que o OLX as mostra ao criar um
+ * anúncio, e evita descarregar a árvore inteira (centenas de pedidos).
+ */
+export async function browseCategories(
+  db: Db,
+  parentId: number | null,
+): Promise<{ ok: true; categories: OlxCategory[] } | { ok: false; error: string }> {
+  const r = await olxFetch<unknown>(db, parentId === null ? "/categories" : `/categories?parent_id=${parentId}`);
+  if (!r.ok) return { ok: false, error: r.error ?? "falha ao ler categorias" };
+  const lista = (unwrap<OlxCategory[]>(r.data) ?? [])
+    // Sem o pedido de parent_id, há APIs que devolvem a árvore toda: fica só a raiz.
+    .filter((c) => (parentId === null ? !c.parent_id : true))
+    .map((c) => ({ id: c.id, name: c.name, parent_id: c.parent_id ?? null, is_leaf: c.is_leaf, photos_limit: c.photos_limit }))
+    .sort((a, b) => a.name.localeCompare(b.name, "pt"));
+  return { ok: true, categories: lista };
+}
+
+/**
+ * Guarda uma categoria escolhida e os seus atributos (os campos que o anúncio
+ * leva). `name` é o caminho legível, para o backoffice mostrar onde está.
+ */
+export async function storeCategoryDetails(
+  db: Db,
+  category: Pick<OlxCategory, "id" | "photos_limit">,
+  name: string,
+): Promise<{ error: string | null; attributes: unknown[] }> {
+  const attrs = await olxFetch<unknown>(db, `/categories/${category.id}/attributes`);
+  if (!attrs.ok) return { error: attrs.error, attributes: [] };
+  const attributes = unwrap<unknown[]>(attrs.data) ?? [];
+  const { error } = await db.from("olx_category_details").upsert({
+    category_id: category.id,
+    category_name: name,
+    photos_limit: category.photos_limit ?? 0,
+    attributes: attributes as never,
+    fetched_at: new Date().toISOString(),
+  });
+  // Sem a migração 0031 a tabela não existe; a categoria padrão (abaixo)
+  // continua a funcionar, por isso não é um erro aqui.
+  if (error && !/olx_category_details|does not exist|schema cache/i.test(error.message)) {
+    return { error: error.message, attributes };
+  }
+  return { error: null, attributes };
+}
+
+/** Guarda a categoria padrão de um tipo de viatura e os seus atributos. */
 export async function storeCategory(
   db: Db,
   vehicleType: "car" | "motorcycle",
   category: OlxCategory,
+  path?: string,
 ): Promise<string | null> {
-  const attrs = await olxFetch<unknown>(db, `/categories/${category.id}/attributes`);
-  if (!attrs.ok) return attrs.error;
+  const details = await storeCategoryDetails(db, category, path ?? category.name);
+  if (details.error) return details.error;
   const { error } = await db.from("olx_category_cache").upsert({
     vehicle_type: vehicleType,
     category_id: category.id,
-    category_name: category.name,
+    category_name: path ?? category.name,
     photos_limit: category.photos_limit ?? 0,
-    attributes: (unwrap<unknown[]>(attrs.data) ?? []) as never,
+    attributes: details.attributes as never,
     fetched_at: new Date().toISOString(),
   });
   return error ? error.message : null;
