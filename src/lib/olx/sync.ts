@@ -187,6 +187,7 @@ export async function syncListing(db: Db, carId: string): Promise<SyncOutcome> {
       description: car.description,
       tagline: car.tagline,
       extras: car.extras ?? [],
+      olxValues: (car as { olx_attributes?: unknown }).olx_attributes,
     };
 
     const built = buildAdvert(advertCar, {

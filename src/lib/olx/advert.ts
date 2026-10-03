@@ -1,5 +1,6 @@
 import { canonicalBrand } from "@/lib/brand-name";
-import { mapAttributes, type CarFacts, type OlxAttribute, type OlxAttributeDef } from "@/lib/olx/attributes";
+import type { CarFacts, OlxAttribute, OlxAttributeDef } from "@/lib/olx/attributes";
+import { advertAttributes, toFields } from "@/lib/olx/fields";
 import { buildDescription, buildTitle, textProblems } from "@/lib/olx/text";
 
 /**
@@ -19,6 +20,8 @@ export interface AdvertCar extends CarFacts {
   description: string | null;
   tagline: string | null;
   extras: string[];
+  /** Valores escolhidos em «Campos do OLX» na ficha (`cars.olx_attributes`). */
+  olxValues?: unknown;
 }
 
 export interface AdvertContext {
@@ -88,7 +91,11 @@ export function buildAdvert(car: AdvertCar, ctx: AdvertContext): AdvertResult {
   );
   problems.push(...textProblems(title, description));
 
-  const { attributes, missing } = mapAttributes(ctx.attributeDefs, { ...car, make: marca });
+  const { attributes, missing } = advertAttributes(
+    toFields(ctx.attributeDefs),
+    { ...car, make: marca },
+    car.olxValues,
+  );
   problems.push(...missing);
 
   if (problems.length) return { ok: false, problems };

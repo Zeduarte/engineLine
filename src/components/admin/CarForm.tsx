@@ -32,6 +32,8 @@ import {
 import { CAR_MODELS } from "@/lib/car-models";
 import { extrasCatalog, MOTORCYCLE_EXTRAS_CATALOG } from "@/lib/extras";
 import { formatPlate } from "@/lib/plate";
+import { autoValues, type OlxField, type OlxValues } from "@/lib/olx/fields";
+import { OlxFieldsSection } from "./OlxFieldsSection";
 
 // Lista de anos calculada uma vez (o ano corrente é estável na sessão).
 const YEARS = yearOptions();
@@ -51,12 +53,16 @@ export function CarForm({
   carId,
   defaults,
   locations = [],
+  olxFields,
 }: {
   locations?: PointOfSale[];
   carId?: string;
   defaults?: Partial<CarFormValues>;
+  /** Campos do OLX por tipo (da categoria da viatura ou da padrão do tipo). */
+  olxFields?: Partial<Record<VehicleType, OlxField[]>>;
 }) {
   const router = useRouter();
+  const [olxValues, setOlxValues] = useState<OlxValues>(() => (defaults?.olx_attributes ?? {}) as OlxValues);
   const [typeChosen, setTypeChosen] = useState(Boolean(carId || defaults?.vehicle_type));
   const [extras, setExtras] = useState<string[]>(defaults?.extras ?? []);
   const [extraInput, setExtraInput] = useState("");
@@ -121,6 +127,9 @@ export function CarForm({
   const make = watch("make") ?? "";
   const modelOptions =
     vehicleType === "motorcycle" ? [] : (CAR_MODELS[make] ?? []);
+  // Os campos do OLX acompanham a ficha: o «automático» usa o que está escrito.
+  const watched = watch();
+  const currentOlxFields = olxFields?.[vehicleType] ?? [];
 
   function chooseType(kind: VehicleType) {
     if (kind !== vehicleType) {
@@ -173,7 +182,7 @@ export function CarForm({
   }
 
   async function onSubmit(values: CarFormValues) {
-    const payload = { ...values, extras, channels };
+    const payload = { ...values, extras, channels, olx_attributes: olxValues };
     const res = carId
       ? await updateCar(carId, payload)
       : await createCar(payload);
@@ -681,6 +690,30 @@ export function CarForm({
             )}
           </div>
         </div>
+      </Section>
+
+      {/* Os mesmos campos que o OLX pede nesta categoria, vindos da API. */}
+      <Section title="Campos do OLX">
+        <OlxFieldsSection
+          fields={currentOlxFields}
+          values={olxValues}
+          auto={autoValues(currentOlxFields, {
+            make: watched.make ?? "",
+            model: watched.model ?? "",
+            year: Number(watched.year) || 0,
+            mileage: Number(watched.mileage) || 0,
+            fuel: watched.fuel ?? "",
+            transmission: watched.transmission ?? "",
+            body: watched.body ?? "",
+            power: Number(watched.power) || 0,
+            displacement: Number(watched.displacement) || 0,
+            color: watched.color || null,
+            doors: Number(watched.doors) || 0,
+            seats: Number(watched.seats) || 0,
+            registrationMonth: watched.registration_month ?? null,
+          })}
+          onChange={setOlxValues}
+        />
       </Section>
 
       {/* Exportação multi-canal */}

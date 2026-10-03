@@ -2,12 +2,13 @@ import { getVehicleSelection } from "@/lib/vehicle-context";
 import { getShowroomContent } from "@/lib/showroom-queries";
 import Link from "next/link";
 import { CarForm } from "@/components/admin/CarForm";
+import { getOlxFieldsForForm } from "@/lib/olx/field-queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewCarPage() {
   const vehicleType = await getVehicleSelection("admin");
-  const showroom = await getShowroomContent();
+  const [showroom, olxFields] = await Promise.all([getShowroomContent(), getOlxFieldsForForm()]);
   return (
     <>
       <div className="mb-6">
@@ -23,7 +24,7 @@ export default async function NewCarPage() {
           criar o anúncio, poderá adicionar fotografias e vídeo.
         </p>
       </div>
-      <CarForm locations={showroom.locations} defaults={vehicleType ? {vehicle_type:vehicleType,body:vehicleType === "motorcycle" ? "Naked" : "Berlina",doors:vehicleType === "motorcycle" ? 0 : 5,seats:vehicleType === "motorcycle" ? 2 : 5} : undefined} />
+      <CarForm locations={showroom.locations} olxFields={olxFields} defaults={vehicleType ? {vehicle_type:vehicleType,body:vehicleType === "motorcycle" ? "Naked" : "Berlina",doors:vehicleType === "motorcycle" ? 0 : 5,seats:vehicleType === "motorcycle" ? 2 : 5} : undefined} />
     </>
   );
 }

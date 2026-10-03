@@ -87,6 +87,7 @@ function toRow(
     warranty_months: values.warranty_months ?? null,
     last_inspection: values.last_inspection || null,
     channels: values.channels ?? [],
+    olx_attributes: values.olx_attributes ?? {},
   };
 }
 
@@ -113,15 +114,15 @@ export async function createCar(input: unknown): Promise<SaveResult> {
   );
   const slug = await uniqueSlug(supabase, base);
 
-  const { data, error } = await supabase
-    .from("cars")
-    .insert({ ...toRow(parsed.data), slug, created_by: user?.id ?? null })
-    .select("id, slug")
-    .single();
+  const row = { ...toRow(parsed.data), slug, created_by: user?.id ?? null };
+  let { data, error } = await supabase.from("cars").insert(row).select("id, slug").single();
+  if (error && withoutOlxFields(error.message)) {
+    ({ data, error } = await supabase.from("cars").insert(stripOlxFields(row)).select("id, slug").single());
+  }
 
-  if (error) {
-    console.error("createCar:", error.message);
-    return { ok: false, error: error.message };
+  if (error || !data) {
+    console.error("createCar:", error?.message);
+    return { ok: false, error: error?.message ?? "Não foi possível criar a viatura." };
   }
 
   revalidatePublic(data.slug);
@@ -145,22 +146,44 @@ export async function updateCar(
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const row = toRow(parsed.data);
+  let { data, error } = await supabase
     .from("cars")
-    .update(toRow(parsed.data))
+    .update(row)
     .eq("id", id)
     .select("id, slug")
     .single();
+  if (error && withoutOlxFields(error.message)) {
+    ({ data, error } = await supabase
+      .from("cars")
+      .update(stripOlxFields(row))
+      .eq("id", id)
+      .select("id, slug")
+      .single());
+  }
 
-  if (error) {
-    console.error("updateCar:", error.message);
-    return { ok: false, error: error.message };
+  if (error || !data) {
+    console.error("updateCar:", error?.message);
+    return { ok: false, error: error?.message ?? "Não foi possível guardar a viatura." };
   }
 
   revalidatePublic(data.slug);
   // O anúncio do OLX acompanha a viatura (se tiver OLX marcado nos canais).
   await queueOlxSync([data.id]);
   return { ok: true, id: data.id, slug: data.slug };
+}
+
+/**
+ * Sem a migração 0032 a coluna `olx_attributes` não existe: a viatura grava
+ * na mesma, só sem os campos do OLX — em vez de a ficha deixar de gravar.
+ */
+function withoutOlxFields(message: string): boolean {
+  return /olx_attributes/.test(message);
+}
+function stripOlxFields<T extends { olx_attributes?: unknown }>(row: T): Omit<T, "olx_attributes"> {
+  const { olx_attributes: _omit, ...rest } = row;
+  void _omit;
+  return rest;
 }
 
 export async function setCarStatus(

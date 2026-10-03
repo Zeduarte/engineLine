@@ -157,6 +157,8 @@ type CarsRow = {
   channels: string[];
   /** Categoria do OLX só desta viatura (0031); nulo = a padrão do tipo. */
   olx_category_id?: number | null;
+  /** «Campos do OLX» escolhidos na ficha (0032). */
+  olx_attributes?: Record<string, string | string[]>;
   created_by: string | null;
   published_at: string | null;
   sold_at: string | null;
@@ -201,6 +203,7 @@ type CarsInsert = {
   last_inspection?: string | null;
   channels?: string[];
   olx_category_id?: number | null;
+  olx_attributes?: Record<string, string | string[]>;
   created_by?: string | null;
 };
 type CarsUpdate = Partial<CarsInsert>;
@@ -803,6 +806,10 @@ export type Database = {
       return_vehicle_to_workshop: {
         Args: { vehicle: string };
         Returns: undefined;
+      };
+      olx_category_fields: {
+        Args: Record<string, never>;
+        Returns: { vehicle_type: string; category_id: number; category_name: string; attributes: Json }[];
       };
       analytics_summary_by_type: {
         Args: {selected_type:string};

@@ -21,6 +21,45 @@ function load(path){
  new Function('module','exports','require',outputText)(mod,mod.exports,localRequire);
  cache.set(path,mod.exports);return mod.exports;}
 
+const F=load('src/lib/olx/fields.ts');
+await test('OLX fields come from the API definitions and become form fields and filters',()=>{
+ const attrs=[
+  {code:'make',label:'Marca',validation:{required:true},values:[{code:'yamaha',label:'Yamaha'},{code:'bmw',label:'BMW'}]},
+  {code:'color',label:'Cor',validation:{required:false},values:[{code:'preto',label:'Preto'},{code:'azul',label:'Azul'}]},
+  {code:'condition',label:'Condição',validation:{required:true},values:[{code:'usado',label:'Usado'},{code:'novo',label:'Novo'}]},
+  {code:'origin',label:'Origem',validation:{required:true},values:[{code:'nacional',label:'Nacional'},{code:'importado',label:'Importado'}]},
+  {code:'extras',label:'Equipamento',validation:{allow_multiple_values:true},values:[{code:'abs',label:'ABS'},{code:'gps',label:'GPS'}]},
+  {code:'weight',label:'Peso',unit:'kg',validation:{numeric:true}},
+  {code:'vin',label:'Nº de quadro',validation:{}},
+  {code:'price',label:'Preço',validation:{type:'price',required:true}},
+  'lixo',
+ ];
+ const fields=F.toFields(attrs);
+ assert.deepEqual(fields.map(f=>[f.code,f.kind]),[['make','select'],['color','select'],['condition','select'],['origin','select'],['extras','multi'],['weight','number'],['vin','text']],'preço fica de fora');
+ const moto={make:'Yamaha',model:'R6',year:2019,mileage:10000,fuel:'Gasolina',transmission:'Manual',body:'Desportiva',power:120,displacement:600,color:'Preto',doors:0,seats:2,registrationMonth:null};
+ // Automático: o que o site já sabe.
+ assert.deepEqual(F.autoValues(fields,moto),{make:'yamaha',color:'preto',condition:'usado'});
+ // A ficha manda: valida contra a lista do OLX e ignora o que não existe.
+ const manual={color:'azul',origin:'importado',extras:['gps','xpto'],weight:'187,4',vin:'  JYA123  ',make:'ferrari',inventado:'x'};
+ assert.deepEqual(F.cleanValues(fields,manual),{color:'azul',origin:'importado',extras:['gps'],weight:'187',vin:'JYA123'});
+ const ad=F.advertAttributes(fields,moto,manual);
+ assert.deepEqual(ad.missing,[]);
+ assert.deepEqual(ad.attributes.find(a=>a.code==='extras'),{code:'extras',values:['gps']});
+ assert.equal(ad.attributes.find(a=>a.code==='make').value,'yamaha','valor inválido na ficha não apaga o automático');
+ // Obrigatório sem valor: não se inventa, diz onde preencher.
+ assert.match(F.advertAttributes(fields,moto,{}).missing.join(),/Origem.*Campos do OLX/);
+ // Filtros: sem duplicar os do site (marca), números com intervalo.
+ assert.deepEqual(F.searchableFields(fields).map(f=>f.code),['color','condition','origin','extras','weight']);
+ const vals=F.effectiveValues(fields,moto,manual);
+ assert.equal(F.matchesOlxFilters(vals,{origin:'importado',weight:{min:150,max:200}}),true);
+ assert.equal(F.matchesOlxFilters(vals,{origin:'nacional'}),false);
+ assert.equal(F.matchesOlxFilters(vals,{extras:'gps'}),true);
+ assert.equal(F.matchesOlxFilters(vals,{weight:{min:200,max:null}}),false);
+ assert.equal(F.matchesOlxFilters(undefined,{color:''}),true,'filtro vazio não filtra');
+ assert.deepEqual(F.valuesInStock(fields[1],[vals,{color:'preto'}]).map(v=>v.label),['Preto','Azul']);
+ assert.equal(F.valueLabel(fields[4],['abs','gps']),'ABS, GPS');
+});
+
 const C=load('src/lib/olx/categories.ts');
 await test('OLX categories are recognised by name, never parts or the parent branch',()=>{
  const tree=[

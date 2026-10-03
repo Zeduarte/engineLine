@@ -211,6 +211,19 @@ await test('unticking OLX retires the advert; nothing happens without it',async(
  await markPending(limpo,CAR);assert.equal(limpo._t.channel_listings.length,0,'sem OLX e sem anúncio, nem cria linha');
 });
 
+await test('fields chosen in the car form go into the advert, over what the site guesses',async()=>{
+ const db=makeDb();
+ db._t.olx_category_cache[0].attributes.push({code:'origin',label:'Origem',validation:{required:true},values:[{code:'nacional',label:'Nacional'},{code:'importado',label:'Importado'}]});
+ await markPending(db,CAR);
+ const sem=await syncListing(db,CAR);
+ assert.equal(sem.ok,false);assert.match(sem.error,/Origem.*Campos do OLX/,'obrigatório sem valor não sai');
+ db._t.cars[0].olx_attributes={origin:'importado',fuel:'diesel'};
+ await markPending(db,CAR);assert.equal((await syncListing(db,CAR)).ok,true);
+ const ad=olx.adverts.get(Number(listing(db).external_id));
+ assert.deepEqual(ad.attributes.find(a=>a.code==='origin'),{code:'origin',value:'importado'});
+ assert.deepEqual(ad.attributes.find(a=>a.code==='make'),{code:'make',value:'bmw'},'o automático continua');
+});
+
 await test('the category tree is browsed level by level; a car can use its own category',async()=>{
  const db=makeDb();
  const root=await browseCategories(db,null);

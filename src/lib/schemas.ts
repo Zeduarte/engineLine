@@ -128,6 +128,13 @@ export const carFormSchema = z
 
     // Exportação multi-canal (portais externos onde publicar)
     channels: z.array(z.string().trim().min(1)).default([]),
+
+    // «Campos do OLX»: { código: valor | [valores] }. Validados contra a
+    // lista do OLX quando o anúncio é montado; aqui só se limita o tamanho.
+    olx_attributes: z
+      .record(z.string().max(80), z.union([z.string().max(200), z.array(z.string().max(200)).max(100)]))
+      .refine((r) => Object.keys(r).length <= 200, "Demasiados campos do OLX")
+      .default({}),
   })
   .refine((v) => v.price_on_request || (v.price != null && v.price > 0), {
     message: "Indique um preço ou marque 'sob consulta'",
