@@ -33,8 +33,6 @@ export interface AdvertContext {
   images: string[];
   /** Máximo de fotografias da categoria (`photos_limit`); 0 = desconhecido. */
   photosLimit: number;
-  /** Página da viatura no site. */
-  siteUrl?: string;
 }
 
 export interface OlxAdvert {
@@ -43,7 +41,6 @@ export interface OlxAdvert {
   category_id: number;
   advertiser_type: "business";
   external_id: string;
-  external_url?: string;
   contact: { name: string; phone: string };
   location: { city_id: number; latitude?: number; longitude?: number };
   images: { url: string }[];
@@ -107,7 +104,8 @@ export function buildAdvert(car: AdvertCar, ctx: AdvertContext): AdvertResult {
       // O id do site identifica o anúncio no OLX: é por ele que se procura
       // antes de criar, para uma nova tentativa nunca duplicar o anúncio.
       external_id: car.id,
-      ...(ctx.siteUrl ? { external_url: ctx.siteUrl } : {}),
+      // Sem `external_url`: o OLX recusa o anúncio inteiro ("Partner is not
+      // allowed to use external URL") a parceiros sem essa permissão.
       contact: { name: ctx.contactName, phone: ctx.contactPhone },
       location: {
         city_id: ctx.cityId,

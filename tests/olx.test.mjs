@@ -101,11 +101,12 @@ const Ad=load('src/lib/olx/advert.ts');
 const car={...facts,id:'11111111-1111-4111-8111-111111111111',variant:null,price:18500,priceOnRequest:false,
  description:'Muito estimado, revisões na marca.',tagline:null,extras:['GPS','Bluetooth']};
 const ctx={categoryId:181,attributeDefs:defs,cityId:1,contactName:'engineLine',contactPhone:'916193337',
- images:['https://x/1.jpg','https://x/2.jpg','https://x/3.jpg'],photosLimit:2,siteUrl:'https://engineline2.netlify.app/viaturas/bmw'};
+ images:['https://x/1.jpg','https://x/2.jpg','https://x/3.jpg'],photosLimit:2};
 await test('an advert is built only when OLX would accept it',()=>{
  const r=Ad.buildAdvert(car,ctx);
  assert.equal(r.ok,true,JSON.stringify(r.problems));
  assert.equal(r.advert.external_id,car.id,'o id do site identifica o anúncio');
+ assert.equal('external_url' in r.advert,false,'o OLX recusa links externos de parceiros');
  assert.equal(r.advert.images.length,2,'respeita o limite de fotos da categoria');
  assert.deepEqual(r.advert.price,{value:18500,currency:'EUR',negotiable:false,trade:false});
  const sob=Ad.buildAdvert({...car,priceOnRequest:true,price:null},ctx);

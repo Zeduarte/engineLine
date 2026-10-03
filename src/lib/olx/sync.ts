@@ -31,10 +31,6 @@ interface RemoteAdvert {
   url?: string;
 }
 
-function siteBase(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
-}
-
 /** Marca a viatura para sincronizar. Chamado sempre que a viatura é gravada. */
 export async function markPending(db: Db, carId: string): Promise<void> {
   const { data: car } = await db.from("cars").select("channels").eq("id", carId).maybeSingle();
@@ -203,7 +199,6 @@ export async function syncListing(db: Db, carId: string): Promise<SyncOutcome> {
       contactPhone: (branding.company.phone || "").replace(/[^\d+]/g, ""),
       images: media,
       photosLimit: category.photos_limit,
-      siteUrl: siteBase() ? `${siteBase()}/viaturas/${car.slug}` : undefined,
     });
     if (!built.ok) return fail(action, `Não publicado: ${built.problems.join("; ")}.`);
 
