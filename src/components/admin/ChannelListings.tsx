@@ -213,7 +213,8 @@ function ChannelRow({
   );
 }
 
-const fmt = (n: number | null) => (n === null ? "—" : n.toLocaleString("pt-PT"));
+// `== null` apanha também `undefined`: sem a migração 0030 as colunas nem existem.
+const fmt = (n: number | null | undefined) => (n == null ? "—" : n.toLocaleString("pt-PT"));
 
 /** Visualizações, telefone e seguidores do anúncio no OLX. */
 function OlxStats({ carId, listing }: { carId: string; listing: ChannelListingRow }) {
