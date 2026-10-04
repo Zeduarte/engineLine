@@ -58,6 +58,16 @@ await test('OLX fields come from the API definitions and become form fields and 
  assert.equal(F.matchesOlxFilters(undefined,{color:''}),true,'filtro vazio não filtra');
  assert.deepEqual(F.valuesInStock(fields[1],[vals,{color:'preto'}]).map(v=>v.label),['Preto','Azul']);
  assert.equal(F.valueLabel(fields[4],['abs','gps']),'ABS, GPS');
+ // Na ficha: um formulário só. O que o site tem não se repete; volta apenas
+ // se o site tiver um valor que o OLX não reconhece.
+ const place=F.formPlacement(fields,F.autoValues(fields,moto),()=>true);
+ assert.deepEqual(place.characteristics.map(f=>f.code),['condition','origin','weight','vin'].filter(c=>!fields.find(f=>f.code===c)?.siteField));
+ assert.deepEqual(place.equipment.map(f=>f.code),['extras']);
+ assert.deepEqual(place.fixes,[]);
+ const ferrari={...moto,make:'Ferrari'};
+ assert.deepEqual(F.formPlacement(fields,F.autoValues(fields,ferrari),()=>true).fixes.map(f=>f.code),['make']);
+ assert.deepEqual(F.formPlacement(fields,F.autoValues(fields,{...moto,make:''}),(s)=>s!=='make').fixes,[],'marca vazia preenche-se no campo do site');
+ assert.deepEqual(F.missingRequired(fields,{},F.autoValues(fields,moto)).map(f=>f.code),['origin']);
 });
 
 const C=load('src/lib/olx/categories.ts');

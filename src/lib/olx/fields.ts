@@ -138,6 +138,43 @@ export function advertAttributes(
   return { attributes, missing };
 }
 
+// ---- Ficha ------------------------------------------------------------------
+
+/**
+ * Onde cada campo do OLX entra na ficha, para ser um formulário só (sem uma
+ * caixa «Campos do OLX» à parte nem campos repetidos):
+ *  - os que o site já tem (marca, km, …) não aparecem — vão automaticamente;
+ *    só voltam se forem obrigatórios e o OLX não reconhecer o valor do site
+ *    (`fixes`), para se escolher da lista do OLX;
+ *  - os restantes de escolha única entram em «Características»;
+ *  - os de escolha múltipla entram junto ao equipamento.
+ */
+export function formPlacement(
+  fields: OlxField[],
+  auto: OlxValues,
+  /** O campo do site correspondente já tem valor? (vazio → preenche-se lá). */
+  siteFilled: (siteField: string) => boolean = () => true,
+): { characteristics: OlxField[]; equipment: OlxField[]; fixes: OlxField[] } {
+  const characteristics: OlxField[] = [];
+  const equipment: OlxField[] = [];
+  const fixes: OlxField[] = [];
+  for (const f of fields) {
+    if (f.siteField) {
+      // Só se o site TEM valor e o OLX não o reconhece; vazio preenche-se no
+      // campo do site, e não num segundo campo igual.
+      if (f.required && auto[f.code] === undefined && siteFilled(f.siteField)) fixes.push(f);
+      continue;
+    }
+    (f.kind === "multi" ? equipment : characteristics).push(f);
+  }
+  return { characteristics, equipment, fixes };
+}
+
+/** Obrigatórios do OLX ainda sem valor (nem escolhido, nem automático). */
+export function missingRequired(fields: OlxField[], values: OlxValues, auto: OlxValues): OlxField[] {
+  return fields.filter((f) => f.required && values[f.code] === undefined && auto[f.code] === undefined);
+}
+
 /** Texto de um valor (etiqueta do OLX), para mostrar. */
 export function valueLabel(field: OlxField, value: string | string[]): string {
   const label = (c: string) => field.values.find((x) => x.code === c)?.label ?? c;

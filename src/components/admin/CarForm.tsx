@@ -37,8 +37,8 @@ import {
 import { CAR_MODELS } from "@/lib/car-models";
 import { extrasCatalog, MOTORCYCLE_EXTRAS_CATALOG } from "@/lib/extras";
 import { formatPlate } from "@/lib/plate";
-import { autoValues, type OlxField, type OlxValues } from "@/lib/olx/fields";
-import { OlxFieldsSection } from "./OlxFieldsSection";
+import { autoValues, formPlacement, missingRequired, type OlxField, type OlxValues } from "@/lib/olx/fields";
+import { OlxFieldInputs } from "./OlxFieldInputs";
 
 // Lista de anos calculada uma vez (o ano corrente é estável na sessão).
 const YEARS = yearOptions();
@@ -132,9 +132,66 @@ export function CarForm({
   const make = watch("make") ?? "";
   const modelOptions =
     vehicleType === "motorcycle" ? [] : (CAR_MODELS[make] ?? []);
-  // Os campos do OLX acompanham a ficha: o «automático» usa o que está escrito.
+  // Os campos do OLX acompanham a ficha: o que o site já sabe vai sozinho.
   const watched = watch();
   const currentOlxFields = olxFields?.[vehicleType] ?? [];
+  const olxFacts = {
+    make: watched.make ?? "",
+    model: watched.model ?? "",
+    year: Number(watched.year) || 0,
+    mileage: Number(watched.mileage) || 0,
+    fuel: watched.fuel ?? "",
+    transmission: watched.transmission ?? "",
+    body: watched.body ?? "",
+    power: Number(watched.power) || 0,
+    displacement: Number(watched.displacement) || 0,
+    color: watched.color || null,
+    doors: Number(watched.doors) || 0,
+    seats: Number(watched.seats) || 0,
+    registrationMonth: watched.registration_month ?? null,
+  };
+  const olxAuto = autoValues(currentOlxFields, olxFacts);
+  const olxPlacement = formPlacement(currentOlxFields, olxAuto, (siteField) => {
+    if (siteField === "condition") return true;
+    const v = olxFacts[siteField as keyof typeof olxFacts];
+    return v !== null && v !== "" && v !== 0;
+  });
+  const olxMissing = missingRequired(currentOlxFields, olxValues, olxAuto);
+
+  // O que falta para o anúncio ficar completo — o painel ao lado.
+  const filled = (v: unknown) => v !== undefined && v !== null && v !== "" && !(typeof v === "number" && Number.isNaN(v));
+  const wantsOlx = channels.includes("olx");
+  const progressItems: { label: string; ok: boolean; href: string; note?: string }[] = [
+    { label: "Marca e modelo", ok: filled(watched.make) && filled(watched.model) && watched.model !== "—", href: "#sec-identificacao" },
+    { label: "Ano", ok: filled(watched.year), href: "#sec-identificacao" },
+    { label: "Quilómetros", ok: filled(watched.mileage), href: "#sec-caracteristicas" },
+    { label: "Combustível e caixa", ok: filled(watched.fuel) && filled(watched.transmission), href: "#sec-caracteristicas" },
+    { label: vehicleType === "motorcycle" ? "Categoria da mota" : "Carroçaria", ok: filled(watched.body), href: "#sec-caracteristicas" },
+    { label: "Preço", ok: !!watched.price_on_request || Number(watched.price) > 0, href: "#sec-preco" },
+    {
+      label: "Descrição",
+      ok: (watched.description ?? "").trim().length >= 40,
+      href: "#sec-descricao",
+      note: "recomendado: algumas frases sobre a viatura",
+    },
+    ...(wantsOlx
+      ? [{
+          label: "Campos obrigatórios do OLX",
+          ok: currentOlxFields.length > 0 && olxMissing.length === 0,
+          href: "#sec-caracteristicas",
+          note: !currentOlxFields.length
+            ? "escolha a categoria em Integrações → OLX"
+            : olxMissing.length
+              ? `faltam: ${olxMissing.map((f) => f.label).join(", ")}`
+              : undefined,
+        }]
+      : []),
+  ];
+  const progress = {
+    items: progressItems,
+    done: progressItems.filter((i) => i.ok).length,
+    percent: Math.round((progressItems.filter((i) => i.ok).length / progressItems.length) * 100),
+  };
   const motoKind = motorcycleKind(watch("body"));
 
   /** Estrada ↔ moto 4: o segmento muda com o tipo de mota. */
@@ -286,11 +343,12 @@ export function CarForm({
   if (!typeChosen) return typeSelector;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start" noValidate>
+      <div className="min-w-0 space-y-6">
       {typeSelector}
       <input type="hidden" {...register("vehicle_type")} />
       {/* Identificação */}
-      <Section title="Identificação">
+      <Section n={1} id="sec-identificacao" title="Identificação" subtitle="Marca, modelo e ano — o que aparece no título do anúncio.">
         <Grid>
           <Field
             label="Mês da primeira matrícula"
@@ -424,7 +482,7 @@ export function CarForm({
       </Section>
 
       {/* Mecânica */}
-      <Section title="Mecânica">
+      <Section n={2} id="sec-caracteristicas" title="Características" subtitle="Os mesmos campos que o OLX pede para esta categoria.">
         <Grid>
           <Field label="Quilómetros" error={errors.mileage?.message} required>
             <input
@@ -520,11 +578,15 @@ export function CarForm({
               ))}
             </select>
           </Field>
+          {/* Os campos do OLX que o site não tem, na mesma grelha; e os que o
+              site tem mas cujo valor o OLX não reconheceu, para corrigir. */}
+          <OlxFieldInputs fields={olxPlacement.fixes} values={olxValues} onChange={setOlxValues} fix />
+          <OlxFieldInputs fields={olxPlacement.characteristics} values={olxValues} onChange={setOlxValues} />
         </Grid>
       </Section>
 
       {/* Comercial */}
-      <Section title="Comercial">
+      <Section n={3} id="sec-preco" title="Preço e estado">
         <Grid>
           <Field label="Preço (€)" error={errors.price?.message}>
             <input
@@ -573,7 +635,7 @@ export function CarForm({
       </Section>
 
       {/* Transparência & badges */}
-      <Section title="Transparência & destaques">
+      <Section n={4} id="sec-historico" title="Histórico e garantias" subtitle="Dá confiança a quem compra: donos, garantia, inspeção.">
         <Grid>
           <Field label="Preço anterior (€) — mostra «Baixa de preço»">
             <input
@@ -640,7 +702,7 @@ export function CarForm({
       </Section>
 
       {/* Conteúdo */}
-      <Section title="Conteúdo">
+      <Section n={5} id="sec-descricao" title="Descrição e equipamento" subtitle="Um bom texto e o equipamento certo vendem a viatura.">
         <div className="space-y-4">
           <Field label="Slogan (frase curta)" error={errors.tagline?.message}>
             <input
@@ -727,35 +789,16 @@ export function CarForm({
               </ul>
             )}
           </div>
+          {olxPlacement.equipment.length > 0 && (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <OlxFieldInputs fields={olxPlacement.equipment} values={olxValues} onChange={setOlxValues} />
+            </div>
+          )}
         </div>
       </Section>
 
-      {/* Os mesmos campos que o OLX pede nesta categoria, vindos da API. */}
-      <Section title="Campos do OLX">
-        <OlxFieldsSection
-          fields={currentOlxFields}
-          values={olxValues}
-          auto={autoValues(currentOlxFields, {
-            make: watched.make ?? "",
-            model: watched.model ?? "",
-            year: Number(watched.year) || 0,
-            mileage: Number(watched.mileage) || 0,
-            fuel: watched.fuel ?? "",
-            transmission: watched.transmission ?? "",
-            body: watched.body ?? "",
-            power: Number(watched.power) || 0,
-            displacement: Number(watched.displacement) || 0,
-            color: watched.color || null,
-            doors: Number(watched.doors) || 0,
-            seats: Number(watched.seats) || 0,
-            registrationMonth: watched.registration_month ?? null,
-          })}
-          onChange={setOlxValues}
-        />
-      </Section>
-
       {/* Exportação multi-canal */}
-      <Section title="Publicar noutras plataformas">
+      <Section n={6} id="sec-publicacao" title="Publicação" subtitle="Onde anunciar esta viatura, além do site.">
         <p className="mb-4 text-xs text-paper/50">
           Selecione os portais onde quer anunciar esta viatura. As viaturas
           escolhidas ficam disponíveis no feed de exportação de cada plataforma
@@ -779,7 +822,12 @@ export function CarForm({
         </div>
       </Section>
 
-      <div className="sticky bottom-0 -mx-2 flex items-center justify-end gap-3 border-t border-white/10 bg-ink/90 px-2 py-4 backdrop-blur">
+      {/* Telemóvel e tablet: barra fixa em baixo, com o progresso. */}
+      <div className="sticky bottom-0 -mx-2 flex items-center justify-between gap-3 border-t border-white/10 bg-ink/90 px-2 py-4 backdrop-blur lg:hidden">
+        <span className="text-xs text-paper/60">
+          {progress.done}/{progress.items.length} · {progress.percent}%
+        </span>
+        <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={() => router.push("/admin/carros")}
@@ -794,23 +842,79 @@ export function CarForm({
               ? "Guardar alterações"
               : "Criar viatura"}
         </button>
+        </div>
       </div>
+      </div>
+
+      {/* Computador: painel fixo ao lado com o que falta e o botão de gravar. */}
+      <aside className="hidden lg:sticky lg:top-24 lg:block">
+        <div className="card space-y-4 p-5">
+          <div>
+            <p className="text-sm font-semibold text-paper">Progresso do anúncio</p>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10" aria-hidden>
+              <div className="h-full rounded-full bg-[color:var(--accent)] transition-all" style={{ width: `${progress.percent}%` }} />
+            </div>
+            <p className="mt-1.5 text-xs text-paper/50">
+              {progress.done} de {progress.items.length} — {progress.percent === 100 ? "pronto a publicar" : "falta pouco"}
+            </p>
+          </div>
+          <ul className="space-y-1.5 text-sm">
+            {progress.items.map((item) => (
+              <li key={item.label}>
+                <a href={item.href} className="flex items-start gap-2 rounded-md px-1 py-0.5 hover:bg-white/5">
+                  <span aria-hidden className={item.ok ? "text-emerald-300" : "text-paper/30"}>
+                    {item.ok ? "✓" : "○"}
+                  </span>
+                  <span className={item.ok ? "text-paper/60" : "text-paper"}>
+                    {item.label}
+                    {item.note && <span className="block text-xs text-paper/40">{item.note}</span>}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div className="space-y-2 border-t border-white/10 pt-4">
+            <button type="submit" disabled={isSubmitting} className="btn-primary w-full">
+              {isSubmitting ? "A guardar…" : carId ? "Guardar alterações" : "Criar viatura"}
+            </button>
+            <button type="button" onClick={() => router.push("/admin/carros")} className="btn-ghost w-full">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </aside>
     </form>
   );
 }
 
 function Section({
   title,
+  n,
+  id,
+  subtitle,
   children,
 }: {
   title: string;
+  /** Número da secção, para a ficha se ler como um percurso. */
+  n?: number;
+  /** Âncora, para o painel de progresso levar até aqui. */
+  id?: string;
+  subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="card p-5">
-      <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-paper/50">
-        {title}
-      </h2>
+    <section id={id} className="card scroll-mt-24 p-5 md:p-6">
+      <div className="mb-5 flex items-start gap-3">
+        {n !== undefined && (
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-sm font-semibold text-paper">
+            {n}
+          </span>
+        )}
+        <div>
+          <h2 className="text-base font-semibold text-paper">{title}</h2>
+          {subtitle && <p className="mt-0.5 text-xs text-paper/50">{subtitle}</p>}
+        </div>
+      </div>
       {children}
     </section>
   );
