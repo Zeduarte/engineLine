@@ -61,6 +61,13 @@ await test('OLX fields come from the API definitions and become form fields and 
 });
 
 const C=load('src/lib/olx/categories.ts');
+await test('new segments reach OLX: Utilitário and Moto 4 are not confused with Citadino',()=>{
+ const A=load('src/lib/olx/attributes.ts');
+ const body=[{code:'u',label:'Utilitário'},{code:'c',label:'Citadino'},{code:'q',label:'Moto 4 / Quad'}];
+ assert.equal(A.pickValue('Utilitário',body),'u');
+ assert.equal(A.pickValue('Citadino',body),'c');
+ assert.equal(A.pickValue('Moto 4',body),'q');
+});
 await test('OLX categories are recognised by name, never parts or the parent branch',()=>{
  const tree=[
   {id:1,name:'Carros, motos e barcos',is_leaf:false},

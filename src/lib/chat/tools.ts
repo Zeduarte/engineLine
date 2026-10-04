@@ -30,6 +30,7 @@ const BODIES = [
   "Coupé",
   "Carrinha",
   "Citadino",
+  "Utilitário",
   "Descapotável",
   "Monovolume",
 ] as const;

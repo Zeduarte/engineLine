@@ -22,6 +22,7 @@ export type BodyType =
   | "Coupé"
   | "Carrinha"
   | "Citadino"
+  | "Utilitário"
   | "Descapotável"
   | "Monovolume"
   | "Scooter"
@@ -30,7 +31,8 @@ export type BodyType =
   | "Trail"
   | "Touring"
   | "Chopper/Cruiser"
-  | "Enduro";
+  | "Enduro"
+  | "Moto 4";
 
 export type VehicleStatus = "workshop" | "draft" | "prepared" | "published" | "reserved" | "sold";
 

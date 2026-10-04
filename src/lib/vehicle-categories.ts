@@ -6,6 +6,7 @@ export const MOTORCYCLE_BODIES = [
   "Touring",
   "Chopper/Cruiser",
   "Enduro",
+  "Moto 4",
 ] as const;
 export const CAR_BODIES = [
   "Berlina",
@@ -13,6 +14,7 @@ export const CAR_BODIES = [
   "Coupé",
   "Carrinha",
   "Citadino",
+  "Utilitário",
   "Descapotável",
   "Monovolume",
 ] as const;

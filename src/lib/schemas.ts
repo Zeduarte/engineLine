@@ -26,6 +26,7 @@ export const BODY_TYPES = [
   "Coupé",
   "Carrinha",
   "Citadino",
+  "Utilitário",
   "Descapotável",
   "Monovolume",
   ...MOTORCYCLE_BODIES,

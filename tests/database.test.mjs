@@ -122,6 +122,16 @@ await test('personal hours: each person sees and edits only their own, admin see
  });
  await asUser(seller,async()=>assert.equal((await db.query('delete from time_entries where id=$1 returning id',[mine.id])).rows.length,1));
 });
+await test('new segments Utilitário and Moto 4 are accepted by the database, each in its own world',async()=>{
+ for(const [slug,body,type,doors] of [['megane-util','Utilitário','car',5],['ltr-quad','Moto 4','motorcycle',0]]){
+  const r=await db.query(`insert into cars(slug,make,model,year,fuel,transmission,body,status,price,vehicle_type,doors) values($1,'X','Y',2016,'Diesel','Manual',$2,'draft',1000,$3,$4) returning body`,[slug,body,type,doors]);
+  assert.equal(r.rows[0].body,body);
+  await db.query('delete from cars where slug=$1',[slug]);
+ }
+ // Uma moto 4 não pode ser um carro, nem um utilitário uma mota.
+ await assert.rejects(db.query(`insert into cars(slug,make,model,year,fuel,transmission,body,status,price,vehicle_type,doors) values('x1','X','Y',2016,'Diesel','Manual','Moto 4','draft',1000,'car',5)`),/cars_vehicle_category_check/);
+ await assert.rejects(db.query(`insert into cars(slug,make,model,year,fuel,transmission,body,status,price,vehicle_type,doors) values('x2','X','Y',2016,'Diesel','Manual','Utilitário','draft',1000,'motorcycle',0)`),/cars_vehicle_category_check/);
+});
 await test('workshop hours are recalculated even when API submits forged totals',async()=>asUser(mechanic,async()=>{
  const row=(await db.query("insert into vehicle_tasks(car_id,work_date,start_time,end_time,hours) values($1,current_date,'22:00','01:30',999) returning *",[car])).rows[0];
  assert.equal(Number(row.hours),3.5);
