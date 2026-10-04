@@ -8,6 +8,7 @@ import type {
   BodyType,
   SortKey,
 } from "@/types/vehicle";
+import { MOTORCYCLE_KIND_HINT, MOTORCYCLE_KIND_LABEL, QUAD_BODY } from "@/lib/vehicle-categories";
 
 interface FiltersProps {
   filters: VehicleFilters;
@@ -19,6 +20,8 @@ interface FiltersProps {
     fuels: FuelType[];
     transmissions: Transmission[];
     bodies: BodyType[];
+    /** Quantas motas de estrada e moto 4 há no stock (só nas motas). */
+    motoCounts?: { road: number; quad: number };
   };
   resultCount: number;
   onChange: (patch: Partial<VehicleFilters>) => void;
@@ -58,6 +61,35 @@ export function Filters({
 
   return (
     <div className="rounded-2xl border border-white/10 bg-ink-soft p-5 md:p-6">
+      {/* Nas motas, a primeira escolha é o mundo: de estrada (2 rodas) ou
+          moto 4. Quem procura um quad não quer ver scooters, e vice-versa. */}
+      {filters.vehicleType === "motorcycle" && options.motoCounts && (
+        <div role="radiogroup" aria-label="Tipo de mota" className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {([
+            [null, "Todas as motas", `${options.motoCounts.road + options.motoCounts.quad} no stock`],
+            ["road", MOTORCYCLE_KIND_LABEL.road, `${MOTORCYCLE_KIND_HINT.road} · ${options.motoCounts.road}`],
+            ["quad", MOTORCYCLE_KIND_LABEL.quad, `${MOTORCYCLE_KIND_HINT.quad} · ${options.motoCounts.quad}`],
+          ] as const).map(([kind, title, hint]) => {
+            const active = filters.motoKind === kind;
+            return (
+              <button
+                key={title}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => onChange({ motoKind: kind, body: null })}
+                className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+                  active ? "border-accent bg-white/[0.06]" : "border-white/10 hover:border-white/25"
+                }`}
+              >
+                <span className={`block text-base font-semibold ${active ? "text-accent" : "text-paper"}`}>{title}</span>
+                <span className="mt-0.5 block text-xs text-paper/50">{hint}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Pesquisa livre */}
       <input
         type="search"
@@ -183,6 +215,7 @@ export function Filters({
               </Select>
             </Field>
 
+            {filters.motoKind !== "quad" && (
             <Field
               label={
                 filters.vehicleType === "motorcycle"
@@ -197,13 +230,17 @@ export function Filters({
                 }
               >
                 <option value="">Todas</option>
-                {options.bodies.map((b) => (
+                {options.bodies
+                  // Nas motas de estrada, "Moto 4" não é uma categoria.
+                  .filter((b) => filters.motoKind !== "road" || b !== QUAD_BODY)
+                  .map((b) => (
                   <option key={b} value={b}>
                     {b}
                   </option>
                 ))}
               </Select>
             </Field>
+            )}
 
             {([
               ["Preço (€)","minPrice","maxPrice"],

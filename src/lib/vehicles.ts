@@ -1,4 +1,4 @@
-import { isCampaign } from "./vehicle-categories";
+import { isCampaign, motorcycleKind } from "./vehicle-categories";
 import type { Vehicle, VehicleFilters, SortKey } from "@/types/vehicle";
 import { brandOptions, sameBrand } from "./brand-name";
 
@@ -40,6 +40,7 @@ const EMPTY_FILTERS: VehicleFilters = {
   maxYear: null,
   location: null,
   vehicleType: null,
+  motoKind: null,
   campaignOnly: false,
 };
 
@@ -72,6 +73,11 @@ export function applyFilters(
     )
       return false;
     if (filters.vehicleType && (v.vehicleType ?? "car") !== filters.vehicleType)
+      return false;
+    if (
+      filters.motoKind &&
+      ((v.vehicleType ?? "car") !== "motorcycle" || motorcycleKind(v.body) !== filters.motoKind)
+    )
       return false;
     if (filters.campaignOnly && !isCampaign(v)) return false;
     if (filters.maxYear != null && v.year > filters.maxYear) return false;

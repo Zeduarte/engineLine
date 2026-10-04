@@ -37,6 +37,18 @@ await test('everyone has the personal Hours section, including mechanics',()=>{
  for(const [role,allowed] of [['mecanico',null],['vendedor',null],['vendedor',['leads']],['chefe',null],['admin',[]]]) assert.equal(canAccess(role,allowed,'horas'),true,role);
  assert.equal(canAccess('mecanico',null,'leads'),false);
 });
+await test('motorcycles split into road (2 wheels) and moto 4, in search and in categories',()=>{
+ const {applyFilters,emptyFilters}=load('src/lib/vehicles.ts');
+ const VC=load('src/lib/vehicle-categories.ts');
+ const base={make:'X',model:'Y',year:2020,mileage:0,price:5000,fuel:'Gasolina',transmission:'Manual',featured:false};
+ const stock=[{...base,slug:'r6',vehicleType:'motorcycle',body:'Desportiva'},{...base,slug:'ltr',vehicleType:'motorcycle',body:'Moto 4'},{...base,slug:'clio',vehicleType:'car',body:'Utilitário'}];
+ const pick=(p)=>applyFilters(stock,{...emptyFilters(),...p}).map(v=>v.slug);
+ assert.deepEqual(pick({motoKind:'quad'}),['ltr']);
+ assert.deepEqual(pick({motoKind:'road'}),['r6'],'carros não entram nas motas de estrada');
+ assert.deepEqual(pick({}),['r6','ltr','clio']);
+ assert.equal(VC.ROAD_MOTORCYCLE_BODIES.includes('Moto 4'),false);
+ assert.equal(VC.motorcycleKind('Moto 4'),'quad');assert.equal(VC.motorcycleKind('Naked'),'road');assert.equal(VC.motorcycleKind(null),'road');
+});
 await test('only the account owner manages other admins',()=>{
  assert.equal(canManage('admin','admin'),false);assert.equal(canManage('admin','admin',false),false);assert.equal(canManage('admin','admin',true),true);
  assert.equal(canManage('chefe','admin',true),false);assert.equal(canManage('admin','chefe'),true);assert.equal(canManage('admin','mecanico'),true);assert.equal(canManage('chefe','vendedor'),true);

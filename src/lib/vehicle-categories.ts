@@ -20,6 +20,26 @@ export const CAR_BODIES = [
 ] as const;
 export const VEHICLE_TYPES = ["car", "motorcycle"] as const;
 export type VehicleType = (typeof VEHICLE_TYPES)[number];
+
+/**
+ * As motas dividem-se em dois mundos que quem procura não mistura: as de
+ * estrada (2 rodas) e as moto 4 (quads). É o segmento que decide.
+ */
+export type MotorcycleKind = "road" | "quad";
+export const MOTORCYCLE_KIND_LABEL: Record<MotorcycleKind, string> = {
+  road: "Motas de estrada",
+  quad: "Moto 4",
+};
+export const MOTORCYCLE_KIND_HINT: Record<MotorcycleKind, string> = {
+  road: "2 rodas · scooter, naked, trail, touring…",
+  quad: "4 rodas · quads e ATV",
+};
+export const QUAD_BODY = "Moto 4";
+/** Segmentos das motas de estrada (todos menos Moto 4). */
+export const ROAD_MOTORCYCLE_BODIES = MOTORCYCLE_BODIES.filter((b) => b !== QUAD_BODY);
+export function motorcycleKind(body: string | null | undefined): MotorcycleKind {
+  return body === QUAD_BODY ? "quad" : "road";
+}
 export function isMotorcycleBody(body: string): boolean {
   return (MOTORCYCLE_BODIES as readonly string[]).includes(body);
 }

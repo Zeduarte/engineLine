@@ -33,6 +33,8 @@ export default async function InventoryPage({
     model: sp.model || null,
     fuel: (sp.fuel as FuelType) || null,
     query: sp.q || null,
+    // ?mota=estrada | ?mota=moto4 — links diretos para cada tipo de mota.
+    motoKind: sp.mota === "moto4" ? ("quad" as const) : sp.mota === "estrada" ? ("road" as const) : null,
   };
 
   return (

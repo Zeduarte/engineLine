@@ -2,8 +2,13 @@
 
 import {
   CAR_BODIES,
-  MOTORCYCLE_BODIES,
   MOTORCYCLE_BRANDS,
+  MOTORCYCLE_KIND_HINT,
+  MOTORCYCLE_KIND_LABEL,
+  QUAD_BODY,
+  ROAD_MOTORCYCLE_BODIES,
+  motorcycleKind,
+  type MotorcycleKind,
   type VehicleType,
 } from "@/lib/vehicle-categories";
 import type { PointOfSale } from "@/lib/showroom";
@@ -130,6 +135,13 @@ export function CarForm({
   // Os campos do OLX acompanham a ficha: o «automático» usa o que está escrito.
   const watched = watch();
   const currentOlxFields = olxFields?.[vehicleType] ?? [];
+  const motoKind = motorcycleKind(watch("body"));
+
+  /** Estrada ↔ moto 4: o segmento muda com o tipo de mota. */
+  function chooseMotoKind(kind: MotorcycleKind) {
+    if (kind === motoKind) return;
+    setValue("body", kind === "quad" ? QUAD_BODY : "Naked", { shouldDirty: true });
+  }
 
   function chooseType(kind: VehicleType) {
     if (kind !== vehicleType) {
@@ -242,8 +254,32 @@ export function CarForm({
       </div>
       {typeChosen && (
         <p className="mt-3 text-sm text-paper/60" role="status">
-          Anúncio de {vehicleType === "motorcycle" ? "mota" : "carro"}
+          Anúncio de {vehicleType === "motorcycle" ? (motoKind === "quad" ? "moto 4" : "mota de estrada") : "carro"}
         </p>
+      )}
+      {/* Nas motas, a segunda escolha é o mundo: estrada (2 rodas) ou moto 4.
+          Decide o segmento e o sítio onde a mota aparece no site. */}
+      {typeChosen && vehicleType === "motorcycle" && (
+        <div className="mt-5 border-t border-white/10 pt-5">
+          <h3 className="text-base font-semibold text-paper">Que tipo de mota?</h3>
+          <div className="mt-3 grid grid-cols-2 gap-3" role="group" aria-label="Tipo de mota">
+            {(["road", "quad"] as const).map((kind) => (
+              <button
+                key={kind}
+                type="button"
+                disabled={isSubmitting}
+                aria-pressed={motoKind === kind}
+                onClick={() => chooseMotoKind(kind)}
+                className={`rounded-xl border px-5 py-4 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50 ${motoKind === kind ? "border-accent bg-white/[0.06]" : "border-white/15 hover:border-accent"}`}
+              >
+                <span className={`block text-lg font-semibold ${motoKind === kind ? "text-accent" : "text-paper"}`}>
+                  {MOTORCYCLE_KIND_LABEL[kind]}
+                </span>
+                <span className="mt-0.5 block text-xs text-paper/50">{MOTORCYCLE_KIND_HINT[kind]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </section>
   );
@@ -432,7 +468,9 @@ export function CarForm({
             >
               <option value="">Por confirmar — selecione</option>
               {(vehicleType === "motorcycle"
-                ? MOTORCYCLE_BODIES
+                ? motoKind === "quad"
+                  ? [QUAD_BODY]
+                  : ROAD_MOTORCYCLE_BODIES
                 : CAR_BODIES
               ).map((b) => (
                 <option key={b} value={b}>
