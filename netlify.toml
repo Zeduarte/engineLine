@@ -14,7 +14,7 @@
   [build.environment]
     NEXT_PUBLIC_SUPABASE_URL = "https://hmmuhxfggwhvvvtzbdps.supabase.co"
     NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_SgrQ9eUf-AxPyVhurQU-jQ_Ff57sgw4"
-    NEXT_PUBLIC_SITE_URL = "https://engineline2.netlify.app"
+    NEXT_PUBLIC_SITE_URL = "https://supermotas.netlify.app"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
