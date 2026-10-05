@@ -49,6 +49,19 @@ await test('motorcycles split into road (2 wheels) and moto 4, in search and in 
  assert.equal(VC.ROAD_MOTORCYCLE_BODIES.includes('Moto 4'),false);
  assert.equal(VC.motorcycleKind('Moto 4'),'quad');assert.equal(VC.motorcycleKind('Naked'),'road');assert.equal(VC.motorcycleKind(null),'road');
 });
+await test('company contacts come from the main point of sale, keeping what the point leaves blank',()=>{
+ const {companyFromPoint,DEFAULT_COMPANY}=load('src/lib/branding.ts');
+ const base={...DEFAULT_COMPANY,whatsapp:'351910000000',messenger:'https://m.me/x'};
+ const point={address:'Av. Cruzeiro das Lampreias nº727',city:'Cabeça Santa',postalCode:'4575-134',phone:'916100742',email:'',hours:'',latitude:null,longitude:null};
+ const c=companyFromPoint(base,point);
+ assert.equal(c.phone,'916100742');assert.equal(c.phoneHref,'tel:916100742');
+ assert.equal(c.address.street,'Av. Cruzeiro das Lampreias nº727');assert.equal(c.address.city,'Cabeça Santa');
+ assert.equal(c.email,base.email,'email vazio no ponto não apaga');
+ assert.deepEqual(c.geo,base.geo,'sem coordenadas no ponto mantém as anteriores');
+ assert.equal(c.whatsapp,'351910000000');assert.equal(c.messenger,'https://m.me/x');
+ assert.deepEqual(companyFromPoint(base,{...point,latitude:41.2,longitude:-8.3}).geo,{lat:41.2,lng:-8.3});
+ assert.equal(companyFromPoint(base,undefined),base,'sem pontos de venda fica tudo como estava');
+});
 await test('only the account owner manages other admins',()=>{
  assert.equal(canManage('admin','admin'),false);assert.equal(canManage('admin','admin',false),false);assert.equal(canManage('admin','admin',true),true);
  assert.equal(canManage('chefe','admin',true),false);assert.equal(canManage('admin','chefe'),true);assert.equal(canManage('admin','mecanico'),true);assert.equal(canManage('chefe','vendedor'),true);

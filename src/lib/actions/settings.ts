@@ -143,20 +143,14 @@ export async function saveCompany(input: unknown): Promise<SettingsResult> {
 
   const d = parsed.data;
   const supabase = await createClient();
+  // Só os canais de conversa: telefone, email, morada, horário e mapa vêm
+  // agora do ponto de venda principal (Página inicial). O que estava aqui
+  // fica intacto, como reserva enquanto não houver pontos de venda.
   const { error } = await supabase.from("site_settings").upsert(
     {
       id: 1,
-      phone: d.phone || null,
-      email: d.email || null,
       whatsapp: d.whatsapp || null,
       messenger: d.messenger || null,
-      address_street: d.address_street || null,
-      address_city: d.address_city || null,
-      address_postal: d.address_postal || null,
-      address_country: d.address_country || null,
-      hours: d.hours || null,
-      geo_lat: d.geo_lat ?? null,
-      geo_lng: d.geo_lng ?? null,
     },
     { onConflict: "id" },
   );

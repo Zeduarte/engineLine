@@ -62,6 +62,46 @@ export function waHref(whatsapp: string, message: string): string {
   return `https://wa.me/${normalizeWhatsApp(whatsapp)}?text=${encodeURIComponent(message)}`;
 }
 
+/** O que um ponto de venda sabe dizer sobre os contactos. */
+export interface PointContacts {
+  address: string;
+  city: string;
+  postalCode: string;
+  phone: string;
+  email: string;
+  hours: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+/**
+ * Os contactos da empresa vêm do ponto de venda principal (o primeiro em
+ * Página inicial → Pontos de venda): é aí que se editam, num só sítio. Um
+ * campo vazio no ponto mantém o que havia, para nada ficar em branco no site.
+ * WhatsApp e Messenger não existem nos pontos e mantêm-se.
+ */
+export function companyFromPoint(company: Company, point: PointContacts | undefined): Company {
+  if (!point) return company;
+  const phone = point.phone.trim() || company.phone;
+  return {
+    ...company,
+    phone,
+    phoneHref: telHref(phone),
+    email: point.email.trim() || company.email,
+    address: {
+      ...company.address,
+      street: point.address.trim() || company.address.street,
+      city: point.city.trim() || company.address.city,
+      postalCode: point.postalCode.trim() || company.address.postalCode,
+    },
+    hours: point.hours.trim() || company.hours,
+    geo:
+      point.latitude !== null && point.longitude !== null
+        ? { lat: point.latitude, lng: point.longitude }
+        : company.geo,
+  };
+}
+
 /** Empresa por defeito — vinda de `site.ts`. */
 export const DEFAULT_COMPANY: Company = {
   phone: site.phone,

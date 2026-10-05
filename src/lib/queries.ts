@@ -12,6 +12,7 @@ import { mergeBadges, type BadgeDef } from "@/lib/badges";
 import {
   DEFAULT_BRANDING,
   DEFAULT_COMPANY,
+  companyFromPoint,
   telHref,
   type Branding,
 } from "@/lib/branding";
@@ -189,6 +190,9 @@ export const getBranding = unstable_cache(
 
     const d = DEFAULT_COMPANY;
     const phone = data.phone || d.phone;
+    // Contactos: o ponto de venda principal (Página inicial) manda; o que
+    // está em site_settings fica só como reserva enquanto não houver pontos.
+    const { locations } = await getShowroomContent();
     return {
       companyName: data.company_name || DEFAULT_BRANDING.companyName,
       logoUrl: data.logo_url ? publicMediaUrl(data.logo_url) : null,
@@ -199,7 +203,7 @@ export const getBranding = unstable_cache(
       pixelId: data.pixel_id || null,
       reservationEnabled: data.reservation_enabled ?? false,
       depositAmount: data.deposit_amount ?? DEFAULT_BRANDING.depositAmount,
-      company: {
+      company: companyFromPoint({
         phone,
         phoneHref: telHref(phone),
         email: data.email || d.email,
@@ -216,7 +220,7 @@ export const getBranding = unstable_cache(
           lat: data.geo_lat ?? d.geo.lat,
           lng: data.geo_lng ?? d.geo.lng,
         },
-      },
+      }, locations[0]),
     };
   },
   ["site-branding"],

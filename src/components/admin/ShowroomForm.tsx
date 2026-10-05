@@ -1,11 +1,21 @@
 "use client";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { saveShowroom } from "@/lib/actions/showroom";
+import { DEFAULT_COMPANY } from "@/lib/branding";
 import {
   SERVICE_IDS,
   type ShowroomContent,
   type PointOfSale,
 } from "@/lib/showroom";
+
+// O mapa (Leaflet) depende de `window` — carrega só no cliente.
+const AddressMapPicker = dynamic(() => import("@/components/admin/AddressMapPicker"), {
+  ssr: false,
+  loading: () => (
+    <div className="grid h-72 place-items-center rounded-xl border border-white/10 text-sm text-paper/40">A carregar mapa…</div>
+  ),
+});
 export function ShowroomForm({
   initial,
   googleConfigured,
@@ -47,19 +57,38 @@ export function ShowroomForm({
         Serviços, confiança e pontos de venda
       </h2>
       <fieldset disabled={pending} className="space-y-8 disabled:opacity-60">
-        <section className="card space-y-4 p-5">
+        <section id="pontos-de-venda" className="card scroll-mt-24 space-y-4 p-5">
           <h3 className="text-lg font-semibold">Pontos de venda</h3>
           <p className="text-sm text-paper/60">
-            Crie as instalações reais do stand. Associe cada viatura ao seu
-            ponto de venda no editor de viaturas. Se não adicionar pontos,
-            mantém-se a morada das Definições.
+            Crie as instalações reais do stand e associe cada viatura ao seu
+            ponto de venda no editor de viaturas. O <strong className="text-paper/80">primeiro é o principal</strong>:
+            o telefone, email, morada, horário e localização dele são os contactos de todo o site
+            (rodapé, Contactos, ficha das viaturas e anúncios do OLX).
           </p>
           {value.locations.map((l, i) => (
             <fieldset
               key={i}
               className="space-y-3 rounded-xl border border-white/10 p-4"
             >
-              <legend>{l.name || `Ponto ${i + 1}`}</legend>
+              <legend className="flex items-center gap-2 px-1">
+                {l.name || `Ponto ${i + 1}`}
+                {i === 0 ? (
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-accent">Principal</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="text-xs text-paper/50 hover:text-accent"
+                    onClick={() =>
+                      setValue((v) => ({
+                        ...v,
+                        locations: [v.locations[i]!, ...v.locations.filter((_, j) => j !== i)],
+                      }))
+                    }
+                  >
+                    Tornar principal
+                  </button>
+                )}
+              </legend>
               {/* O identificador liga a viatura ao ponto e é gerado pelo
                   sistema — mostra-se só para referência, não se edita. */}
               <p className="text-xs text-paper/40">Referência: {l.id}</p>
@@ -113,6 +142,21 @@ export function ShowroomForm({
                   </label>
                 ))}
               </div>
+              {/* Localização no mapa: procura a morada e o pin pode ser
+                  arrastado para afinar. Preenche a latitude/longitude acima. */}
+              <details className="rounded-lg border border-white/10 p-3" open={i === 0 && l.latitude === null}>
+                <summary className="cursor-pointer text-sm text-paper/70 hover:text-paper">
+                  Localização no mapa {l.latitude !== null ? "✓" : "— por marcar"}
+                </summary>
+                <div className="mt-3">
+                  <AddressMapPicker
+                    lat={l.latitude ?? DEFAULT_COMPANY.geo.lat}
+                    lng={l.longitude ?? DEFAULT_COMPANY.geo.lng}
+                    address={[l.address, l.postalCode, l.city, "Portugal"].map((s) => s.trim()).filter(Boolean).join(", ")}
+                    onChange={(lat, lng) => location(i, { latitude: lat, longitude: lng })}
+                  />
+                </div>
+              </details>
               <button
                 type="button"
                 className="btn-ghost"

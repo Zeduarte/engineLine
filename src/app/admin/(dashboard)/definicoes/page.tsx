@@ -28,10 +28,9 @@ export default async function SettingsPage() {
       <BrandingForm initial={settings} />
 
       <div className="mt-10 mb-6 border-t border-white/10 pt-8">
-        <h2 className="text-lg font-semibold text-paper">Dados da empresa</h2>
+        <h2 className="text-lg font-semibold text-paper">Contactos</h2>
         <p className="mt-1 text-sm text-paper/50">
-          Telefone, email, morada e horário — usados no rodapé, contactos,
-          WhatsApp e ficha das viaturas.
+          WhatsApp e Messenger. Os restantes contactos vêm do ponto de venda principal (Página inicial).
         </p>
       </div>
 
