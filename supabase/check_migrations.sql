@@ -43,6 +43,9 @@ from (values
             where table_schema = 'public' and table_name = 'cars' and column_name = 'olx_attributes')),
   ('0033_body_types',
     exists (select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid
-            where t.typname = 'body_type' and e.enumlabel = 'Moto 4'))
+            where t.typname = 'body_type' and e.enumlabel = 'Moto 4')),
+  ('0034_vehicle_badges',
+    exists (select 1 from information_schema.columns
+            where table_schema = 'public' and table_name = 'cars' and column_name = 'badges'))
 ) as m(migracao, aplicada)
 order by migracao;

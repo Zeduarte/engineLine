@@ -136,6 +136,9 @@ export const carFormSchema = z
       .record(z.string().max(80), z.union([z.string().max(200), z.array(z.string().max(200)).max(100)]))
       .refine((r) => Object.keys(r).length <= 200, "Demasiados campos do OLX")
       .default({}),
+
+    // Etiquetas do stand marcadas nesta viatura (ids de Definições → Etiquetas).
+    badges: z.array(z.string().trim().min(1).max(40)).max(10).default([]),
   })
   .refine((v) => v.price_on_request || (v.price != null && v.price > 0), {
     message: "Indique um preço ou marque 'sob consulta'",

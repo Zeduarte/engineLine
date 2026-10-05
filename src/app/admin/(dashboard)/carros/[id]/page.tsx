@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { getAdminCarById, getCarListings } from "@/lib/admin-queries";
 import { CarForm } from "@/components/admin/CarForm";
 import { getOlxFieldsForForm } from "@/lib/olx/field-queries";
+import { getBadges } from "@/lib/queries";
 import { MediaManager, type MediaItem } from "@/components/admin/MediaManager";
 import { ChannelListings } from "@/components/admin/ChannelListings";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -45,6 +46,7 @@ export default async function EditCarPage({ params }: { params: Params }) {
   })();
 
   const showroom = await getShowroomContent();
+  const badgeOptions = await getBadges();
   const olxFields = await getOlxFieldsForForm({
     categoryId: (car as { olx_category_id?: number | null }).olx_category_id ?? null,
     type: car.vehicle_type ?? "car",
@@ -84,6 +86,7 @@ export default async function EditCarPage({ params }: { params: Params }) {
     last_inspection: car.last_inspection ?? "",
     channels: car.channels ?? [],
     olx_attributes: car.olx_attributes ?? {},
+    badges: car.badges ?? [],
   };
 
   const media: MediaItem[] = (car.car_media ?? []).map((m) => ({
@@ -134,6 +137,7 @@ export default async function EditCarPage({ params }: { params: Params }) {
           carId={car.id}
           defaults={defaults}
           olxFields={olxFields}
+          badgeOptions={badgeOptions}
         />
         <ChannelListings
           carId={car.id}

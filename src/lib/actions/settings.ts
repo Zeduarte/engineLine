@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/admin-queries";
+import { mergeBadges } from "@/lib/badges";
 import {
   siteSettingsSchema,
   marketingSchema,
@@ -19,6 +21,43 @@ export interface SettingsResult {
 async function requireAdmin(): Promise<boolean> {
   const profile = await getCurrentProfile();
   return profile?.role === "admin";
+}
+
+const badgeSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).max(40).regex(/^[a-z0-9_-]+$/),
+        label: z.string().trim().min(1, "Cada etiqueta precisa de um texto").max(30, "Texto da etiqueta demasiado longo"),
+        color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Cor inválida"),
+        enabled: z.boolean(),
+      }),
+    )
+    .max(40),
+});
+
+/**
+ * Etiquetas dos cards: texto, cor e se aparecem; e as do stand. As
+ * automáticas não se apagam (o `mergeBadges` repõe-nas). Apenas admin.
+ */
+export async function saveBadges(input: unknown): Promise<SettingsResult> {
+  if (!(await requireAdmin())) {
+    return { ok: false, error: "Sem permissão. Apenas administradores." };
+  }
+  const parsed = badgeSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+  const items = mergeBadges(parsed.data).map(({ id, label, color, enabled }) => ({ id, label, color, enabled }));
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("site_content")
+    .upsert({ key: "badges", content: { items } }, { onConflict: "key" });
+  if (error) return { ok: false, error: error.message };
+  // Os cards aparecem em todo o site público.
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/definicoes");
+  return { ok: true };
 }
 
 /** Guarda o valor/hora da mão de obra da oficina. Apenas admin. */

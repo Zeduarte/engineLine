@@ -88,6 +88,7 @@ function toRow(
     last_inspection: values.last_inspection || null,
     channels: values.channels ?? [],
     olx_attributes: values.olx_attributes ?? {},
+    badges: values.badges ?? [],
   };
 }
 
@@ -174,15 +175,16 @@ export async function updateCar(
 }
 
 /**
- * Sem a migração 0032 a coluna `olx_attributes` não existe: a viatura grava
- * na mesma, só sem os campos do OLX — em vez de a ficha deixar de gravar.
+ * Colunas recentes (0032 `olx_attributes`, 0034 `badges`): sem a migração a
+ * viatura grava na mesma, só sem elas — em vez de a ficha deixar de gravar.
  */
 function withoutOlxFields(message: string): boolean {
-  return /olx_attributes/.test(message);
+  return /olx_attributes|badges/.test(message);
 }
-function stripOlxFields<T extends { olx_attributes?: unknown }>(row: T): Omit<T, "olx_attributes"> {
-  const { olx_attributes: _omit, ...rest } = row;
-  void _omit;
+function stripOlxFields<T extends { olx_attributes?: unknown; badges?: unknown }>(row: T): Omit<T, "olx_attributes" | "badges"> {
+  const { olx_attributes: _a, badges: _b, ...rest } = row;
+  void _a;
+  void _b;
   return rest;
 }
 

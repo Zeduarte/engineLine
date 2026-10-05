@@ -8,6 +8,7 @@ import { toVehicle } from "@/lib/mappers";
 import type { CarWithMedia } from "@/lib/supabase/database.types";
 import type { Vehicle } from "@/types/vehicle";
 import { mergeHomeContent, type HomeContent } from "@/lib/home-content";
+import { mergeBadges, type BadgeDef } from "@/lib/badges";
 import {
   DEFAULT_BRANDING,
   DEFAULT_COMPANY,
@@ -130,6 +131,20 @@ export async function getVehicleBySlug(
   return data
     ? (await mapPublicCars([data as unknown as CarWithMedia]))[0]
     : undefined;
+}
+
+/**
+ * Etiquetas dos cards (texto, cor, ligadas) — Definições → Etiquetas. Sem nada
+ * guardado (ou sem acesso), ficam as de fábrica.
+ */
+export async function getBadges(): Promise<BadgeDef[]> {
+  const { data, error } = await supabasePublic
+    .from("site_content")
+    .select("content")
+    .eq("key", "badges")
+    .maybeSingle();
+  if (error) console.error("getBadges:", error.message);
+  return mergeBadges(data?.content ?? null);
 }
 
 /**

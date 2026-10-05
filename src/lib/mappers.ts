@@ -113,6 +113,7 @@ export function toVehicle(car: CarWithMedia): Vehicle {
     createdAt: car.created_at,
     previousPrice: car.previous_price,
     national: car.national,
+    customBadges: car.badges ?? [],
     owners: car.owners,
     firstOwner: car.first_owner,
     serviceBook: car.service_book,

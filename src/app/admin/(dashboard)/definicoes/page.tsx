@@ -2,15 +2,18 @@ import { getSiteSettings, getCompanySettings } from "@/lib/admin-queries";
 import { requireSection } from "@/lib/guard";
 import { BrandingForm } from "@/components/admin/BrandingForm";
 import { CompanyForm } from "@/components/admin/CompanyForm";
+import { BadgesForm } from "@/components/admin/BadgesForm";
+import { getBadges } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   await requireSection("definicoes");
 
-  const [settings, company] = await Promise.all([
+  const [settings, company, badges] = await Promise.all([
     getSiteSettings(),
     getCompanySettings(),
+    getBadges(),
   ]);
 
   return (
@@ -33,6 +36,16 @@ export default async function SettingsPage() {
       </div>
 
       <CompanyForm initial={company} />
+
+      <div className="mt-10 mb-6 border-t border-white/10 pt-8">
+        <h2 className="text-lg font-semibold text-paper">Etiquetas dos cards</h2>
+        <p className="mt-1 text-sm text-paper/50">
+          As etiquetas que aparecem por cima da foto das viaturas («Nacional», «Novidade», «Poucos km», …):
+          o texto, a cor e se aparecem. Pode criar etiquetas suas e marcá-las em cada viatura.
+        </p>
+      </div>
+
+      <BadgesForm initial={badges} />
     </>
   );
 }

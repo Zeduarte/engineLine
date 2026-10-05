@@ -10,7 +10,8 @@ import { ChatProvider } from "@/components/chat/ChatContext";
 import { CompareProvider } from "@/components/inventory/CompareContext";
 import { CompareBar } from "@/components/inventory/CompareBar";
 import { DealerJsonLd } from "@/components/seo/DealerJsonLd";
-import { getBranding } from "@/lib/queries";
+import { getBadges, getBranding } from "@/lib/queries";
+import { BadgesProvider } from "@/components/site/BadgesContext";
 import { WorldEntrance } from "@/components/site/WorldEntrance";
 import { existingMedia } from "@/lib/hero-media";
 import { OPTIONAL_MEDIA } from "@/lib/media";
@@ -26,9 +27,10 @@ export default async function PublicLayout({
   const branding = await getBranding();
   const type = await getPublicVehicleType();
   const selection = await getVehicleSelection();
+  const badges = await getBadges();
 
   return (
-    <VehicleWorld key={type} type={type}><LenisProvider>
+    <VehicleWorld key={type} type={type}><BadgesProvider badges={badges}><LenisProvider>
       {/* O provider envolve o conteúdo: a barra fixa da ficha de viatura
           precisa de abrir o mesmo painel de conversa que o botão flutuante. */}
       <ChatProvider enabled={!!process.env.ANTHROPIC_API_KEY}>
@@ -59,6 +61,6 @@ export default async function PublicLayout({
         <GrainOverlay />
       </CompareProvider>
       </ChatProvider>
-    </LenisProvider></VehicleWorld>
+    </LenisProvider></BadgesProvider></VehicleWorld>
   );
 }

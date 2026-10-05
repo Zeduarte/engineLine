@@ -110,6 +110,8 @@ export interface Vehicle {
   previousPrice?: number | null;
   /** Viatura nacional (badge "Nacional"). */
   national?: boolean;
+  /** Etiquetas do stand marcadas na ficha (ids de Definições → Etiquetas). */
+  customBadges?: string[];
   /** Transparência: nº de donos, 1º dono, livro de revisões, garantia, inspeção. */
   owners?: number | null;
   firstOwner?: boolean;

@@ -39,6 +39,7 @@ import { extrasCatalog, MOTORCYCLE_EXTRAS_CATALOG } from "@/lib/extras";
 import { formatPlate } from "@/lib/plate";
 import { autoValues, formPlacement, missingRequired, type OlxField, type OlxValues } from "@/lib/olx/fields";
 import { OlxFieldInputs } from "./OlxFieldInputs";
+import { textOn, type BadgeDef } from "@/lib/badges";
 
 // Lista de anos calculada uma vez (o ano corrente é estável na sessão).
 const YEARS = yearOptions();
@@ -59,15 +60,19 @@ export function CarForm({
   defaults,
   locations = [],
   olxFields,
+  badgeOptions = [],
 }: {
   locations?: PointOfSale[];
   carId?: string;
   defaults?: Partial<CarFormValues>;
   /** Campos do OLX por tipo (da categoria da viatura ou da padrão do tipo). */
   olxFields?: Partial<Record<VehicleType, OlxField[]>>;
+  /** Etiquetas do stand (Definições → Etiquetas) que se podem marcar. */
+  badgeOptions?: BadgeDef[];
 }) {
   const router = useRouter();
   const [olxValues, setOlxValues] = useState<OlxValues>(() => (defaults?.olx_attributes ?? {}) as OlxValues);
+  const [badges, setBadges] = useState<string[]>(defaults?.badges ?? []);
   const [typeChosen, setTypeChosen] = useState(Boolean(carId || defaults?.vehicle_type));
   const [extras, setExtras] = useState<string[]>(defaults?.extras ?? []);
   const [extraInput, setExtraInput] = useState("");
@@ -251,7 +256,7 @@ export function CarForm({
   }
 
   async function onSubmit(values: CarFormValues) {
-    const payload = { ...values, extras, channels, olx_attributes: olxValues };
+    const payload = { ...values, extras, channels, olx_attributes: olxValues, badges };
     const res = carId
       ? await updateCar(carId, payload)
       : await createCar(payload);
@@ -632,6 +637,36 @@ export function CarForm({
             <input className="field" {...register("location")} />
           </Field>
         </Grid>
+        {/* Etiquetas do stand: aparecem por cima da foto no card do site. */}
+        <div className="mt-5">
+          <span className="field-label">Etiquetas no card</span>
+          {badgeOptions.filter((b) => !b.auto && b.enabled).length ? (
+            <div className="flex flex-wrap gap-2">
+              {badgeOptions
+                .filter((b) => !b.auto && b.enabled)
+                .map((b) => {
+                  const on = badges.includes(b.id);
+                  return (
+                    <button
+                      key={b.id}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => setBadges((list) => (on ? list.filter((x) => x !== b.id) : [...list, b.id]))}
+                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-opacity ${on ? "opacity-100 ring-2 ring-paper/60" : "opacity-40 hover:opacity-70"}`}
+                      style={{ backgroundColor: b.color, color: textOn(b.color) }}
+                    >
+                      {on ? "✓ " : ""}
+                      {b.label}
+                    </button>
+                  );
+                })}
+            </div>
+          ) : (
+            <p className="text-xs text-paper/50">
+              «Nacional», «Novidade», «Poucos km», etc. aparecem sozinhas. Para criar etiquetas suas (ex.: «IVA dedutível»), vá a Definições → Etiquetas dos cards.
+            </p>
+          )}
+        </div>
       </Section>
 
       {/* Transparência & badges */}

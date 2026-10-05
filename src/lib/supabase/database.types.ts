@@ -161,6 +161,8 @@ type CarsRow = {
   olx_category_id?: number | null;
   /** «Campos do OLX» escolhidos na ficha (0032). */
   olx_attributes?: Record<string, string | string[]>;
+  /** Etiquetas do stand marcadas nesta viatura (0034). */
+  badges?: string[];
   created_by: string | null;
   published_at: string | null;
   sold_at: string | null;
@@ -206,6 +208,7 @@ type CarsInsert = {
   channels?: string[];
   olx_category_id?: number | null;
   olx_attributes?: Record<string, string | string[]>;
+  badges?: string[];
   created_by?: string | null;
 };
 type CarsUpdate = Partial<CarsInsert>;
