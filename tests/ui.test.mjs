@@ -116,7 +116,7 @@ await test('admin world bar hides on shared sections and without access to the o
  assert.ok(onlyCars.includes('A gerir'),'continua a dizer onde está');
  assert.ok(!onlyCars.includes('Passar para'),'sem passagem para o que não pode ver');
 
- for(const shared of ['/admin/utilizadores','/admin/testemunhos','/admin/definicoes','/admin/integracoes']){
+ for(const shared of ['/admin/utilizadores','/admin/testemunhos','/admin/definicoes','/admin/integracoes','/admin/anuncios','/admin/horas']){
   pathname=shared;
   assert.equal(renderToStaticMarkup(React.createElement(Bar,{world:'car',allowed:['car','motorcycle']})),'',shared);
  }

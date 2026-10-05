@@ -150,13 +150,13 @@ export async function syncListing(db: Db, carId: string): Promise<SyncOutcome> {
       getConnection(db),
       getBranding(),
     ]);
-    if (!conn) return fail(action, "A conta do OLX não está ligada (Integrações → Ligar conta OLX).");
+    if (!conn) return fail(action, "A conta do OLX não está ligada (Plataformas de anúncios → Ligar conta OLX).");
     if (!category)
       return fail(
         action,
         ownCategory
           ? "A categoria do OLX escolhida para esta viatura não está carregada. Escolha-a outra vez na ficha."
-          : "Falta escolher a categoria do OLX (Integrações → OLX).",
+          : "Falta escolher a categoria do OLX (Plataformas de anúncios → OLX).",
       );
 
     // A relação cars→car_media não está nos tipos gerados; a forma é esta.

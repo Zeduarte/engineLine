@@ -15,6 +15,7 @@ const NAV: { href: string; label: string; exact: boolean; section: Section }[] =
   { href: "/admin/leads", label: "Leads", exact: false, section: "leads" },
   { href: "/admin/testemunhos", label: "Testemunhos", exact: false, section: "testemunhos" },
   { href: "/admin/integracoes", label: "Integrações", exact: false, section: "integracoes" },
+  { href: "/admin/anuncios", label: "Plataformas de anúncios", exact: false, section: "anuncios" },
   { href: "/admin/utilizadores", label: "Utilizadores", exact: false, section: "utilizadores" },
   { href: "/admin/definicoes", label: "Definições", exact: false, section: "definicoes" },
   { href: "/admin/financeiro", label: "Custos e margens", exact: false, section: "financeiro" },

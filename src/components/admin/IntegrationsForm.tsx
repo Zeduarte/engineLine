@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { saveIntegrations } from "@/lib/actions/settings";
-import { CHANNELS } from "@/lib/schemas";
+import { CHANNELS, COMING_SOON } from "@/lib/schemas";
 
 type Cred = { username?: string; token?: string; enabled?: boolean };
 export type IntegrationsInitial = Record<string, unknown> & {
@@ -64,25 +64,28 @@ export function IntegrationsForm({
       </div>
 
       <div className="space-y-4">
-        {CHANNELS.map((c) => (
+        {CHANNELS.map((c) =>
+          c.available ? (
+            // O OLX liga-se pela conta (OAuth) no seu separador, sem chaves aqui.
+            <div key={c.id} className="rounded-xl border border-white/10 p-4 text-sm text-paper/70">
+              <span className="font-medium text-paper">{c.label}</span> — ligado em{" "}
+              <a href="/admin/anuncios" className="text-accent underline">Plataformas de anúncios</a>.
+            </div>
+          ) : (
           <div
             key={c.id}
             className="rounded-xl border border-white/10 p-4"
           >
-            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-paper">
-              <input
-                type="checkbox"
-                className="accent-[color:var(--accent)]"
-                checked={creds[c.id]?.enabled ?? false}
-                onChange={(e) => update(c.id, { enabled: e.target.checked })}
-              />
-              {c.label}
-            </label>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-paper">{c.label}</span>
+              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-paper/70">{COMING_SOON}</span>
+            </div>
+            <div className="mt-3 grid gap-3 opacity-50 sm:grid-cols-2">
               <div>
                 <span className="field-label">Utilizador / conta</span>
                 <input
                   className="field"
+                  disabled
                   value={creds[c.id]?.username ?? ""}
                   onChange={(e) => update(c.id, { username: e.target.value })}
                   placeholder="Ex.: stand@exemplo.pt"
@@ -93,6 +96,7 @@ export function IntegrationsForm({
                 <input
                   type="password"
                   className="field"
+                  disabled
                   value={creds[c.id]?.token ?? ""}
                   onChange={(e) => update(c.id, { token: e.target.value })}
                   placeholder="••••••••"
@@ -100,7 +104,8 @@ export function IntegrationsForm({
               </div>
             </div>
           </div>
-        ))}
+          ),
+        )}
       </div>
 
       <div className="border-t border-white/10 pt-5">

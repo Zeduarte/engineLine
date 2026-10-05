@@ -3,7 +3,7 @@ import { getAllowedVehicleTypes } from "@/lib/vehicle-context";
 
 const ADMIN_TARGETS = [
   "/admin", "/admin/carros", "/admin/carros/novo", "/admin/oficina",
-  "/admin/financeiro", "/admin/leads", "/admin/integracoes",
+  "/admin/financeiro", "/admin/leads", "/admin/integracoes", "/admin/anuncios",
   "/admin/pagina-inicial", "/admin/definicoes", "/admin/testemunhos",
   "/admin/utilizadores",
 ];

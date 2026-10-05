@@ -22,6 +22,7 @@ export type Section =
   | "leads"
   | "testemunhos"
   | "integracoes"
+  | "anuncios"
   | "utilizadores"
   | "definicoes"
   | "oficina"
@@ -56,6 +57,7 @@ export const SECTIONS: {
   { key: "leads", label: "Leads", href: "/admin/leads", exact: false },
   { key: "testemunhos", label: "Testemunhos", href: "/admin/testemunhos", exact: false },
   { key: "integracoes", label: "Integrações", href: "/admin/integracoes", exact: false },
+  { key: "anuncios", label: "Plataformas de anúncios", href: "/admin/anuncios", exact: false },
   { key: "utilizadores", label: "Utilizadores", href: "/admin/utilizadores", exact: false },
   { key: "definicoes", label: "Definições", href: "/admin/definicoes", exact: false },
   { key: "financeiro", label: "Custos e margens", href: "/admin/financeiro", exact: false },

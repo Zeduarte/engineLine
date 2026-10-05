@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CHANNELS } from "@/lib/schemas";
+import { CHANNELS, COMING_SOON } from "@/lib/schemas";
 
 export function FeedUrls({ baseUrl }: { baseUrl: string }) {
   const [copied, setCopied] = useState<string | null>(null);
@@ -25,13 +25,12 @@ export function FeedUrls({ baseUrl }: { baseUrl: string }) {
           Links dos feeds de exportação
         </h2>
         <p className="mt-1 text-xs text-paper/40">
-          Feeds disponíveis para validação com cada plataforma. A publicação automática
-          ainda depende da aprovação do formato pelo portal. Incluem apenas viaturas
-          publicadas com esse canal selecionado.
+          Para os portais que ainda não publicam automaticamente. O OLX publica pela API em «Plataformas de anúncios» e
+          não precisa de feed.
         </p>
       </div>
       <ul className="space-y-2">
-        {CHANNELS.map((c) => {
+        {CHANNELS.filter((c) => !c.available).map((c) => {
           const url = `${baseUrl}/api/feeds/${c.id}.xml`;
           return (
             <li
@@ -39,7 +38,7 @@ export function FeedUrls({ baseUrl }: { baseUrl: string }) {
               className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 p-2.5"
             >
               <span className="w-28 shrink-0 text-sm font-medium text-paper">
-                {c.label}<span className="block text-xs text-amber-300">Por validar no portal</span>
+                {c.label}<span className="block text-xs text-amber-300">{COMING_SOON}</span>
               </span>
               <code className="min-w-0 flex-1 truncate text-xs text-paper/50">
                 {url}

@@ -44,12 +44,16 @@ export const LISTING_STATUSES = CAR_STATUSES.filter((s) => s !== "workshop");
  * O `id` é usado no URL do feed (`/api/feeds/<id>.xml`) e nas credenciais.
  */
 export const CHANNELS = [
-  { id: "standvirtual", label: "StandVirtual" },
-  { id: "olx", label: "OLX" },
-  { id: "autosapo", label: "auto SAPO" },
-  { id: "custojusto", label: "CustoJusto" },
-  { id: "piscapisca", label: "Piscapisca" },
+  { id: "standvirtual", label: "StandVirtual", available: false },
+  { id: "olx", label: "OLX", available: true },
+  { id: "autosapo", label: "auto SAPO", available: false },
+  { id: "custojusto", label: "CustoJusto", available: false },
+  { id: "piscapisca", label: "Piscapisca", available: false },
 ] as const;
+
+/** Só o OLX publica de verdade por agora; os outros ficam «Brevemente». */
+export const AVAILABLE_CHANNEL_IDS: readonly string[] = CHANNELS.filter((c) => c.available).map((c) => c.id);
+export const COMING_SOON = "Brevemente disponível";
 
 export const CHANNEL_IDS = CHANNELS.map((c) => c.id);
 export type ChannelId = (typeof CHANNELS)[number]["id"];

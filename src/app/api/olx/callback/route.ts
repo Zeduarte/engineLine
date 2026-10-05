@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const back = new URL("/admin/integracoes", request.url);
+  const back = new URL("/admin/anuncios", request.url);
   const done = (estado: string, detalhe?: string) => {
     back.searchParams.set("olx", estado);
     if (detalhe) back.searchParams.set("detalhe", detalhe.slice(0, 200));
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   };
 
   const me = await getCurrentProfile();
-  if (!me || !canAccess(me.role, me.allowed_sections, "integracoes")) {
+  if (!me || !canAccess(me.role, me.allowed_sections, "anuncios")) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
   if (!olxConfigured()) return done("sem-credenciais");

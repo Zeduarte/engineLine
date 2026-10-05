@@ -13,7 +13,7 @@ import { getCurrentProfile } from "@/lib/admin-queries";
 import { canAccess } from "@/lib/permissions";
 
 /**
- * Ações do painel do OLX em Integrações e da ficha da viatura.
+ * Ações do painel do OLX (Plataformas de anúncios) e da ficha da viatura.
  *
  * Correm com o cliente de serviço (os tokens do OLX não são legíveis por
  * nenhuma sessão), por isso cada uma começa por verificar o separador de quem
@@ -35,19 +35,19 @@ function admin() {
 }
 
 export async function disconnectOlx(): Promise<OlxActionResult> {
-  await requireSection("integracoes");
+  await requireSection("anuncios");
   const { error } = await admin().from("olx_connection").delete().eq("id", 1);
   if (error) return { ok: false, error: error.message };
-  revalidatePath("/admin/integracoes");
+  revalidatePath("/admin/anuncios");
   return { ok: true, message: "Conta do OLX desligada. Os anúncios já publicados continuam no OLX." };
 }
 
 export async function loadOlxCategories(): Promise<OlxActionResult> {
-  await requireSection("integracoes");
+  await requireSection("anuncios");
   if (!olxConfigured()) return { ok: false, error: "Faltam OLX_CLIENT_ID e OLX_CLIENT_SECRET no Netlify." };
   try {
     const r = await loadCategories(admin());
-    revalidatePath("/admin/integracoes");
+    revalidatePath("/admin/anuncios");
     if (!r.ok) return { ok: false, error: r.error };
     const escolhidas = Object.entries(r.chosen).map(([t, c]) => `${t === "car" ? "carros" : "motas"}: ${c!.name}`);
     const duvidas = Object.keys(r.ambiguous).length;
@@ -66,7 +66,7 @@ export async function loadOlxCategories(): Promise<OlxActionResult> {
 }
 
 export async function chooseOlxCategory(data: FormData): Promise<OlxActionResult> {
-  await requireSection("integracoes");
+  await requireSection("anuncios");
   const parsed = z
     .object({ vehicle_type: z.enum(["car", "motorcycle"]), category_id: z.coerce.number().int().positive() })
     .safeParse({ vehicle_type: data.get("vehicle_type"), category_id: data.get("category_id") });
@@ -75,18 +75,18 @@ export async function chooseOlxCategory(data: FormData): Promise<OlxActionResult
   const c = await olxFetch<unknown>(db, `/categories/${parsed.data.category_id}`);
   if (!c.ok) return { ok: false, error: c.error ?? "Categoria inválida." };
   const erro = await storeCategory(db, parsed.data.vehicle_type, unwrap<OlxCategory>(c.data));
-  revalidatePath("/admin/integracoes");
+  revalidatePath("/admin/anuncios");
   return erro ? { ok: false, error: erro } : { ok: true, message: "Categoria guardada." };
 }
 
 export async function syncOlxNow(): Promise<OlxActionResult> {
-  await requireSection("integracoes");
+  await requireSection("anuncios");
   const n = await syncPending(admin(), 50);
-  revalidatePath("/admin/integracoes");
+  revalidatePath("/admin/anuncios");
   return { ok: true, message: n ? `${n} anúncio(s) sincronizado(s).` : "Não havia nada por sincronizar." };
 }
 
-/** "Atualizar estatísticas": de todos os anúncios (Integrações) ou de uma
+/** "Atualizar estatísticas": de todos os anúncios (Plataformas de anúncios) ou de uma
  * viatura (ficha). A manutenção diária faz o mesmo sozinha.
  */
 export async function refreshOlxStats(carId?: string): Promise<OlxActionResult> {
@@ -94,10 +94,10 @@ export async function refreshOlxStats(carId?: string): Promise<OlxActionResult> 
     await requireSection("carros");
     if (!z.string().uuid().safeParse(carId).success) return { ok: false, error: "Viatura inválida." };
   } else {
-    await requireSection("integracoes");
+    await requireSection("anuncios");
   }
   const r = await refreshStats(admin(), carId ? [carId] : undefined);
-  revalidatePath("/admin/integracoes");
+  revalidatePath("/admin/anuncios");
   if (carId) revalidatePath(`/admin/carros/${carId}`);
   if (r.updated === 0 && r.error) return { ok: false, error: r.error };
   return {
@@ -129,10 +129,10 @@ export interface CategoryBrowse {
   categories?: OlxCategory[];
 }
 
-/** Um nível da árvore do OLX. Para quem gere Viaturas ou Integrações. */
+/** Um nível da árvore do OLX. Para quem gere Viaturas ou Plataformas de anúncios. */
 export async function browseOlxCategories(parentId: number | null): Promise<CategoryBrowse> {
   const me = await getCurrentProfile();
-  if (!me || !(canAccess(me.role, me.allowed_sections, "carros") || canAccess(me.role, me.allowed_sections, "integracoes")))
+  if (!me || !(canAccess(me.role, me.allowed_sections, "carros") || canAccess(me.role, me.allowed_sections, "anuncios")))
     return { ok: false, error: "Sem permissão." };
   if (parentId !== null && !(Number.isInteger(parentId) && parentId > 0)) return { ok: false, error: "Categoria inválida." };
   const r = await browseCategories(admin(), parentId);
@@ -157,19 +157,19 @@ async function leafCategory(categoryId: number): Promise<OlxCategory | string> {
   return category;
 }
 
-/** Categoria padrão de um tipo de viatura (Integrações → OLX). */
+/** Categoria padrão de um tipo de viatura (Plataformas de anúncios → OLX). */
 export async function setDefaultOlxCategory(
   vehicleType: "car" | "motorcycle",
   categoryId: number,
   path: string,
 ): Promise<OlxActionResult> {
-  await requireSection("integracoes");
+  await requireSection("anuncios");
   const parsed = pickSchema.safeParse({ categoryId, path });
   if (!parsed.success || !["car", "motorcycle"].includes(vehicleType)) return { ok: false, error: "Escolha uma categoria." };
   const category = await leafCategory(parsed.data.categoryId);
   if (typeof category === "string") return { ok: false, error: category };
   const erro = await storeCategory(admin(), vehicleType, category, parsed.data.path);
-  revalidatePath("/admin/integracoes");
+  revalidatePath("/admin/anuncios");
   return erro
     ? { ok: false, error: erro }
     : { ok: true, message: `Categoria dos ${vehicleType === "car" ? "carros" : "motas"} guardada. Carregue em «Sincronizar agora».` };

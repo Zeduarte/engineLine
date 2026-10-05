@@ -8,19 +8,13 @@ import {
 } from "@/components/admin/IntegrationsForm";
 import { FeedUrls } from "@/components/admin/FeedUrls";
 import { WhatsAppPanel } from "@/components/admin/WhatsAppPanel";
-import { OlxPanel } from "@/components/admin/OlxPanel";
+import Link from "next/link";
 import { site } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
-export default async function IntegrationsPage({
-  searchParams,
-}: {
-  // O retorno do OAuth do OLX volta aqui com ?olx=ligado|erro|… para avisar.
-  searchParams: Promise<{ olx?: string; detalhe?: string }>;
-}) {
+export default async function IntegrationsPage() {
   await requireSection("integracoes");
-  const { olx, detalhe } = await searchParams;
 
   const [settings, integrations] = await Promise.all([
     getSiteSettings(),
@@ -50,7 +44,17 @@ export default async function IntegrationsPage({
         />
         <IntegrationsForm initial={integrations as IntegrationsInitial} />
         <FeedUrls baseUrl={baseUrl} />
-        <OlxPanel status={olx} detalhe={detalhe} />
+        {/* O OLX e os outros portais geram-se agora no seu separador. */}
+        <Link
+          href="/admin/anuncios"
+          className="card block p-5 transition-colors hover:border-accent/50"
+        >
+          <p className="text-lg font-semibold text-paper">Plataformas de anúncios →</p>
+          <p className="mt-1 text-sm text-paper/60">
+            A ligação ao OLX, as categorias, a publicação automática e as estatísticas estão no separador
+            «Plataformas de anúncios». StandVirtual, CustoJusto, auto SAPO e Piscapisca: brevemente disponíveis.
+          </p>
+        </Link>
         <WhatsAppPanel baseUrl={baseUrl} />
         <NotificationStatus />
       </div>

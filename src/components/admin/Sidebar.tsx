@@ -20,6 +20,7 @@ const NAV: {
   { href: "/admin/leads", label: "Leads", icon: "✉", exact: false, section: "leads" },
   { href: "/admin/testemunhos", label: "Testemunhos", icon: "★", exact: false, section: "testemunhos" },
   { href: "/admin/integracoes", label: "Integrações", icon: "⇄", exact: false, section: "integracoes" },
+  { href: "/admin/anuncios", label: "Plataformas de anúncios", icon: "⊞", exact: false, section: "anuncios" },
   { href: "/admin/utilizadores", label: "Utilizadores", icon: "◑", exact: false, section: "utilizadores" },
   { href: "/admin/definicoes", label: "Definições", icon: "⚙", exact: false, section: "definicoes" },
   { href: "/admin/financeiro", label: "Custos e margens", icon: "€", exact: false, section: "financeiro" },

@@ -19,14 +19,16 @@ export const COMMON_PUBLIC_PATHS = [
 
 /**
  * Separadores do backoffice que gerem o site inteiro, não um tipo de viatura:
- * testemunhos e utilizadores (pedido do cliente), mais definições e
- * integrações, que são configuração global.
+ * testemunhos e utilizadores (pedido do cliente), definições, integrações e
+ * plataformas de anúncios (configuração global) e as horas (pessoais).
  */
 export const COMMON_ADMIN_SECTIONS: Section[] = [
   "testemunhos",
   "utilizadores",
   "definicoes",
   "integracoes",
+  "anuncios",
+  "horas",
 ];
 
 /**

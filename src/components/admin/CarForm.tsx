@@ -24,6 +24,7 @@ import {
   TRANSMISSIONS,
   CAR_STATUSES,
   CHANNELS,
+  COMING_SOON,
 } from "@/lib/schemas";
 import { CAR_STATUS_LABEL } from "./StatusBadge";
 import { createCar, updateCar } from "@/lib/actions/cars";
@@ -185,7 +186,7 @@ export function CarForm({
           ok: currentOlxFields.length > 0 && olxMissing.length === 0,
           href: "#sec-caracteristicas",
           note: !currentOlxFields.length
-            ? "escolha a categoria em Integrações → OLX"
+            ? "escolha a categoria em Plataformas de anúncios → OLX"
             : olxMissing.length
               ? `faltam: ${olxMissing.map((f) => f.label).join(", ")}`
               : undefined,
@@ -835,25 +836,36 @@ export function CarForm({
       {/* Exportação multi-canal */}
       <Section n={6} id="sec-publicacao" title="Publicação" subtitle="Onde anunciar esta viatura, além do site.">
         <p className="mb-4 text-xs text-paper/50">
-          Selecione os portais onde quer anunciar esta viatura. As viaturas
-          escolhidas ficam disponíveis no feed de exportação de cada plataforma
-          (ver Definições → Integrações).
+          Marque onde quer anunciar esta viatura. O anúncio no OLX é criado e
+          mantido atualizado sozinho (Plataformas de anúncios). Os outros portais
+          estão a ser preparados.
         </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {CHANNELS.map((c) => (
+          {CHANNELS.map((c) => {
+            // Um portal ainda indisponível não se marca; se já estava marcado
+            // de antes, pode desmarcar-se.
+            const locked = !c.available && !channels.includes(c.id);
+            return (
             <label
               key={c.id}
-              className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-3 py-2.5 text-sm text-paper/80 transition-colors hover:border-white/20"
+              className={`flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2.5 text-sm transition-colors ${
+                locked ? "cursor-not-allowed text-paper/40" : "cursor-pointer text-paper/80 hover:border-white/20"
+              }`}
             >
               <input
                 type="checkbox"
                 className="accent-[color:var(--accent)]"
                 checked={channels.includes(c.id)}
+                disabled={locked}
                 onChange={() => toggleChannel(c.id)}
               />
-              {c.label}
+              <span className="flex-1">{c.label}</span>
+              {!c.available && (
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-paper/60">{COMING_SOON}</span>
+              )}
             </label>
-          ))}
+            );
+          })}
         </div>
       </Section>
 

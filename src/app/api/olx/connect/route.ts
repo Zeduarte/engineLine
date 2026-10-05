@@ -12,8 +12,8 @@ export const dynamic = "force-dynamic";
  * autorizar a aplicação e o devolve a /api/olx/callback com um `code`.
  */
 export async function GET(request: Request) {
-  await requireSection("integracoes");
-  const back = new URL("/admin/integracoes", request.url);
+  await requireSection("anuncios");
+  const back = new URL("/admin/anuncios", request.url);
   if (!olxConfigured()) {
     back.searchParams.set("olx", "sem-credenciais");
     return NextResponse.redirect(back);

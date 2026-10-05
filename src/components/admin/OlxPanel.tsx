@@ -5,7 +5,7 @@ import { OlxActions } from "./OlxActions";
 import { OlxDefaultCategories } from "./OlxDefaultCategories";
 
 /**
- * Ligação ao OLX, em Integrações.
+ * Ligação ao OLX, em Plataformas de anúncios.
  *
  * Lê pelo cliente de serviço porque as tabelas do OLX não são legíveis por
  * nenhuma sessão (têm os tokens da conta). Daqui só sai o que é seguro

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CHANNELS } from "@/lib/schemas";
+import { CHANNELS, COMING_SOON } from "@/lib/schemas";
 import { saveListing } from "@/lib/actions/channels";
 import { refreshOlxStats, retryOlxListing, setCarOlxCategory } from "@/lib/actions/olx";
 import { OlxCategoryPicker } from "./OlxCategoryPicker";
@@ -52,7 +52,9 @@ export function ChannelListings({
   olxCategory?: { own: string | null; fallback: string | null };
 }) {
   const byChannel = new Map(listings.map((l) => [l.channel, l]));
-  const selected = CHANNELS.filter((c) => channels.includes(c.id));
+  // Tipo largo: o ramo dos portais com formulário próprio volta a servir
+  // quando outro portal ficar disponível.
+  const selected: { id: string; label: string; available: boolean }[] = CHANNELS.filter((c) => channels.includes(c.id));
 
   return (
     <section className="card p-5">
@@ -61,8 +63,8 @@ export function ChannelListings({
           Publicação nos portais
         </h2>
         <p className="mt-1 text-xs text-paper/50">
-          A publicação é feita por feed (o portal importa o inventário). Aqui
-          registas o estado real em cada portal e o link do anúncio.
+          O anúncio no OLX é criado e atualizado sozinho. Os outros portais
+          estão a ser preparados.
         </p>
       </div>
 
@@ -82,6 +84,11 @@ export function ChannelListings({
             // não um formulário para o registar à mão.
             c.id === "olx" ? (
               <OlxRow key={c.id} carId={carId} listing={byChannel.get(c.id) ?? null} category={olxCategory} />
+            ) : !c.available ? (
+              <div key={c.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <span className="font-semibold text-paper/70">{c.label}</span>
+                <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-paper/60">{COMING_SOON}</span>
+              </div>
             ) : (
             <ChannelRow
               key={c.id}
@@ -284,7 +291,7 @@ function OlxCategoryRow({
           <span className="text-paper">{category.own}</span>
         ) : (
           <span className="text-paper/80">
-            {category?.fallback ?? "por escolher em Integrações"}{" "}
+            {category?.fallback ?? "por escolher em Plataformas de anúncios"}{" "}
             <span className="text-xs text-paper/40">(padrão)</span>
           </span>
         )}
