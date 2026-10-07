@@ -47,8 +47,17 @@ export interface CtaSectionContent {
   secondary: CtaContent;
 }
 
+/** Topo da página inicial quando o visitante está nas motas. */
+export interface MotoHeroContent {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  primaryCta: CtaContent;
+}
+
 export interface HomeContent {
   hero: HeroContent;
+  motoHero: MotoHeroContent;
   brands: string[];
   trust: TrustContent;
   cta: CtaSectionContent;
@@ -62,6 +71,12 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
     primaryCta: { label: "Ver stock", href: "/inventario" },
     secondaryCta: { label: "Conhecer o stand", href: "/sobre" },
     media: "auto",
+  },
+  motoHero: {
+    eyebrow: "Stand premium · Portugal",
+    title: "A tua próxima viagem começa sobre duas rodas",
+    subtitle: "Explora as nossas motas e encontra a tua próxima companheira de estrada.",
+    primaryCta: { label: "Ver motas", href: "/inventario" },
   },
   brands: [
     "BMW",
@@ -117,6 +132,11 @@ export function mergeHomeContent(partial?: Partial<HomeContent> | null): HomeCon
       ...partial.hero,
       primaryCta: { ...d.hero.primaryCta, ...partial.hero?.primaryCta },
       secondaryCta: { ...d.hero.secondaryCta, ...partial.hero?.secondaryCta },
+    },
+    motoHero: {
+      ...d.motoHero,
+      ...partial.motoHero,
+      primaryCta: { ...d.motoHero.primaryCta, ...partial.motoHero?.primaryCta },
     },
     brands:
       partial.brands && partial.brands.length ? partial.brands : d.brands,

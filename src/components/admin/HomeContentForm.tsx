@@ -62,7 +62,7 @@ export function HomeContentForm({ initial }: { initial: HomeContentValues }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
       {/* HERO */}
-      <Section title="Destaque (topo)">
+      <Section title="Destaque (topo) — carros">
         <div className="space-y-4">
           <Field label="Etiqueta (eyebrow)" error={errors.hero?.eyebrow?.message}>
             <input className="field" {...register("hero.eyebrow")} />
@@ -106,6 +106,32 @@ export function HomeContentForm({ initial }: { initial: HomeContentValues }) {
             </Field>
             <Field label="Botão 2 — link">
               <input className="field" {...register("hero.secondaryCta.href")} />
+            </Field>
+          </div>
+        </div>
+      </Section>
+
+      {/* HERO DAS MOTAS */}
+      <Section title="Destaque (topo) — motas">
+        <div className="space-y-4">
+          <p className="text-xs text-paper/50">
+            O que aparece no topo da página inicial quando o visitante está nas motas.
+          </p>
+          <Field label="Etiqueta (eyebrow)" error={errors.motoHero?.eyebrow?.message}>
+            <input className="field" {...register("motoHero.eyebrow")} />
+          </Field>
+          <Field label="Título" error={errors.motoHero?.title?.message}>
+            <input className="field" {...register("motoHero.title")} />
+          </Field>
+          <Field label="Subtítulo" error={errors.motoHero?.subtitle?.message}>
+            <textarea rows={2} className="field" {...register("motoHero.subtitle")} />
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Botão — texto">
+              <input className="field" {...register("motoHero.primaryCta.label")} />
+            </Field>
+            <Field label="Botão — link">
+              <input className="field" {...register("motoHero.primaryCta.href")} />
             </Field>
           </div>
         </div>

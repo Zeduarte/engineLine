@@ -242,6 +242,12 @@ export const homeContentSchema = z.object({
     secondaryCta: cta,
     media: z.enum(["auto", "video", "image"]).default("auto"),
   }),
+  motoHero: z.object({
+    eyebrow: z.string().trim().max(80),
+    title: z.string().trim().min(1, "Título obrigatório").max(160),
+    subtitle: z.string().trim().max(300),
+    primaryCta: cta,
+  }),
   brands: z.array(z.string().trim().min(1)).max(30),
   trust: z.object({
     eyebrow: z.string().trim().max(80),
