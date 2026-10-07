@@ -3,15 +3,15 @@ import { normalizeWhatsApp } from "./phone";
 /** Constantes de marca e contactos — um único sítio para editar. */
 
 export const site = {
-  name: "engineLine",
-  legalName: "engineLine — Automóveis Premium",
+  name: "Supermotas",
+  legalName: "Supermotas — Motas e Automóveis",
   description:
-    "Stand de automóveis premium em Portugal. Viaturas selecionadas, histórico transparente e uma experiência de compra sem fricção.",
-  url: "https://engineline.pt",
+    "Stand de motas e automóveis em Portugal. Viaturas selecionadas, histórico transparente e uma experiência de compra sem fricção.",
+  url: "https://supermotas.netlify.app",
   phone: "+351 210 000 000",
   phoneHref: "tel:+351210000000",
   whatsapp: "351910000000",
-  email: "geral@engineline.pt",
+  email: "geral@supermotas.pt",
   address: {
     street: "Av. da Liberdade 100",
     city: "Lisboa",

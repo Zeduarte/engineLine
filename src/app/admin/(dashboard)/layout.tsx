@@ -40,7 +40,7 @@ export default async function DashboardLayout({
       .maybeSingle(),
   ]);
 
-  const companyName = settings.data?.company_name ?? "engineLine";
+  const companyName = settings.data?.company_name ?? "Supermotas";
   const user = {
     name: profile.full_name || profile.email || "Utilizador",
     role: profile.role,

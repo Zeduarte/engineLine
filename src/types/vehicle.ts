@@ -137,8 +137,6 @@ export interface VehicleFilters {
   maxYear: number | null;
   location: string | null;
   vehicleType: "car" | "motorcycle" | null;
-  /** Só nas motas: de estrada (2 rodas) ou moto 4. */
-  motoKind: "road" | "quad" | null;
   campaignOnly: boolean;
 }
 

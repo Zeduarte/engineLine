@@ -26,7 +26,7 @@ const NAV: { href: string; label: string; exact: boolean; section: Section }[] =
 export function MobileNav({
   user,
   sections,
-  companyName = "engineLine",
+  companyName = "Supermotas",
   newLeads = 0,
 }: {
   user: { name: string; role: string };

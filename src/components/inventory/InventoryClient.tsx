@@ -11,7 +11,6 @@ import {
   distinctMakes,
 } from "@/lib/vehicles";
 import { sameBrand } from "@/lib/brand-name";
-import { motorcycleKind } from "@/lib/vehicle-categories";
 import { Filters } from "./Filters";
 import { VehicleCard } from "@/components/vehicle/VehicleCard";
 
@@ -66,10 +65,11 @@ export function InventoryClient({
       fuels: distinctValues(vehicles, "fuel"),
       transmissions: distinctValues(vehicles, "transmission"),
       bodies: distinctValues(vehicles, "body"),
-      motoCounts: {
-        road: vehicles.filter((v) => v.vehicleType === "motorcycle" && motorcycleKind(v.body) === "road").length,
-        quad: vehicles.filter((v) => v.vehicleType === "motorcycle" && motorcycleKind(v.body) === "quad").length,
-      },
+      // Quantas viaturas há em cada categoria (os quadrados da pesquisa).
+      bodyCounts: vehicles.reduce<Record<string, number>>((acc, v) => {
+        acc[v.body] = (acc[v.body] ?? 0) + 1;
+        return acc;
+      }, {}),
     }),
     [vehicles, filters.make],
   );

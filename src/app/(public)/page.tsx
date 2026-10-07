@@ -52,7 +52,7 @@ export default async function HomePage() {
 
   // A definição do backoffice (vídeo/imagem) é a dos carros; as motas detetam pelo ficheiro.
   const heroMedia: HeroMedia = getHeroMedia(type === "motorcycle" ? "auto" : content.hero.media, type);
-  const heroContent = type === "motorcycle" ? {...content.hero,eyebrow:"Motas · engineLine",title:"A tua próxima viagem começa sobre duas rodas",subtitle:"Explora as nossas motas e encontra a tua próxima companheira de estrada.",primaryCta:{label:"Ver motas",href:"/inventario"}} : content.hero;
+  const heroContent = type === "motorcycle" ? {...content.hero,eyebrow:`Motas · ${branding.companyName}`,title:"A tua próxima viagem começa sobre duas rodas",subtitle:"Explora as nossas motas e encontra a tua próxima companheira de estrada.",primaryCta:{label:"Ver motas",href:"/inventario"}} : content.hero;
 
   return (
     <>

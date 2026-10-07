@@ -31,7 +31,7 @@ const NAV: {
 export function Sidebar({
   user,
   sections,
-  companyName = "engineLine",
+  companyName = "Supermotas",
   newLeads = 0,
 }: {
   user: { name: string; role: string };

@@ -5,14 +5,14 @@ import type { Metadata } from "next";
 import { getVehicles } from "@/lib/queries";
 import { InventoryClient } from "@/components/inventory/InventoryClient";
 import { StockAlertForm } from "@/components/inventory/StockAlertForm";
-import type { FuelType } from "@/types/vehicle";
+import type { FuelType, VehicleFilters } from "@/types/vehicle";
 
 export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Stock",
   description:
-    "Explore o stock completo de viaturas premium do engineLine. Filtre por marca, modelo, preço, ano, combustível e quilómetros.",
+    "Explore o stock completo de motas e automóveis da Supermotas. Filtre por marca, modelo, preço, ano, combustível e quilómetros.",
 };
 
 export default async function InventoryPage({
@@ -33,8 +33,8 @@ export default async function InventoryPage({
     model: sp.model || null,
     fuel: (sp.fuel as FuelType) || null,
     query: sp.q || null,
-    // ?mota=estrada | ?mota=moto4 — links diretos para cada tipo de mota.
-    motoKind: sp.mota === "moto4" ? ("quad" as const) : sp.mota === "estrada" ? ("road" as const) : null,
+    // ?categoria=Moto%204 — link direto para uma categoria.
+    body: (sp.categoria as VehicleFilters["body"]) || null,
   };
 
   return (

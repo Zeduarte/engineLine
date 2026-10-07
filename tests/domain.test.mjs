@@ -37,17 +37,18 @@ await test('everyone has the personal Hours section, including mechanics',()=>{
  for(const [role,allowed] of [['mecanico',null],['vendedor',null],['vendedor',['leads']],['chefe',null],['admin',[]]]) assert.equal(canAccess(role,allowed,'horas'),true,role);
  assert.equal(canAccess('mecanico',null,'leads'),false);
 });
-await test('motorcycles split into road (2 wheels) and moto 4, in search and in categories',()=>{
+await test('motorcycle categories are one list (Moto 4 is just another category), picked like on OLX',()=>{
  const {applyFilters,emptyFilters}=load('src/lib/vehicles.ts');
  const VC=load('src/lib/vehicle-categories.ts');
  const base={make:'X',model:'Y',year:2020,mileage:0,price:5000,fuel:'Gasolina',transmission:'Manual',featured:false};
  const stock=[{...base,slug:'r6',vehicleType:'motorcycle',body:'Desportiva'},{...base,slug:'ltr',vehicleType:'motorcycle',body:'Moto 4'},{...base,slug:'clio',vehicleType:'car',body:'Utilitário'}];
  const pick=(p)=>applyFilters(stock,{...emptyFilters(),...p}).map(v=>v.slug);
- assert.deepEqual(pick({motoKind:'quad'}),['ltr']);
- assert.deepEqual(pick({motoKind:'road'}),['r6'],'carros não entram nas motas de estrada');
+ assert.deepEqual(pick({body:'Moto 4'}),['ltr']);
+ assert.deepEqual(pick({vehicleType:'motorcycle'}),['r6','ltr']);
  assert.deepEqual(pick({}),['r6','ltr','clio']);
- assert.equal(VC.ROAD_MOTORCYCLE_BODIES.includes('Moto 4'),false);
- assert.equal(VC.motorcycleKind('Moto 4'),'quad');assert.equal(VC.motorcycleKind('Naked'),'road');assert.equal(VC.motorcycleKind(null),'road');
+ assert.ok(VC.bodiesFor('motorcycle').includes('Moto 4'));
+ assert.ok(!VC.bodiesFor('car').includes('Moto 4'));
+ for(const b of [...VC.bodiesFor('motorcycle'),...VC.bodiesFor('car')]) assert.ok(VC.BODY_HINT[b],`falta a frase de ${b}`);
 });
 await test('company contacts come from the main point of sale, keeping what the point leaves blank',()=>{
  const {companyFromPoint,DEFAULT_COMPANY}=load('src/lib/branding.ts');

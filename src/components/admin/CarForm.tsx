@@ -1,16 +1,11 @@
 "use client";
 
 import {
-  CAR_BODIES,
   MOTORCYCLE_BRANDS,
-  MOTORCYCLE_KIND_HINT,
-  MOTORCYCLE_KIND_LABEL,
-  QUAD_BODY,
-  ROAD_MOTORCYCLE_BODIES,
-  motorcycleKind,
-  type MotorcycleKind,
+  bodiesFor,
   type VehicleType,
 } from "@/lib/vehicle-categories";
+import { BodyPicker } from "@/components/ui/BodyPicker";
 import type { PointOfSale } from "@/lib/showroom";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -198,13 +193,6 @@ export function CarForm({
     done: progressItems.filter((i) => i.ok).length,
     percent: Math.round((progressItems.filter((i) => i.ok).length / progressItems.length) * 100),
   };
-  const motoKind = motorcycleKind(watch("body"));
-
-  /** Estrada ↔ moto 4: o segmento muda com o tipo de mota. */
-  function chooseMotoKind(kind: MotorcycleKind) {
-    if (kind === motoKind) return;
-    setValue("body", kind === "quad" ? QUAD_BODY : "Naked", { shouldDirty: true });
-  }
 
   function chooseType(kind: VehicleType) {
     if (kind !== vehicleType) {
@@ -317,32 +305,8 @@ export function CarForm({
       </div>
       {typeChosen && (
         <p className="mt-3 text-sm text-paper/60" role="status">
-          Anúncio de {vehicleType === "motorcycle" ? (motoKind === "quad" ? "moto 4" : "mota de estrada") : "carro"}
+          Anúncio de {vehicleType === "motorcycle" ? "mota" : "carro"}
         </p>
-      )}
-      {/* Nas motas, a segunda escolha é o mundo: estrada (2 rodas) ou moto 4.
-          Decide o segmento e o sítio onde a mota aparece no site. */}
-      {typeChosen && vehicleType === "motorcycle" && (
-        <div className="mt-5 border-t border-white/10 pt-5">
-          <h3 className="text-base font-semibold text-paper">Que tipo de mota?</h3>
-          <div className="mt-3 grid grid-cols-2 gap-3" role="group" aria-label="Tipo de mota">
-            {(["road", "quad"] as const).map((kind) => (
-              <button
-                key={kind}
-                type="button"
-                disabled={isSubmitting}
-                aria-pressed={motoKind === kind}
-                onClick={() => chooseMotoKind(kind)}
-                className={`rounded-xl border px-5 py-4 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50 ${motoKind === kind ? "border-accent bg-white/[0.06]" : "border-white/15 hover:border-accent"}`}
-              >
-                <span className={`block text-lg font-semibold ${motoKind === kind ? "text-accent" : "text-paper"}`}>
-                  {MOTORCYCLE_KIND_LABEL[kind]}
-                </span>
-                <span className="mt-0.5 block text-xs text-paper/50">{MOTORCYCLE_KIND_HINT[kind]}</span>
-              </button>
-            ))}
-          </div>
-        </div>
       )}
     </section>
   );
@@ -518,31 +482,20 @@ export function CarForm({
               ))}
             </select>
           </Field>
-          <Field
-            label={
-              vehicleType === "motorcycle" ? "Categoria da mota" : "Carroçaria"
-            }
-            error={errors.body?.message}
-            required
-          >
-            <select
-              className="field"
-              {...register("body")}
-              value={watch("body") ?? ""}
+          {/* Categoria como no OLX: um quadrado por categoria, com uma frase. */}
+          <div className="sm:col-span-2 lg:col-span-3">
+            <Field
+              label={vehicleType === "motorcycle" ? "Categoria da mota" : "Carroçaria"}
+              error={errors.body?.message}
+              required
             >
-              <option value="">Por confirmar — selecione</option>
-              {(vehicleType === "motorcycle"
-                ? motoKind === "quad"
-                  ? [QUAD_BODY]
-                  : ROAD_MOTORCYCLE_BODIES
-                : CAR_BODIES
-              ).map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-          </Field>
+              <BodyPicker
+                options={bodiesFor(vehicleType)}
+                value={watch("body") ?? null}
+                onChange={(b) => setValue("body", (b ?? undefined) as CarFormValues["body"], { shouldDirty: true, shouldValidate: true })}
+              />
+            </Field>
+          </div>
           <Field label="Potência (cv)" error={errors.power?.message}>
             <input
               type="number"

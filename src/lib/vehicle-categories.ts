@@ -22,23 +22,31 @@ export const VEHICLE_TYPES = ["car", "motorcycle"] as const;
 export type VehicleType = (typeof VEHICLE_TYPES)[number];
 
 /**
- * As motas dividem-se em dois mundos que quem procura não mistura: as de
- * estrada (2 rodas) e as moto 4 (quads). É o segmento que decide.
+ * Uma frase por categoria, para escolher como no OLX: um quadrado por
+ * categoria, com o nome e o que a distingue — sem ter de saber os termos.
  */
-export type MotorcycleKind = "road" | "quad";
-export const MOTORCYCLE_KIND_LABEL: Record<MotorcycleKind, string> = {
-  road: "Motas de estrada",
-  quad: "Moto 4",
+export const BODY_HINT: Record<string, string> = {
+  Scooter: "Automática, para a cidade",
+  Naked: "Sem carenagem, versátil",
+  Desportiva: "Carenagem, alto desempenho",
+  Trail: "Estrada e terra, viagens",
+  Touring: "Conforto para viagens longas",
+  "Chopper/Cruiser": "Posição relaxada, estilo custom",
+  Enduro: "Todo-o-terreno",
+  "Moto 4": "Quads e ATV",
+  Berlina: "Sedan, mala separada",
+  SUV: "Posição alta, versátil",
+  Coupé: "Duas portas, desportivo",
+  Carrinha: "Mala grande, familiar",
+  Citadino: "Pequeno, para a cidade",
+  Utilitário: "Compacto, do dia a dia",
+  Descapotável: "Capota amovível",
+  Monovolume: "Espaço e muitos lugares",
 };
-export const MOTORCYCLE_KIND_HINT: Record<MotorcycleKind, string> = {
-  road: "2 rodas · scooter, naked, trail, touring…",
-  quad: "4 rodas · quads e ATV",
-};
-export const QUAD_BODY = "Moto 4";
-/** Segmentos das motas de estrada (todos menos Moto 4). */
-export const ROAD_MOTORCYCLE_BODIES = MOTORCYCLE_BODIES.filter((b) => b !== QUAD_BODY);
-export function motorcycleKind(body: string | null | undefined): MotorcycleKind {
-  return body === QUAD_BODY ? "quad" : "road";
+
+/** As categorias de cada tipo de viatura, pela ordem em que se mostram. */
+export function bodiesFor(type: VehicleType | null | undefined): readonly string[] {
+  return type === "motorcycle" ? MOTORCYCLE_BODIES : CAR_BODIES;
 }
 export function isMotorcycleBody(body: string): boolean {
   return (MOTORCYCLE_BODIES as readonly string[]).includes(body);
