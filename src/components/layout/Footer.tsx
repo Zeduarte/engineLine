@@ -47,9 +47,9 @@ export function Footer({
             <Image
               src={branding.logoUrl}
               alt={branding.companyName}
-              width={180}
-              height={44}
-              className="h-9 w-auto object-contain"
+              width={300}
+              height={75}
+              className="h-14 w-auto max-w-full object-contain md:h-16"
             />
           ) : (
             <p className="text-2xl font-bold tracking-tight text-paper">

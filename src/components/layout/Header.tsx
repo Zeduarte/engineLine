@@ -74,9 +74,9 @@ export function Header({
               <Image
                 src={branding.logoUrl}
                 alt={branding.companyName}
-                width={160}
-                height={40}
-                className="h-8 w-auto object-contain"
+                width={280}
+                height={70}
+                className="h-11 w-auto max-w-[55vw] object-contain md:h-14"
                 priority
               />
             ) : (
