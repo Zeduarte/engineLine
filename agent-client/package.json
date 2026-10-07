@@ -1,0 +1,19 @@
+{
+  "name": "agent-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal Managed Agents client: create a session, send a message, stream the reply.",
+  "scripts": {
+    "start": "tsx index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
