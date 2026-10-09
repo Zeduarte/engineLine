@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { publicSubmissionClient } from "@/lib/public-submissions";
 import { z } from "zod";
+import { viewSkipReason } from "@/lib/view-filter";
 
 export const runtime = "nodejs";
 
@@ -28,6 +29,18 @@ export async function POST(request: Request) {
   }
 
   const ua = request.headers.get("user-agent") ?? "";
+  // Só contam visitantes reais: fora robôs, a equipa, o dev local e as previews.
+  const skipped = viewSkipReason({
+    userAgent: ua,
+    host: request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "",
+    nodeEnv: process.env.NODE_ENV,
+    cookieNames: (request.headers.get("cookie") ?? "")
+      .split(";")
+      .map((c) => c.split("=")[0]!.trim())
+      .filter(Boolean),
+  });
+  if (skipped) return NextResponse.json({ ok: true, skipped });
+
   const day = new Date().toISOString().slice(0, 10);
   const session = createHash("sha256")
     .update(`${ua}|${day}`)
