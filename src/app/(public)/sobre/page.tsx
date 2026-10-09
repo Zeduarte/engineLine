@@ -9,7 +9,7 @@ import { COMMON_MEDIA } from "@/lib/media";
 export const metadata: Metadata = {
   title: "Sobre",
   description:
-    "Conheça o nosso stand de automóveis premium — curadoria rigorosa, histórico transparente e uma experiência de compra sem fricção.",
+    "Conheça o nosso stand de motas e automóveis — curadoria rigorosa, histórico transparente e uma experiência de compra sem fricção.",
 };
 
 export const revalidate = 300;

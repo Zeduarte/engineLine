@@ -7,7 +7,7 @@ import { site } from "@/lib/site";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `${site.name} — Automóveis Premium`,
+    name: `${site.name} — Motas e Automóveis`,
     short_name: site.name,
     description: site.description,
     start_url: "/",

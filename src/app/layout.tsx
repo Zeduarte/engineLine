@@ -18,7 +18,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: `${site.name} — Automóveis Premium em Portugal`,
+    default: `${site.name} — Motas e Automóveis em Portugal`,
     template: `%s · ${site.name}`,
   },
   description: site.description,
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_PT",
     siteName: site.name,
-    title: `${site.name} — Automóveis Premium`,
+    title: `${site.name} — Motas e Automóveis`,
     description: site.description,
     url: site.url,
   },
