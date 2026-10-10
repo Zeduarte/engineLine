@@ -82,11 +82,12 @@ html.lenis body {
   .field-error {
     @apply mt-1 text-xs text-red-400;
   }
+  /* Botões: sobem no hover, encolhem ao premir (resposta tátil imediata). */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-ink transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-ink transition-[transform,box-shadow] duration-300 ease-premium hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-10px_var(--accent)] active:translate-y-0 active:scale-[0.97] active:duration-100 disabled:translate-y-0 disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-paper transition-colors hover:border-white/40 disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-paper transition-[transform,border-color,background-color] duration-300 ease-premium hover:border-white/40 hover:bg-white/[0.04] active:scale-[0.97] active:duration-100 disabled:scale-100 disabled:bg-transparent disabled:opacity-60;
   }
   .card {
     @apply rounded-2xl border border-white/10 bg-ink-soft;
@@ -102,6 +103,16 @@ html.lenis body {
   }
   .js-anim [data-anim="clip"] {
     clip-path: inset(0 0 100% 0);
+  }
+
+  /* Fotos (FadeImage): entram com fade quando acabam de carregar, em vez de
+     aparecerem aos bocados. Só com `.js-anim`, pelo mesmo motivo acima. */
+  .js-anim .img-fade {
+    opacity: 0;
+    transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .js-anim .img-fade[data-loaded="true"] {
+    opacity: 1;
   }
 }
 

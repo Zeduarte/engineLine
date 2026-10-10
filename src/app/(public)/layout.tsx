@@ -3,7 +3,9 @@ import { VehicleWorld } from "@/components/site/VehicleWorld";
 import { LenisProvider } from "@/components/providers/LenisProvider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { Suspense } from "react";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
+import { NavigationProgress } from "@/components/ui/NavigationProgress";
 import { GrainOverlay } from "@/components/ui/GrainOverlay";
 import { ChatLauncher } from "@/components/chat/ChatLauncher";
 import { ChatProvider } from "@/components/chat/ChatContext";
@@ -45,6 +47,10 @@ export default async function PublicLayout({
         </a>
         <DealerJsonLd branding={branding} />
         <ScrollProgress />
+        {/* `useSearchParams` exige um Suspense para não desligar o render estático. */}
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         <Header branding={branding} />
         <main id="conteudo" className="pt-16">{children}</main>
         <Footer branding={branding} background={existingMedia(type, OPTIONAL_MEDIA.rodape)} />

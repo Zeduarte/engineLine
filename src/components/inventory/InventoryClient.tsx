@@ -114,11 +114,16 @@ export function InventoryClient({
                 layout
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.96 }}
+                // Saída mais rápida do que a entrada: o que sai não deve
+                // atrasar o que fica.
+                exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }}
                 transition={{
                   duration: 0.4,
                   ease: [0.22, 1, 0.36, 1],
                   delay: Math.min(i * 0.05, 0.3),
+                  // A reorganização (filtrar/ordenar) move todos os cards em
+                  // conjunto — sem o atraso em cascata da entrada.
+                  layout: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
                 }}
               >
                 <VehicleCard vehicle={vehicle} priority={i < 3} />

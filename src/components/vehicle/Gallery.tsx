@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { FadeImage } from "@/components/ui/FadeImage";
 import type { VehicleImage, VehicleVideo } from "@/types/vehicle";
 
 /**
@@ -60,15 +61,23 @@ export function Gallery({
         className="group relative aspect-[16/10] cursor-zoom-in overflow-hidden rounded-3xl bg-ink-muted"
         onClick={() => setLightbox(active)}
       >
-        <Image
-          key={current.src}
-          src={current.src}
-          alt={current.alt}
-          fill
-          priority
-          sizes="(max-width: 1024px) 100vw, 66vw"
-          className="object-cover"
-        />
+        {/* Fade cruzado entre fotos (sem corte seco ao mudar). */}
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={current.src}
+            className="absolute inset-0"
+            exit={{ opacity: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } }}
+          >
+            <FadeImage
+              src={current.src}
+              alt={current.alt}
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 66vw"
+              className="object-cover"
+            />
+          </motion.div>
+        </AnimatePresence>
 
         {/* Ícone de ampliar (afeta descoberta do lightbox). */}
         <span className="pointer-events-none absolute left-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-ink/60 text-paper backdrop-blur transition-opacity md:opacity-0 md:group-hover:opacity-100">
@@ -162,6 +171,7 @@ export function Gallery({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
             onClick={() => setLightbox(null)}
             role="dialog"
@@ -191,7 +201,13 @@ export function Gallery({
                 className="relative flex h-full w-full items-center justify-center"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="relative max-h-[85vh] w-full max-w-5xl">
+                <motion.div
+                  key={images[active]!.src}
+                  initial={{ opacity: 0, scale: 0.97 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                  className="relative max-h-[85vh] w-full max-w-5xl"
+                >
                   <Image
                     src={images[active]!.src}
                     alt={images[active]!.alt}
@@ -200,7 +216,7 @@ export function Gallery({
                     sizes="92vw"
                     className="mx-auto max-h-[85vh] w-auto rounded-xl object-contain"
                   />
-                </div>
+                </motion.div>
 
                 {hasMultiple && (
                   <>

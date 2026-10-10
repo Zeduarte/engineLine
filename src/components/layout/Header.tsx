@@ -10,6 +10,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
 import { useLocalList, FAVORITES_KEY } from "@/hooks/useLocalList";
 
+/** Entrada em cascata de cada item do menu mobile. */
+const MENU_ITEM = {
+  open: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
+  closed: { opacity: 0, y: -8, transition: { duration: 0.15 } },
+} as const;
+
 const NAV = [
   { href: "/", label: "Início" },
   { href: "/inventario", label: "Stock" },
@@ -31,23 +37,44 @@ export function Header({
   // voltar ao lado do logótipo — sempre acessível no topo fixo.
   const onVehiclePage = /^\/viaturas\/[^/]+$/.test(pathname);
   const [scrolled, setScrolled] = useState(false);
+  // Header "inteligente": esconde-se ao descer (mais espaço para o conteúdo) e
+  // volta ao mínimo gesto de subida.
+  const [hidden, setHidden] = useState(false);
   const [open, setOpen] = useState(false);
   const { items: favorites, ready: favReady } = useLocalList(FAVORITES_KEY);
   const favCount = favReady ? favorites.length : 0;
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 24);
+      // Pequena zona morta para não tremer com micro-scrolls do trackpad.
+      if (Math.abs(y - lastY) < 6) return;
+      setHidden(y > lastY && y > 160);
+      lastY = y;
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Fecha o menu mobile ao navegar.
-  useEffect(() => setOpen(false), [pathname]);
+  // Fecha o menu mobile e volta a mostrar o header ao navegar.
+  useEffect(() => {
+    setOpen(false);
+    setHidden(false);
+  }, [pathname]);
+
+  // Com o menu aberto nunca se esconde; o foco por teclado também o revela
+  // (`onFocusCapture` no <header>).
+  const visible = !hidden || open;
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-500 ${
+      onFocusCapture={() => setHidden(false)}
+      className={`fixed inset-x-0 top-0 z-50 transition-[transform,background-color,border-color] duration-500 ease-premium ${
+        visible ? "translate-y-0" : "-translate-y-full"
+      } ${
         scrolled || open
           ? "border-b border-white/10 bg-ink/80 backdrop-blur-xl"
           : "border-b border-transparent bg-transparent"
@@ -104,6 +131,7 @@ export function Header({
                   {active && (
                     <motion.span
                       layoutId="nav-underline"
+                      transition={{ type: "spring", stiffness: 380, damping: 34 }}
                       className="absolute -bottom-1.5 left-0 h-px w-full bg-accent"
                     />
                   )}
@@ -193,34 +221,43 @@ export function Header({
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden md:hidden"
           >
-            <ul className="container-px flex flex-col gap-1 py-4">
+            <motion.ul
+              className="container-px flex flex-col gap-1 py-4"
+              initial="closed"
+              animate="open"
+              exit="closed"
+              variants={{
+                open: { transition: { staggerChildren: 0.04, delayChildren: 0.06 } },
+                closed: { transition: { staggerChildren: 0.02, staggerDirection: -1 } },
+              }}
+            >
               {NAV.map((item) => (
-                <li key={item.href}>
+                <motion.li key={item.href} variants={MENU_ITEM}>
                   <Link
                     href={item.href}
                     className="block rounded-lg px-2 py-3 text-lg font-medium text-paper/80 hover:text-paper"
                   >
                     {item.label === "Carro ideal" && world === "motorcycle" ? "Mota ideal" : item.label}
                   </Link>
-                </li>
+                </motion.li>
               ))}
-              <li>
+              <motion.li variants={MENU_ITEM}>
                 <Link
                   href="/favoritos"
                   className="block rounded-lg px-2 py-3 text-lg font-medium text-paper/80 hover:text-paper"
                 >
                   Favoritos{favCount > 0 ? ` (${favCount})` : ""}
                 </Link>
-              </li>
-              <li>
+              </motion.li>
+              <motion.li variants={MENU_ITEM}>
                 <a
                   href={branding.company.phoneHref}
-                  className="mt-2 block rounded-full bg-accent px-5 py-3 text-center text-sm font-semibold text-ink"
+                  className="mt-2 block rounded-full bg-accent px-5 py-3 text-center text-sm font-semibold text-ink transition-transform active:scale-[0.97]"
                 >
                   Ligar · {branding.company.phone}
                 </a>
-              </li>
-            </ul>
+              </motion.li>
+            </motion.ul>
           </motion.div>
         )}
       </AnimatePresence>

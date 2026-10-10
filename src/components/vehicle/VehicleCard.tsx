@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { FadeImage } from "@/components/ui/FadeImage";
 import { VehiclePrice } from "@/components/vehicle/VehiclePrice";
 import { registrationLabel } from "@/lib/vehicle-categories";
 import type { Vehicle } from "@/types/vehicle";
@@ -65,6 +65,15 @@ export function VehicleCard({
       }
     : {};
 
+  // Elevação subtil do card inteiro no hover/foco (só na grelha "fonte"; nas
+  // listas secundárias fica estático para não competir com a página).
+  const liftProps = morph
+    ? {
+        variants: { hover: { y: -4 } },
+        transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const },
+      }
+    : {};
+
   // As setas mudam a foto sem navegar para a ficha (o card é um Link).
   function step(e: React.MouseEvent, dir: 1 | -1) {
     e.preventDefault();
@@ -77,7 +86,8 @@ export function VehicleCard({
       initial={false}
       whileHover="hover"
       whileFocus="hover"
-      className="group relative rounded-3xl border border-white/10 bg-ink-soft p-3 transition-colors duration-300 hover:border-white/20 hover:bg-white/[0.04]"
+      {...liftProps}
+      className="group relative rounded-3xl border border-white/10 bg-ink-soft p-3 transition-[border-color,background-color,box-shadow] duration-500 ease-premium hover:border-white/20 hover:bg-white/[0.04] hover:shadow-[0_24px_48px_-24px_rgba(0,0,0,0.9)]"
     >
       <Link
         href={`/viaturas/${vehicle.slug}`}
@@ -96,15 +106,24 @@ export function VehicleCard({
                 : "absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-105"
             }
           >
-            <Image
-              key={current.src}
-              src={current.src}
-              alt={current.alt}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              priority={priority}
-              className="object-cover"
-            />
+            {/* Fade cruzado entre fotos: a anterior desvanece enquanto a nova
+                entra (com fade próprio quando acaba de carregar). */}
+            <AnimatePresence initial={false}>
+              <motion.div
+                key={current.src}
+                className="absolute inset-0"
+                exit={{ opacity: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } }}
+              >
+                <FadeImage
+                  src={current.src}
+                  alt={current.alt}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  priority={priority}
+                  className="object-cover"
+                />
+              </motion.div>
+            </AnimatePresence>
           </Zoom>
 
           <div className="absolute right-4 top-4 flex items-center gap-2">
@@ -135,7 +154,7 @@ export function VehicleCard({
                 type="button"
                 onClick={(e) => step(e, -1)}
                 aria-label="Foto anterior"
-                className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-ink/60 text-paper opacity-0 backdrop-blur transition-opacity hover:bg-ink/80 group-hover:opacity-100 focus:opacity-100"
+                className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 scale-90 place-items-center rounded-full bg-ink/60 text-paper opacity-0 backdrop-blur transition-[opacity,transform,background-color] duration-300 ease-premium hover:bg-ink/80 group-hover:scale-100 group-hover:opacity-100 focus:scale-100 focus:opacity-100"
               >
                 ‹
               </button>
@@ -143,7 +162,7 @@ export function VehicleCard({
                 type="button"
                 onClick={(e) => step(e, 1)}
                 aria-label="Foto seguinte"
-                className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-ink/60 text-paper opacity-0 backdrop-blur transition-opacity hover:bg-ink/80 group-hover:opacity-100 focus:opacity-100"
+                className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 scale-90 place-items-center rounded-full bg-ink/60 text-paper opacity-0 backdrop-blur transition-[opacity,transform,background-color] duration-300 ease-premium hover:bg-ink/80 group-hover:scale-100 group-hover:opacity-100 focus:scale-100 focus:opacity-100"
               >
                 ›
               </button>
@@ -151,7 +170,7 @@ export function VehicleCard({
                 {images.map((_, i) => (
                   <span
                     key={i}
-                    className={`h-1.5 rounded-full transition-all ${
+                    className={`h-1.5 rounded-full transition-all duration-300 ease-premium ${
                       i === index ? "w-4 bg-paper" : "w-1.5 bg-paper/40"
                     }`}
                   />
