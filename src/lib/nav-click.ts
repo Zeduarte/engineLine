@@ -1,7 +1,7 @@
 /**
  * Deteta se um clique vai provocar uma navegação interna do Next (um `<Link>`
- * ou `<a>` para outra rota do mesmo site). Usado pelas transições de página,
- * que o intercetam na fase de captura — antes dos handlers do React.
+ * ou `<a>` para outra rota do mesmo site). Usado pelo `NavigationEvents` na
+ * fase de captura — antes dos handlers do React.
  *
  * Ignora: cliques com modificadores (abrir noutro separador), botões que não o
  * principal, `target="_blank"`, `download`, outros domínios, `mailto:`/`tel:`,

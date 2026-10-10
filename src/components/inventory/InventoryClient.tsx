@@ -107,7 +107,9 @@ export function InventoryClient({
           layout
           className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3"
         >
-          <AnimatePresence mode="popLayout">
+          {/* `initial={false}`: ao chegar à página os cartões já lá estão (a
+              página entra a deslizar); só os que entram ao filtrar animam. */}
+          <AnimatePresence mode="popLayout" initial={false}>
             {results.map((vehicle, i) => (
               <motion.div
                 key={vehicle.slug}

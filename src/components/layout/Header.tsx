@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
 import { useLocalList, FAVORITES_KEY } from "@/hooks/useLocalList";
+import { NAV_START_EVENT, type NavStartDetail } from "@/lib/page-transition";
 
 /** Entrada em cascata de cada item do menu mobile. */
 const MENU_ITEM = {
@@ -41,6 +42,17 @@ export function Header({
   // volta à cor. No topo da página é sempre transparente.
   const [solid, setSolid] = useState(false);
   const [open, setOpen] = useState(false);
+  // Destino de uma navegação em curso: o sublinhado do menu salta logo para o
+  // item clicado, sem esperar que a página chegue do servidor.
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+  const activePath = pendingPath ?? pathname;
+
+  useEffect(() => {
+    const onStart = (e: Event) =>
+      setPendingPath((e as CustomEvent<NavStartDetail>).detail.pathname);
+    window.addEventListener(NAV_START_EVENT, onStart);
+    return () => window.removeEventListener(NAV_START_EVENT, onStart);
+  }, []);
   const { items: favorites, ready: favReady } = useLocalList(FAVORITES_KEY);
   const favCount = favReady ? favorites.length : 0;
 
@@ -64,7 +76,10 @@ export function Header({
   }, []);
 
   // Fecha o menu mobile ao navegar.
-  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    setOpen(false);
+    setPendingPath(null);
+  }, [pathname]);
 
   return (
     <header
@@ -112,8 +127,8 @@ export function Header({
           {NAV.map((item) => {
             const active =
               item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
+                ? activePath === "/"
+                : activePath.startsWith(item.href);
             return (
               <li key={item.href}>
                 <Link

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { FadeImage } from "@/components/ui/FadeImage";
+import { ViewTransition } from "@/components/ui/ViewTransition";
 import { VehiclePrice } from "@/components/vehicle/VehiclePrice";
 import { registrationLabel } from "@/lib/vehicle-categories";
 import type { Vehicle } from "@/types/vehicle";
@@ -19,16 +20,23 @@ interface VehicleCardProps {
   priority?: boolean;
   /** Índice para a jante do stagger (informativo). */
   index?: number;
+  /**
+   * Foto partilhada com a galeria da ficha (voa do cartão para a ficha ao
+   * abrir, e de volta ao regressar). Só na lista principal de cada página:
+   * o mesmo carro em duas listas (ex.: relacionadas e vistas recentemente)
+   * daria dois nomes iguais e o browser cancelava a transição.
+   */
+  sharedTransition?: boolean;
 }
 
 /**
  * Card de viatura reutilizado na homepage e no inventário.
  *
- * `data-vt-media` marca a foto para a transição partilhada com a ficha: ao
- * clicar, o `PageTransitions` dá-lhe um nome de View Transition e o browser
- * expande-a até à galeria. Só o cartão clicado recebe o nome, por isso pode
- * haver o mesmo carro em várias listas da página sem colisões.
- * As micro-interações (elevação, zoom da foto) são CSS no hover e no foco.
+ * A foto é um `<ViewTransition name="vehicle-<slug>">`, o mesmo nome da
+ * galeria da ficha: ao abrir o anúncio, cresce do cartão até à galeria.
+ * As micro-interações são CSS: elevação e zoom da foto no hover/foco, e o
+ * cartão encolhe ligeiramente assim que é clicado (`data-nav-pending`), para
+ * o clique ter resposta mesmo antes de a ficha chegar do servidor.
  */
 /** Etiquetas da viatura, com o texto e a cor de Definições → Etiquetas. */
 function useVehicleBadges(vehicle: Vehicle) {
@@ -38,6 +46,7 @@ function useVehicleBadges(vehicle: Vehicle) {
 export function VehicleCard({
   vehicle,
   priority = false,
+  sharedTransition = true,
 }: VehicleCardProps) {
   const images = vehicle.images.length ? vehicle.images : [];
   const badges = useVehicleBadges(vehicle);
@@ -53,14 +62,18 @@ export function VehicleCard({
   }
 
   return (
-    <article className="group relative rounded-3xl border border-white/10 bg-ink-soft p-3 transition-[transform,border-color,background-color,box-shadow] duration-500 ease-premium focus-within:-translate-y-1 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.04] hover:shadow-[0_24px_48px_-24px_rgba(0,0,0,0.9)]">
+    <article className="group relative rounded-3xl border border-white/10 bg-ink-soft p-3 transition-[transform,border-color,background-color,box-shadow] duration-500 ease-premium focus-within:-translate-y-1 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.04] hover:shadow-[0_24px_48px_-24px_rgba(0,0,0,0.9)] active:scale-[0.98] active:duration-150 has-[[data-nav-pending]]:translate-y-0 has-[[data-nav-pending]]:scale-[0.97] has-[[data-nav-pending]]:border-accent/40">
       <Link
         href={`/viaturas/${vehicle.slug}`}
         className="block focus:outline-none"
         aria-label={`${vehicle.make} ${vehicle.model} ${vehicle.year} — ${priceLabel(vehicle.price, vehicle.priceOnRequest)}`}
       >
+        <ViewTransition
+          name={sharedTransition ? `vehicle-${vehicle.slug}` : undefined}
+          share="vehicle-morph"
+        >
         <div
-          data-vt-media
+          data-vt-card={vehicle.slug}
           className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-ink-muted"
         >
           <div className="absolute inset-0 transition-transform duration-700 ease-premium group-focus-within:scale-105 group-hover:scale-105">
@@ -144,6 +157,7 @@ export function VehicleCard({
             <CompareButton slug={vehicle.slug} />
           </div>
         </div>
+        </ViewTransition>
 
         <div className="mt-4 px-1 pb-1">
           <div className="flex items-start justify-between gap-3">

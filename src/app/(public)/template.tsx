@@ -1,34 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { pageTransition } from "@/lib/page-transition";
+import { ViewTransition } from "@/components/ui/ViewTransition";
 
 /**
- * `template.tsx` (ao contrário de `layout.tsx`) re-monta a cada navegação, o
- * que o torna o sítio certo para transições de página. Fazemos um fade + subida
- * curta com clip, que dá a sensação do conteúdo a "abrir" — o complemento à
- * expansão do card na ficha de viatura.
+ * `template.tsx` (ao contrário de `layout.tsx`) re-monta a cada navegação: a
+ * página antiga sai e a nova entra. O `<ViewTransition>` do React anima essa
+ * troca com a View Transitions API do browser — a página desliza para o lado
+ * (classes `page-in`/`page-out`, direção em `data-nav-dir`; CSS em
+ * globals.css). Fotos com o mesmo `name` (cartão → galeria) voam entre as
+ * duas páginas por cima do deslize.
  *
- * `useReducedMotion` (Framer Motion) corta a animação quando o utilizador pede
- * menos movimento: o conteúdo aparece instantaneamente no estado final.
- *
- * Quando a navegação veio com uma View Transition (`PageTransitions`), é o
- * browser que anima a troca — aqui não se anima outra vez por cima.
+ * O React só arranca a transição quando a página nova está pronta, por isso a
+ * antiga continua viva durante o pedido ao servidor. `default="none"`:
+ * mudanças dentro da mesma página (filtros, ordenação) não deslizam.
+ * Com "reduzir movimento", o CSS desliga as animações.
  */
 export default function Template({ children }: { children: React.ReactNode }) {
-  const reduce = useReducedMotion();
-  const [viaViewTransition] = useState(() => pageTransition.active);
-
-  if (reduce || viaViewTransition) return <>{children}</>;
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {children}
-    </motion.div>
+    <ViewTransition enter="page-in" exit="page-out" default="none">
+      <div>{children}</div>
+    </ViewTransition>
   );
 }

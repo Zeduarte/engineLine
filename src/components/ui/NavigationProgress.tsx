@@ -12,7 +12,7 @@ type Phase = "idle" | "loading" | "done";
  * As páginas são Server Components: entre o clique e a nova página há um
  * pedido ao servidor. Sem feedback, o clique parece "não ter pegado" e o
  * utilizador clica outra vez. A barra arranca no próprio clique (evento do
- * `PageTransitions`) e completa quando a rota muda.
+ * `NavigationEvents`) e completa quando a rota muda.
  *
  *  - `loading`: avança depressa até ~30% e depois abranda até 85% (nunca
  *    chega ao fim sozinha — dá sempre a sensação de progresso).

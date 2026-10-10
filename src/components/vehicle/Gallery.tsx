@@ -4,20 +4,24 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { FadeImage } from "@/components/ui/FadeImage";
+import { ViewTransition } from "@/components/ui/ViewTransition";
 import type { VehicleImage, VehicleVideo } from "@/types/vehicle";
 
 /**
  * Galeria da ficha de viatura, com lightbox (ecrã completo) e vídeo opcional.
  *
- * A imagem principal (`data-vt-target`) é o destino da transição partilhada
- * a partir do cartão: a foto clicada expande-se até aqui (`PageTransitions`). Clicar na
+ * A imagem principal partilha o nome de View Transition do `VehicleCard`
+ * (`vehicle-<slug>`): a foto clicada cresce do cartão até aqui, e volta ao
+ * cartão quando se regressa ao stock. Clicar na
  * imagem abre o lightbox: navegação por setas/teclado, fecho por Esc ou clique
  * fora, e bloqueio do scroll do body enquanto está aberto.
  */
 export function Gallery({
+  slug,
   images,
   video,
 }: {
+  slug: string;
   images: VehicleImage[];
   video?: VehicleVideo | null;
 }) {
@@ -54,8 +58,9 @@ export function Gallery({
 
   return (
     <div>
+      <ViewTransition name={`vehicle-${slug}`} share="vehicle-morph">
       <motion.div
-        data-vt-target
+        data-vt-gallery={slug}
         className="group relative aspect-[16/10] cursor-zoom-in overflow-hidden rounded-3xl bg-ink-muted"
         onClick={() => setLightbox(active)}
       >
@@ -127,6 +132,7 @@ export function Gallery({
           </>
         )}
       </motion.div>
+      </ViewTransition>
 
       {images.length > 1 && (
         // Contentor com scroll horizontal PRÓPRIO: as miniaturas nunca
