@@ -96,9 +96,10 @@ export function inventoryVehicleType(
 }
 
 /**
- * Estados que ainda aparecem na Oficina: em trabalho, preparada ou rascunho.
- * Publicada, reservada ou vendida já só aparece em Viaturas.
+ * Uma viatura está na Oficina ou em Viaturas, nunca nas duas. Na Oficina só as
+ * que estão em trabalho; rascunho, preparada, publicada, reservada e vendida
+ * aparecem em Viaturas.
  */
 export function showsInWorkshop(status: string): boolean {
-  return status === "workshop" || status === "prepared" || status === "draft";
+  return status === "workshop";
 }

@@ -19,9 +19,9 @@ export interface WorkshopVehicle {
 }
 
 /**
- * Lista as viaturas da oficina (em trabalho, preparadas ou em rascunho), com o
- * total de horas registadas. Ao ser publicada, a viatura sai daqui e fica só em
- * Viaturas. Só identificação + capa — o mecânico não edita a ficha.
+ * Lista as viaturas que estão na oficina, com o total de horas registadas. Ao
+ * ser dada como preparada, a viatura sai daqui e passa para Viaturas. Só
+ * identificação + capa — o mecânico não edita a ficha.
  */
 export async function getWorkshopVehicles(): Promise<WorkshopVehicle[]> {
   const supabase = await createClient();

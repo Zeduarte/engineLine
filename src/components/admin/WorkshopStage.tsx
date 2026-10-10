@@ -11,18 +11,22 @@ import type { CarStatus } from "@/lib/supabase/database.types";
  *
  *  - Na oficina → "Dar como preparada": passa a Preparado e aparece em Viaturas.
  *  - Preparado (ou rascunho) → "Voltar para a oficina": sai de Viaturas.
+ *  Uma viatura está sempre num dos dois sítios, nunca nos dois.
  *
  * `leaveTo`: para onde ir depois de voltar à oficina. Em Viaturas a viatura
  * deixa de estar na lista, por isso a página da ficha já não faz sentido.
+ * `preparedTo`: o mesmo, ao dar como preparada a partir da Oficina.
  */
 export function WorkshopStage({
   carId,
   status,
   leaveTo,
+  preparedTo,
 }: {
   carId: string;
   status: CarStatus;
   leaveTo?: string;
+  preparedTo?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -31,9 +35,14 @@ export function WorkshopStage({
     if (!confirm("Dar esta viatura como preparada? Passa a aparecer em Viaturas com o estado «Preparado».")) return;
     startTransition(async () => {
       const res = await markVehiclePrepared(carId);
-      if (res.ok) toast.success("Viatura preparada — já está em Viaturas.");
-      else toast.error(res.error ?? "Erro.");
-      router.refresh();
+      if (!res.ok) {
+        toast.error(res.error ?? "Erro.");
+        router.refresh();
+        return;
+      }
+      toast.success("Viatura preparada — já está em Viaturas.");
+      if (preparedTo) router.push(preparedTo);
+      else router.refresh();
     });
   }
 

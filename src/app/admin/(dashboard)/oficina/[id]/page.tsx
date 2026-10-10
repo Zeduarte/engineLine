@@ -52,7 +52,7 @@ export default async function OficinaVehiclePage({
         )}
         <StatusBadge status={vehicle.status as CarStatus} />
         <div className="sm:ml-auto">
-          <WorkshopStage carId={vehicle.id} status={vehicle.status as CarStatus} />
+          <WorkshopStage carId={vehicle.id} status={vehicle.status as CarStatus} preparedTo="/admin/oficina" />
         </div>
       </div>
       {vehicle.status === "prepared" && (

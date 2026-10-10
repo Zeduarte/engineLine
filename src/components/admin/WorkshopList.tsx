@@ -18,12 +18,8 @@ export function WorkshopList({ vehicles }: { vehicles: WorkshopVehicle[] }) {
 
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
-    // As que ainda estão na oficina primeiro: são as que o mecânico trabalha.
-    const ordered = [...vehicles].sort(
-      (a, b) => Number(b.status === "workshop") - Number(a.status === "workshop"),
-    );
-    if (!t) return ordered;
-    return ordered.filter((v) =>
+    if (!t) return vehicles;
+    return vehicles.filter((v) =>
       `${v.make} ${v.model} ${v.plate ?? ""}`.toLowerCase().includes(t),
     );
   }, [vehicles, q]);
