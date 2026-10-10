@@ -47,6 +47,8 @@ await test('motorcycle categories are one list (Moto 4 is just another category)
  assert.deepEqual(pick({vehicleType:'motorcycle'}),['r6','ltr']);
  assert.deepEqual(pick({}),['r6','ltr','clio']);
  assert.ok(VC.bodiesFor('motorcycle').includes('Moto 4'));
+ for(const st of ['workshop','prepared','draft']) assert.ok(VC.showsInWorkshop(st),`${st} fica na oficina`);
+ for(const st of ['published','reserved','sold']) assert.ok(!VC.showsInWorkshop(st),`${st} sai da oficina`);
  assert.ok(!VC.bodiesFor('car').includes('Moto 4'));
  for(const b of [...VC.bodiesFor('motorcycle'),...VC.bodiesFor('car')]) assert.ok(VC.BODY_HINT[b],`falta a frase de ${b}`);
 });

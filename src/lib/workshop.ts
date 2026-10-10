@@ -1,4 +1,5 @@
 import { getAdminVehicleType } from "@/lib/vehicle-context";
+import { showsInWorkshop } from "@/lib/vehicle-categories";
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { coverImage } from "@/lib/mappers";
@@ -18,8 +19,9 @@ export interface WorkshopVehicle {
 }
 
 /**
- * Lista todas as viaturas (qualquer estado) para a oficina, com o total de
- * horas registadas. Só identificação + capa — o mecânico não edita a ficha.
+ * Lista as viaturas da oficina (em trabalho, preparadas ou em rascunho), com o
+ * total de horas registadas. Ao ser publicada, a viatura sai daqui e fica só em
+ * Viaturas. Só identificação + capa — o mecânico não edita a ficha.
  */
 export async function getWorkshopVehicles(): Promise<WorkshopVehicle[]> {
   const supabase = await createClient();
@@ -40,7 +42,9 @@ export async function getWorkshopVehicles(): Promise<WorkshopVehicle[]> {
     countByCar.set(l.car_id, (countByCar.get(l.car_id) ?? 0) + 1);
   }
 
-  return ((cars ?? []) as unknown as CarWithMedia[]).map((c) => ({
+  // Filtra-se aqui e não na query, pelo mesmo motivo de getAdminCars: os
+  // estados da oficina dependem da migração 0027.
+  return ((cars ?? []) as unknown as CarWithMedia[]).filter((c) => showsInWorkshop(c.status)).map((c) => ({
     id: c.id,
     make: c.make,
     model: c.model,

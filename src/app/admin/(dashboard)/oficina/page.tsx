@@ -15,7 +15,8 @@ export default async function OficinaPage() {
         <p className="mt-1 text-sm text-paper/50">
           Registe as horas de trabalho de cada viatura. Escolha uma viatura ou
           adicione uma nova pela matrícula. Quando estiver pronta, dê-a como
-          preparada: passa para Viaturas.
+          preparada: passa para Viaturas. Quando for publicada no site, sai da
+          Oficina e fica só em Viaturas.
         </p>
       </div>
       <WorkshopList vehicles={vehicles} />
