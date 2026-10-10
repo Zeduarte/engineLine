@@ -29,12 +29,15 @@ export function WorldCoverArt({ type, lazy = false }: { type: VehicleType; lazy?
   const w = WORLD_COVER[type];
   return (
     <div className={styles.art} style={{ "--world-accent": w.accent } as CSSProperties}>
-      {/* `lazy` na chegada: escondida, a foto não é descarregada em cada página. */}
+      {/* `lazy` na chegada: escondida, a foto não é descarregada em cada página.
+          Quando a capa aparece, o script do `WorldArrival` passa-a a "eager"
+          antes de o React arrancar — daí o suppressHydrationWarning. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={asset(mediaFor(type).entrada)}
         alt=""
         loading={lazy ? "lazy" : "eager"}
+        suppressHydrationWarning={lazy}
         className={styles.photo}
       />
       <span className={styles.shade} />
