@@ -177,7 +177,6 @@ export default async function VehiclePage({ params }: { params: Params }) {
                 (8 × 80px) empurrava a página para 724px de largura. */}
             <div className="min-w-0">
               <Gallery
-                slug={vehicle.slug}
                 images={vehicle.images}
                 video={vehicle.video}
               />
@@ -249,7 +248,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
               </h2>
               <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
                 {related.map((v) => (
-                  <VehicleCard key={v.slug} vehicle={v} morph={false} />
+                  <VehicleCard key={v.slug} vehicle={v} />
                 ))}
               </div>
             </section>

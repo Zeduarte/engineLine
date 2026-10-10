@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { pageTransition } from "@/lib/page-transition";
 
 /**
  * `template.tsx` (ao contrário de `layout.tsx`) re-monta a cada navegação, o
@@ -10,11 +12,15 @@ import { motion, useReducedMotion } from "framer-motion";
  *
  * `useReducedMotion` (Framer Motion) corta a animação quando o utilizador pede
  * menos movimento: o conteúdo aparece instantaneamente no estado final.
+ *
+ * Quando a navegação veio com uma View Transition (`PageTransitions`), é o
+ * browser que anima a troca — aqui não se anima outra vez por cima.
  */
 export default function Template({ children }: { children: React.ReactNode }) {
   const reduce = useReducedMotion();
+  const [viaViewTransition] = useState(() => pageTransition.active);
 
-  if (reduce) return <>{children}</>;
+  if (reduce || viaViewTransition) return <>{children}</>;
 
   return (
     <motion.div

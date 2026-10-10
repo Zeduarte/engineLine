@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Suspense } from "react";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { NavigationProgress } from "@/components/ui/NavigationProgress";
+import { PageTransitions } from "@/components/ui/PageTransitions";
 import { GrainOverlay } from "@/components/ui/GrainOverlay";
 import { ChatLauncher } from "@/components/chat/ChatLauncher";
 import { ChatProvider } from "@/components/chat/ChatContext";
@@ -37,6 +38,9 @@ export default async function PublicLayout({
           precisa de abrir o mesmo painel de conversa que o botão flutuante. */}
       <ChatProvider enabled={!!process.env.ANTHROPIC_API_KEY}>
       <CompareProvider>
+      {/* `.site`: estilos só do site público (ex.: botões); `contents` não
+          cria caixa, por isso não altera o layout. */}
+      <div className="site contents">
         <WorldEntrance name={branding.companyName} selected={selection} />
         {/* Salto para conteúdo — acessibilidade por teclado. */}
         <a
@@ -49,6 +53,7 @@ export default async function PublicLayout({
         <ScrollProgress />
         {/* `useSearchParams` exige um Suspense para não desligar o render estático. */}
         <Suspense fallback={null}>
+          <PageTransitions />
           <NavigationProgress />
         </Suspense>
         <Header branding={branding} />
@@ -65,6 +70,7 @@ export default async function PublicLayout({
         />
         <CompareBar />
         <GrainOverlay />
+      </div>
       </CompareProvider>
       </ChatProvider>
     </LenisProvider></BadgesProvider></VehicleWorld>

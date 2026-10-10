@@ -19,22 +19,16 @@ interface VehicleCardProps {
   priority?: boolean;
   /** Índice para a jante do stagger (informativo). */
   index?: number;
-  /**
-   * Ativa a transição partilhada (morph card → galeria). Deve ser `true` só
-   * para a grelha "fonte" (homepage/stock). Em listas secundárias da mesma
-   * página (relacionadas, vistas recentemente) tem de ser `false`, senão dois
-   * cards com o mesmo `layoutId` colidem e a imagem desaparece.
-   */
-  morph?: boolean;
 }
 
 /**
  * Card de viatura reutilizado na homepage e no inventário.
  *
- * O `layoutId` (`card-media-${slug}`) marca a media para a transição partilhada
- * com a ficha de detalhe — o Framer Motion usa-o para morfar o elemento em vez
- * de fazer um corte seco. As micro-interações (elevação, zoom da imagem) vivem
- * em variantes `whileHover`, respeitando o teclado via `whileFocus`.
+ * `data-vt-media` marca a foto para a transição partilhada com a ficha: ao
+ * clicar, o `PageTransitions` dá-lhe um nome de View Transition e o browser
+ * expande-a até à galeria. Só o cartão clicado recebe o nome, por isso pode
+ * haver o mesmo carro em várias listas da página sem colisões.
+ * As micro-interações (elevação, zoom da foto) são CSS no hover e no foco.
  */
 /** Etiquetas da viatura, com o texto e a cor de Definições → Etiquetas. */
 function useVehicleBadges(vehicle: Vehicle) {
@@ -44,35 +38,12 @@ function useVehicleBadges(vehicle: Vehicle) {
 export function VehicleCard({
   vehicle,
   priority = false,
-  morph = true,
 }: VehicleCardProps) {
   const images = vehicle.images.length ? vehicle.images : [];
   const badges = useVehicleBadges(vehicle);
   const [index, setIndex] = useState(0);
   const current = images[index] ?? images[0]!;
   const hasMultiple = images.length > 1;
-
-  // Em listas secundárias (relacionadas, vistas recentemente) desligamos por
-  // completo o framer-motion do media: evita qualquer colisão de layout
-  // partilhado que deixava a imagem em branco. O zoom no hover passa a ser CSS.
-  const Media: React.ElementType = morph ? motion.div : "div";
-  const Zoom: React.ElementType = morph ? motion.div : "div";
-  const mediaProps = morph ? { layoutId: `card-media-${vehicle.slug}` } : {};
-  const zoomProps = morph
-    ? {
-        variants: { hover: { scale: 1.05 } },
-        transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
-      }
-    : {};
-
-  // Elevação subtil do card inteiro no hover/foco (só na grelha "fonte"; nas
-  // listas secundárias fica estático para não competir com a página).
-  const liftProps = morph
-    ? {
-        variants: { hover: { y: -4 } },
-        transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const },
-      }
-    : {};
 
   // As setas mudam a foto sem navegar para a ficha (o card é um Link).
   function step(e: React.MouseEvent, dir: 1 | -1) {
@@ -82,30 +53,17 @@ export function VehicleCard({
   }
 
   return (
-    <motion.article
-      initial={false}
-      whileHover="hover"
-      whileFocus="hover"
-      {...liftProps}
-      className="group relative rounded-3xl border border-white/10 bg-ink-soft p-3 transition-[border-color,background-color,box-shadow] duration-500 ease-premium hover:border-white/20 hover:bg-white/[0.04] hover:shadow-[0_24px_48px_-24px_rgba(0,0,0,0.9)]"
-    >
+    <article className="group relative rounded-3xl border border-white/10 bg-ink-soft p-3 transition-[transform,border-color,background-color,box-shadow] duration-500 ease-premium focus-within:-translate-y-1 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.04] hover:shadow-[0_24px_48px_-24px_rgba(0,0,0,0.9)]">
       <Link
         href={`/viaturas/${vehicle.slug}`}
         className="block focus:outline-none"
         aria-label={`${vehicle.make} ${vehicle.model} ${vehicle.year} — ${priceLabel(vehicle.price, vehicle.priceOnRequest)}`}
       >
-        <Media
-          {...mediaProps}
+        <div
+          data-vt-media
           className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-ink-muted"
         >
-          <Zoom
-            {...zoomProps}
-            className={
-              morph
-                ? "absolute inset-0"
-                : "absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-105"
-            }
-          >
+          <div className="absolute inset-0 transition-transform duration-700 ease-premium group-focus-within:scale-105 group-hover:scale-105">
             {/* Fade cruzado entre fotos: a anterior desvanece enquanto a nova
                 entra (com fade próprio quando acaba de carregar). */}
             <AnimatePresence initial={false}>
@@ -124,7 +82,7 @@ export function VehicleCard({
                 />
               </motion.div>
             </AnimatePresence>
-          </Zoom>
+          </div>
 
           <div className="absolute right-4 top-4 flex items-center gap-2">
             <FavoriteButton slug={vehicle.slug} />
@@ -185,7 +143,7 @@ export function VehicleCard({
           <div className="absolute bottom-3 right-3 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100">
             <CompareButton slug={vehicle.slug} />
           </div>
-        </Media>
+        </div>
 
         <div className="mt-4 px-1 pb-1">
           <div className="flex items-start justify-between gap-3">
@@ -230,7 +188,7 @@ export function VehicleCard({
           ) : null}
         </div>
       </Link>
-    </motion.article>
+    </article>
   );
 }
 

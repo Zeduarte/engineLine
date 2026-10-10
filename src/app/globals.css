@@ -82,12 +82,19 @@ html.lenis body {
   .field-error {
     @apply mt-1 text-xs text-red-400;
   }
-  /* Botões: sobem no hover, encolhem ao premir (resposta tátil imediata). */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-ink transition-[transform,box-shadow] duration-300 ease-premium hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-10px_var(--accent)] active:translate-y-0 active:scale-[0.97] active:duration-100 disabled:translate-y-0 disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-ink transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-paper transition-[transform,border-color,background-color] duration-300 ease-premium hover:border-white/40 hover:bg-white/[0.04] active:scale-[0.97] active:duration-100 disabled:scale-100 disabled:bg-transparent disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-paper transition-colors hover:border-white/40 disabled:opacity-60;
+  }
+  /* No site público os botões sobem no hover e encolhem ao premir (resposta
+     tátil imediata). O backoffice fica com o comportamento simples acima. */
+  .site .btn-primary {
+    @apply transition-[transform,box-shadow] duration-300 ease-premium hover:-translate-y-0.5 hover:scale-100 hover:shadow-[0_10px_30px_-10px_var(--accent)] active:translate-y-0 active:scale-[0.97] active:duration-100 disabled:translate-y-0 disabled:scale-100 disabled:shadow-none;
+  }
+  .site .btn-ghost {
+    @apply transition-[transform,border-color,background-color] duration-300 ease-premium hover:bg-white/[0.04] active:scale-[0.97] active:duration-100 disabled:scale-100 disabled:bg-transparent;
   }
   .card {
     @apply rounded-2xl border border-white/10 bg-ink-soft;
@@ -114,6 +121,48 @@ html.lenis body {
   .js-anim .img-fade[data-loaded="true"] {
     opacity: 1;
   }
+}
+
+/* ---- Transições entre páginas (View Transitions API, ver PageTransitions) ----
+   A página antiga sai depressa a desvanecer e a subir; a nova entra de baixo,
+   um pouco depois, com a curva premium. Saída mais rápida do que a entrada. */
+@keyframes vt-page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.99);
+  }
+}
+@keyframes vt-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+::view-transition-old(root) {
+  animation: vt-page-out 0.25s cubic-bezier(0.4, 0, 1, 1) both;
+}
+::view-transition-new(root) {
+  animation: vt-page-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+/* O header, a barra de scroll e a de comparar ficam no sítio — só o
+   conteúdo muda. */
+::view-transition-group(site-header),
+::view-transition-group(scroll-progress),
+::view-transition-group(compare-bar) {
+  animation-duration: 0.3s;
+}
+
+/* Foto do cartão → galeria da ficha: cresce até ao destino sem deformar. */
+::view-transition-group(vehicle-media) {
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-old(vehicle-media),
+::view-transition-new(vehicle-media) {
+  height: 100%;
+  object-fit: cover;
+  overflow: clip;
 }
 
 /* Ken Burns cinematográfico (zoom + pan lento) para a imagem fixa do hero. */

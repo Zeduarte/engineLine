@@ -36,48 +36,44 @@ export function Header({
   // Numa ficha de viatura (/viaturas/slug, não sub-rotas) mostramos a seta de
   // voltar ao lado do logótipo — sempre acessível no topo fixo.
   const onVehiclePage = /^\/viaturas\/[^/]+$/.test(pathname);
-  const [scrolled, setScrolled] = useState(false);
-  // Header "inteligente": esconde-se ao descer (mais espaço para o conteúdo) e
-  // volta ao mínimo gesto de subida.
-  const [hidden, setHidden] = useState(false);
+  // Fundo sólido só quando a página já desceu E o último gesto foi de subida:
+  // ao descer o header fica transparente (deixa ver o conteúdo), ao subir
+  // volta à cor. No topo da página é sempre transparente.
+  const [solid, setSolid] = useState(false);
   const [open, setOpen] = useState(false);
   const { items: favorites, ready: favReady } = useLocalList(FAVORITES_KEY);
   const favCount = favReady ? favorites.length : 0;
 
   useEffect(() => {
     let lastY = window.scrollY;
+    setSolid(lastY > 24);
     const onScroll = () => {
       const y = window.scrollY;
-      setScrolled(y > 24);
+      if (y <= 24) {
+        setSolid(false);
+        lastY = y;
+        return;
+      }
       // Pequena zona morta para não tremer com micro-scrolls do trackpad.
       if (Math.abs(y - lastY) < 6) return;
-      setHidden(y > lastY && y > 160);
+      setSolid(y < lastY);
       lastY = y;
     };
-    onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Fecha o menu mobile e volta a mostrar o header ao navegar.
-  useEffect(() => {
-    setOpen(false);
-    setHidden(false);
-  }, [pathname]);
-
-  // Com o menu aberto nunca se esconde; o foco por teclado também o revela
-  // (`onFocusCapture` no <header>).
-  const visible = !hidden || open;
+  // Fecha o menu mobile ao navegar.
+  useEffect(() => setOpen(false), [pathname]);
 
   return (
     <header
-      onFocusCapture={() => setHidden(false)}
-      className={`fixed inset-x-0 top-0 z-50 transition-[transform,background-color,border-color] duration-500 ease-premium ${
-        visible ? "translate-y-0" : "-translate-y-full"
-      } ${
-        scrolled || open
-          ? "border-b border-white/10 bg-ink/80 backdrop-blur-xl"
-          : "border-b border-transparent bg-transparent"
+      // Navegação por teclado a meio da página: fundo sólido para ler bem.
+      onFocusCapture={() => window.scrollY > 24 && setSolid(true)}
+      className={`fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color,backdrop-filter] duration-500 ease-premium [view-transition-name:site-header] ${
+        solid || open
+          ? "border-white/10 bg-ink/80 backdrop-blur-xl"
+          : "border-transparent bg-transparent backdrop-blur-none"
       }`}
     >
       <nav className="container-px flex h-16 items-center justify-between md:h-20">

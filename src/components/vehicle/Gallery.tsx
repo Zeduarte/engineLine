@@ -9,17 +9,15 @@ import type { VehicleImage, VehicleVideo } from "@/types/vehicle";
 /**
  * Galeria da ficha de viatura, com lightbox (ecrã completo) e vídeo opcional.
  *
- * A imagem principal usa `layoutId="card-media-${slug}"` — o mesmo do
- * `VehicleCard` — para a transição partilhada a partir do card. Clicar na
+ * A imagem principal (`data-vt-target`) é o destino da transição partilhada
+ * a partir do cartão: a foto clicada expande-se até aqui (`PageTransitions`). Clicar na
  * imagem abre o lightbox: navegação por setas/teclado, fecho por Esc ou clique
  * fora, e bloqueio do scroll do body enquanto está aberto.
  */
 export function Gallery({
-  slug,
   images,
   video,
 }: {
-  slug: string;
   images: VehicleImage[];
   video?: VehicleVideo | null;
 }) {
@@ -57,7 +55,7 @@ export function Gallery({
   return (
     <div>
       <motion.div
-        layoutId={`card-media-${slug}`}
+        data-vt-target
         className="group relative aspect-[16/10] cursor-zoom-in overflow-hidden rounded-3xl bg-ink-muted"
         onClick={() => setLightbox(active)}
       >
