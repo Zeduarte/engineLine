@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
@@ -20,9 +21,16 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
  *  - Só quando o movimento é permitido é que marcamos <html> com `.js-anim`,
  *    que ativa os estados iniciais "escondidos" no CSS. Sem JS ou com
  *    reduced-motion, o conteúdo permanece sempre visível.
+ *  - `stopInertiaOnNavigate`: ao clicar num link para outra página, a inércia
+ *    do smooth scroll é cortada. Sem isto, o Lenis continuava a deslizar e
+ *    "puxava" a página nova para baixo depois de o Next a pôr no topo.
+ *  - `anchors`: links `#secção` deslizam suavemente, descontando o header fixo.
+ *  - A cada mudança de rota recalculamos os ScrollTriggers (a página nova tem
+ *    outra altura).
  */
 export function LenisProvider({ children }: { children: React.ReactNode }) {
   const prefersReduced = usePrefersReducedMotion();
+  const pathname = usePathname();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -40,6 +48,8 @@ export function LenisProvider({ children }: { children: React.ReactNode }) {
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       autoRaf: false,
       touchMultiplier: 1.4,
+      stopInertiaOnNavigate: true,
+      anchors: { offset: -96 },
     });
 
     lenis.on("scroll", ScrollTrigger.update);
@@ -62,6 +72,11 @@ export function LenisProvider({ children }: { children: React.ReactNode }) {
       root.classList.remove("js-anim");
     };
   }, [prefersReduced]);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => ScrollTrigger.refresh());
+    return () => cancelAnimationFrame(id);
+  }, [pathname]);
 
   return <>{children}</>;
 }

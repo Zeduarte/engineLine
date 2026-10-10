@@ -88,6 +88,14 @@ html.lenis body {
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-paper transition-colors hover:border-white/40 disabled:opacity-60;
   }
+  /* No site público os botões sobem no hover e encolhem ao premir (resposta
+     tátil imediata). O backoffice fica com o comportamento simples acima. */
+  .site .btn-primary {
+    @apply transition-[transform,box-shadow] duration-300 ease-premium hover:-translate-y-0.5 hover:scale-100 hover:shadow-[0_10px_30px_-10px_var(--accent)] active:translate-y-0 active:scale-[0.97] active:duration-100 disabled:translate-y-0 disabled:scale-100 disabled:shadow-none;
+  }
+  .site .btn-ghost {
+    @apply transition-[transform,border-color,background-color] duration-300 ease-premium hover:bg-white/[0.04] active:scale-[0.97] active:duration-100 disabled:scale-100 disabled:bg-transparent;
+  }
   .card {
     @apply rounded-2xl border border-white/10 bg-ink-soft;
   }
@@ -103,6 +111,119 @@ html.lenis body {
   .js-anim [data-anim="clip"] {
     clip-path: inset(0 0 100% 0);
   }
+
+  /* Fotos (FadeImage): entram com fade quando acabam de carregar, em vez de
+     aparecerem aos bocados. Só com `.js-anim`, pelo mesmo motivo acima. */
+  .js-anim .img-fade {
+    opacity: 0;
+    transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .js-anim .img-fade[data-loaded="true"] {
+    opacity: 1;
+  }
+}
+
+/* ---- Transições entre páginas (View Transitions, ver template.tsx) ----
+   As páginas estão em fila pela ordem do menu. A página antiga desliza para
+   fora e a nova entra pelo lado oposto, ao mesmo tempo — como um carrossel.
+   `data-nav-dir` no <html> (NavigationEvents) diz o sentido: "forward" (para
+   uma página mais à direita / a abrir uma ficha) ou "back". */
+@keyframes vt-out-to-left {
+  to {
+    transform: translateX(-100%);
+    opacity: 0.5;
+  }
+}
+@keyframes vt-in-from-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes vt-out-to-right {
+  to {
+    transform: translateX(100%);
+    opacity: 0.5;
+  }
+}
+@keyframes vt-in-from-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+::view-transition-old(.page-out) {
+  animation: vt-out-to-left 0.6s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+::view-transition-new(.page-in) {
+  animation: vt-in-from-right 0.6s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+:root[data-nav-dir="back"]::view-transition-old(.page-out) {
+  animation-name: vt-out-to-right;
+}
+:root[data-nav-dir="back"]::view-transition-new(.page-in) {
+  animation-name: vt-in-from-left;
+}
+
+/* "Voltar"/"avançar" do browser: a transição é feita à mão
+   (NavigationEvents) e desliza a página inteira (grupo root). */
+:root[data-manual-vt]::view-transition-old(root) {
+  animation: vt-out-to-left 0.6s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+:root[data-manual-vt]::view-transition-new(root) {
+  animation: vt-in-from-right 0.6s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+:root[data-manual-vt][data-nav-dir="back"]::view-transition-old(root) {
+  animation-name: vt-out-to-right;
+}
+:root[data-manual-vt][data-nav-dir="back"]::view-transition-new(root) {
+  animation-name: vt-in-from-left;
+}
+
+/* O header, a barra de scroll e a de comparar ficam no sítio — só o
+   conteúdo desliza. O header troca de imediato: entre páginas só muda o item
+   ativo (que já mudou no clique) e, na ficha, o botão "‹" — um fade cruzado
+   mostrava o menu duplicado. */
+::view-transition-old(site-header) {
+  display: none;
+}
+::view-transition-new(site-header) {
+  animation: none;
+}
+::view-transition-group(scroll-progress),
+::view-transition-group(compare-bar) {
+  animation-duration: 0.3s;
+}
+
+/* Foto do cartão ↔ galeria da ficha: voa por cima do deslize e cresce até ao
+   destino, sem deformar. */
+::view-transition-group(.vehicle-morph) {
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 1;
+}
+::view-transition-old(.vehicle-morph),
+::view-transition-new(.vehicle-morph) {
+  height: 100%;
+  object-fit: cover;
+  overflow: clip;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Enquanto a página nova não chega: cursor de "a carregar" (o clique teve
+   efeito) e o link clicado fica marcado. */
+html[data-navigating],
+html[data-navigating] * {
+  cursor: progress !important;
+}
+a[data-nav-pending] {
+  opacity: 0.75;
+  transition: opacity 0.3s ease;
 }
 
 /* Ken Burns cinematográfico (zoom + pan lento) para a imagem fixa do hero. */

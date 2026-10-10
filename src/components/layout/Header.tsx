@@ -9,6 +9,13 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DEFAULT_BRANDING, type Branding } from "@/lib/branding";
 import { useLocalList, FAVORITES_KEY } from "@/hooks/useLocalList";
+import { NAV_START_EVENT, type NavStartDetail } from "@/lib/page-transition";
+
+/** Entrada em cascata de cada item do menu mobile. */
+const MENU_ITEM = {
+  open: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
+  closed: { opacity: 0, y: -8, transition: { duration: 0.15 } },
+} as const;
 
 const NAV = [
   { href: "/", label: "Início" },
@@ -30,27 +37,58 @@ export function Header({
   // Numa ficha de viatura (/viaturas/slug, não sub-rotas) mostramos a seta de
   // voltar ao lado do logótipo — sempre acessível no topo fixo.
   const onVehiclePage = /^\/viaturas\/[^/]+$/.test(pathname);
-  const [scrolled, setScrolled] = useState(false);
+  // Fundo sólido só quando a página já desceu E o último gesto foi de subida:
+  // ao descer o header fica transparente (deixa ver o conteúdo), ao subir
+  // volta à cor. No topo da página é sempre transparente.
+  const [solid, setSolid] = useState(false);
   const [open, setOpen] = useState(false);
+  // Destino de uma navegação em curso: o sublinhado do menu salta logo para o
+  // item clicado, sem esperar que a página chegue do servidor.
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+  const activePath = pendingPath ?? pathname;
+
+  useEffect(() => {
+    const onStart = (e: Event) =>
+      setPendingPath((e as CustomEvent<NavStartDetail>).detail.pathname);
+    window.addEventListener(NAV_START_EVENT, onStart);
+    return () => window.removeEventListener(NAV_START_EVENT, onStart);
+  }, []);
   const { items: favorites, ready: favReady } = useLocalList(FAVORITES_KEY);
   const favCount = favReady ? favorites.length : 0;
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
+    let lastY = window.scrollY;
+    setSolid(lastY > 24);
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y <= 24) {
+        setSolid(false);
+        lastY = y;
+        return;
+      }
+      // Pequena zona morta para não tremer com micro-scrolls do trackpad.
+      if (Math.abs(y - lastY) < 6) return;
+      setSolid(y < lastY);
+      lastY = y;
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   // Fecha o menu mobile ao navegar.
-  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    setOpen(false);
+    setPendingPath(null);
+  }, [pathname]);
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-500 ${
-        scrolled || open
-          ? "border-b border-white/10 bg-ink/80 backdrop-blur-xl"
-          : "border-b border-transparent bg-transparent"
+      // Navegação por teclado a meio da página: fundo sólido para ler bem.
+      onFocusCapture={() => window.scrollY > 24 && setSolid(true)}
+      className={`fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color,backdrop-filter] duration-500 ease-premium [view-transition-name:site-header] ${
+        solid || open
+          ? "border-white/10 bg-ink/80 backdrop-blur-xl"
+          : "border-transparent bg-transparent backdrop-blur-none"
       }`}
     >
       <nav className="container-px flex h-16 items-center justify-between md:h-20">
@@ -89,8 +127,8 @@ export function Header({
           {NAV.map((item) => {
             const active =
               item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
+                ? activePath === "/"
+                : activePath.startsWith(item.href);
             return (
               <li key={item.href}>
                 <Link
@@ -104,6 +142,7 @@ export function Header({
                   {active && (
                     <motion.span
                       layoutId="nav-underline"
+                      transition={{ type: "spring", stiffness: 380, damping: 34 }}
                       className="absolute -bottom-1.5 left-0 h-px w-full bg-accent"
                     />
                   )}
@@ -193,34 +232,43 @@ export function Header({
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden md:hidden"
           >
-            <ul className="container-px flex flex-col gap-1 py-4">
+            <motion.ul
+              className="container-px flex flex-col gap-1 py-4"
+              initial="closed"
+              animate="open"
+              exit="closed"
+              variants={{
+                open: { transition: { staggerChildren: 0.04, delayChildren: 0.06 } },
+                closed: { transition: { staggerChildren: 0.02, staggerDirection: -1 } },
+              }}
+            >
               {NAV.map((item) => (
-                <li key={item.href}>
+                <motion.li key={item.href} variants={MENU_ITEM}>
                   <Link
                     href={item.href}
                     className="block rounded-lg px-2 py-3 text-lg font-medium text-paper/80 hover:text-paper"
                   >
                     {item.label === "Carro ideal" && world === "motorcycle" ? "Mota ideal" : item.label}
                   </Link>
-                </li>
+                </motion.li>
               ))}
-              <li>
+              <motion.li variants={MENU_ITEM}>
                 <Link
                   href="/favoritos"
                   className="block rounded-lg px-2 py-3 text-lg font-medium text-paper/80 hover:text-paper"
                 >
                   Favoritos{favCount > 0 ? ` (${favCount})` : ""}
                 </Link>
-              </li>
-              <li>
+              </motion.li>
+              <motion.li variants={MENU_ITEM}>
                 <a
                   href={branding.company.phoneHref}
-                  className="mt-2 block rounded-full bg-accent px-5 py-3 text-center text-sm font-semibold text-ink"
+                  className="mt-2 block rounded-full bg-accent px-5 py-3 text-center text-sm font-semibold text-ink transition-transform active:scale-[0.97]"
                 >
                   Ligar · {branding.company.phone}
                 </a>
-              </li>
-            </ul>
+              </motion.li>
+            </motion.ul>
           </motion.div>
         )}
       </AnimatePresence>

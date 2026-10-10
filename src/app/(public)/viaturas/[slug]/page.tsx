@@ -249,7 +249,7 @@ export default async function VehiclePage({ params }: { params: Params }) {
               </h2>
               <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
                 {related.map((v) => (
-                  <VehicleCard key={v.slug} vehicle={v} morph={false} />
+                  <VehicleCard key={v.slug} vehicle={v} sharedTransition={false} />
                 ))}
               </div>
             </section>

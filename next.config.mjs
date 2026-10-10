@@ -22,6 +22,11 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ["framer-motion", "gsap"],
+    // Transições entre páginas com <ViewTransition> do React (ver
+    // src/components/ui/ViewTransition.tsx). O React só tira a "fotografia"
+    // da página quando a nova já está pronta: durante o pedido ao servidor a
+    // página antiga continua viva (barra de progresso, estados de clique).
+    viewTransition: true,
   },
   // As imagens e vídeos de public/ são servidos pela CDN; nunca devem ir dentro
   // da função do servidor (o Netlify recusa funções com mais de 250 MB).
