@@ -37,42 +37,59 @@ export default async function FichaPage({ params }: { params: Params }) {
   const url = `${site.url}/viaturas/${vehicle.slug}`;
   const qr = await qrDataUrl(url);
 
-  const specs: [string, string][] = [
+  const isMoto = vehicle.vehicleType === "motorcycle";
+  // As linhas a `null` não aparecem: uma ficha cheia de «—» parece incompleta.
+  const specs: [string, string | null][] = [
     ["Preço", priceLabel(vehicle.price, vehicle.priceOnRequest)],
     [
       "Primeira matrícula",
       registrationLabel(vehicle.year, vehicle.registrationMonth),
     ],
-    ["Localização", vehicle.location || "—"],
     ["Quilómetros", formatKm(vehicle.mileage)],
     ["Combustível", vehicle.fuel],
     ["Caixa", vehicle.transmission],
-    ["Carroçaria", vehicle.body],
-    ["Potência", vehicle.power ? `${vehicle.power} cv` : "—"],
+    [isMoto ? "Categoria" : "Carroçaria", vehicle.body],
+    ["Potência", vehicle.power ? `${vehicle.power} cv` : null],
     [
       "Cilindrada",
-      vehicle.displacement ? `${formatNumber(vehicle.displacement)} cm³` : "—",
+      vehicle.displacement ? `${formatNumber(vehicle.displacement)} cm³` : null,
     ],
-    ["Cor", vehicle.color || "—"],
-    ["Portas", String(vehicle.doors)],
-    ["Lugares", String(vehicle.seats)],
-    ["Nº de donos", vehicle.owners ? String(vehicle.owners) : "—"],
-    ["Livro de revisões", vehicle.serviceBook ? "Sim" : "—"],
+    ["Cor", vehicle.color || null],
+    // As motas não têm portas.
+    ["Portas", !isMoto && vehicle.doors ? String(vehicle.doors) : null],
+    ["Lugares", vehicle.seats ? String(vehicle.seats) : null],
+    ["Nº de donos", vehicle.owners ? String(vehicle.owners) : null],
+    ["Livro de revisões", vehicle.serviceBook ? "Sim" : null],
     [
       "Garantia",
-      vehicle.warrantyMonths ? `${vehicle.warrantyMonths} meses` : "—",
+      vehicle.warrantyMonths ? `${vehicle.warrantyMonths} meses` : null,
     ],
-    ["Última inspeção", vehicle.lastInspection || "—"],
-    ["Nacional", vehicle.national ? "Sim" : "—"],
+    ["Última inspeção", vehicle.lastInspection || null],
+    ["Nacional", vehicle.national ? "Sim" : null],
+    ["Localização", vehicle.location || null],
   ];
+  const shown = specs.filter((s): s is [string, string] => s[1] !== null);
 
   return (
     <div className="ficha mx-auto max-w-3xl px-6 pb-24 pt-28 text-paper">
       <style>{`
         @media print {
-          .no-print { display: none !important; }
-          .ficha { padding-top: 0 !important; color: #000 !important; }
-          body { background: #fff !important; }
+          /* Só a ficha: o cabeçalho, o rodapé, o botão de contacto, o aviso de
+             cookies e o resto do site não entram na impressão. */
+          @page { size: A4; margin: 0; }
+          html, body { background: #fff !important; }
+          body * { visibility: hidden !important; }
+          header, footer { display: none !important; }
+          main { padding: 0 !important; }
+          .ficha, .ficha * { visibility: visible !important; }
+          .ficha .no-print { display: none !important; }
+          .ficha {
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 12mm 14mm !important;
+            color: #000 !important;
+          }
+          .ficha dl > div { break-inside: avoid; }
         }
       `}</style>
 
@@ -86,13 +103,23 @@ export default async function FichaPage({ params }: { params: Params }) {
         <PrintButton />
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-ink-soft p-6 md:p-10 print:border-none print:bg-white">
+      <div className="rounded-2xl border border-white/10 bg-ink-soft p-6 md:p-10 print:rounded-none print:border-none print:bg-white print:p-0">
         <div className="flex items-start justify-between gap-6">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-accent">
-              {branding.companyName}
-            </p>
-            <h1 className="mt-2 text-3xl font-bold">
+            {branding.logoUrl ? (
+              <Image
+                src={branding.logoUrl}
+                alt={branding.companyName}
+                width={200}
+                height={50}
+                className="h-10 w-auto object-contain"
+              />
+            ) : (
+              <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+                {branding.companyName}
+              </p>
+            )}
+            <h1 className="mt-3 text-3xl font-bold print:mt-2 print:text-2xl">
               {vehicle.make} {vehicle.model}
             </h1>
             {vehicle.variant && (
@@ -121,18 +148,19 @@ export default async function FichaPage({ params }: { params: Params }) {
           )}
         </div>
 
-        <div className="relative mt-6 aspect-[16/9] overflow-hidden rounded-xl bg-ink-muted">
+        <div className="relative mt-6 aspect-[16/9] overflow-hidden rounded-xl bg-ink-muted print:mt-4 print:aspect-[2/1]">
           <Image
             src={vehicle.images[0]!.src}
             alt={vehicle.images[0]!.alt}
             fill
             sizes="(max-width:768px) 100vw, 720px"
+            priority
             className="object-cover"
           />
         </div>
 
-        <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3">
-          {specs.map(([k, v]) => (
+        <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3 print:mt-5 print:grid-cols-3 print:gap-y-2">
+          {shown.map(([k, v]) => (
             <div
               key={k}
               className="border-b border-white/5 pb-2 print:border-black/10"
@@ -146,7 +174,7 @@ export default async function FichaPage({ params }: { params: Params }) {
         </dl>
 
         {vehicle.extras && vehicle.extras.length > 0 && (
-          <div className="mt-8">
+          <div className="mt-8 print:mt-5">
             <p className="text-[11px] uppercase tracking-wider text-paper/40 print:text-black/50">
               Extras
             </p>
@@ -156,7 +184,7 @@ export default async function FichaPage({ params }: { params: Params }) {
           </div>
         )}
 
-        <div className="mt-8 border-t border-white/10 pt-4 text-xs text-paper/50 print:border-black/10 print:text-black/60">
+        <div className="mt-8 border-t border-white/10 pt-4 text-xs print:mt-6 text-paper/50 print:border-black/10 print:text-black/60">
           {branding.companyName} · {branding.company.phone} ·{" "}
           {branding.company.email} · {branding.company.address.street},{" "}
           {branding.company.address.city}
