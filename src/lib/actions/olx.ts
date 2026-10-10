@@ -51,13 +51,18 @@ export async function loadOlxCategories(): Promise<OlxActionResult> {
     if (!r.ok) return { ok: false, error: r.error };
     const escolhidas = Object.entries(r.chosen).map(([t, c]) => `${t === "car" ? "carros" : "motas"}: ${c!.name}`);
     const duvidas = Object.keys(r.ambiguous).length;
+    const local = r.location
+      ? ` Localização do stand no OLX: ${r.location}.`
+      : r.locationError
+        ? ` Atenção: ${r.locationError}.`
+        : "";
     return {
       ok: true,
-      message: escolhidas.length
+      message: (escolhidas.length
         ? `Categorias carregadas (${escolhidas.join(", ")}).${duvidas ? " Há categorias por escolher." : ""}`
         : duvidas
           ? "Escolha abaixo a categoria do OLX para carros e para motas."
-          : `Não encontrei categorias de carros nem de motas. O OLX devolveu: ${(r.seen ?? []).join(", ") || "nada"}.`,
+          : `Não encontrei categorias de carros nem de motas. O OLX devolveu: ${(r.seen ?? []).join(", ") || "nada"}.`) + local,
       candidates: r.ambiguous,
     };
   } catch (e) {

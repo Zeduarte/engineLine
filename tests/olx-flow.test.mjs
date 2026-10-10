@@ -36,6 +36,10 @@ const server=http.createServer(async(req,res)=>{
   // Sem parent_id devolve a árvore toda, como algumas APIs fazem.
   return send(200,{data:p?tree.filter(x=>x.parent_id===Number(p)):tree});
  }
+ if(url.pathname==='/api/partner/locations'&&req.method==='GET'){
+  // Penafiel, para as coordenadas do stand de teste.
+  return send(200,{data:[{city:{id:12,name:'Penafiel'},district:{id:3}}]});
+ }
  const st=url.pathname.match(/^\/api\/partner\/adverts\/(\d+)\/statistics$/);
  if(st&&req.method==='GET'){
   const ad=olx.adverts.get(Number(st[1]));if(!ad)return send(404,{error:{detail:'Advert not found'}});
@@ -114,11 +118,13 @@ function makeDb(){
 }
 
 // ---- Carregador com os módulos de servidor substituídos ---------------------
+// Coordenadas do ponto de venda principal (os testes mudam-nas).
+let standGeo={lat:41.2,lng:-8.28};
 const cache=new Map();
 function withExt(base){for(const ext of ['.ts','.tsx','/index.ts'])if(existsSync(base+ext))return base+ext;throw new Error(`não resolvido: ${base}`);}
 const STUBS={
  'server-only':{},
- '@/lib/queries':{getBranding:async()=>({companyName:'engineLine',company:{phone:'+351 916 193 337',geo:{lat:41.2,lng:-8.28}}})},
+ '@/lib/queries':{getBranding:async()=>({companyName:'engineLine',company:{phone:'+351 916 193 337',geo:standGeo}})},
 };
 function load(path){
  if(cache.has(path))return cache.get(path);
@@ -261,6 +267,32 @@ await test('advert statistics are read from OLX and stored; retired adverts keep
  l.status='published';l.external_id='999999';
  const f=await refreshStats(db);
  assert.equal(f.failed,1);assert.match(f.error,/Advert not found/);
+});
+
+
+
+await test('without a stored city, publishing looks it up on OLX from the stand coordinates',async()=>{
+ const db=makeDb();db._t.olx_connection[0].city_id=null;
+ olx.calls.length=0;
+ await markPending(db,CAR);
+ const r=await syncListing(db,CAR);
+ assert.equal(r.ok,true,r.error);
+ assert.ok(olx.calls.some(c=>c.startsWith('GET /api/partner/locations?latitude=41.2&longitude=-8.28')),'pergunta ao OLX pela cidade');
+ assert.equal(olx.adverts.get(Number(listing(db).external_id)).location.city_id,12);
+ assert.equal(db._t.olx_connection[0].city_id,12,'fica guardada para a próxima');
+ assert.equal(db._t.olx_connection[0].district_id,3);
+});
+
+await test('with the example coordinates (Lisbon) the error says to mark the stand on the map',async()=>{
+ const antes=standGeo;standGeo={lat:38.7223,lng:-9.1447};
+ try{
+  const db=makeDb();db._t.olx_connection[0].city_id=null;
+  await markPending(db,CAR);
+  const r=await syncListing(db,CAR);
+  assert.equal(r.ok,false);
+  assert.match(r.error,/marque o ponto de venda principal no mapa/);
+  assert.match(listing(db).last_error,/Pontos de venda/,'aparece no backoffice');
+ }finally{standGeo=antes;}
 });
 
 server.close();

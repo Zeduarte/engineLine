@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getBranding } from "@/lib/queries";
+import { site } from "@/lib/site";
 import { publicMediaUrl } from "@/lib/storage";
 import { buildAdvert, type AdvertCar } from "@/lib/olx/advert";
 import type { OlxAttributeDef } from "@/lib/olx/attributes";
@@ -159,6 +160,15 @@ export async function syncListing(db: Db, carId: string): Promise<SyncOutcome> {
           : "Falta escolher a categoria do OLX (Plataformas de anúncios → OLX).",
       );
 
+    // A cidade do stand é obrigatória em cada anúncio. Se ainda não foi lida
+    // (p. ex. as categorias foram escolhidas pela árvore), lê-se agora.
+    let cityId = Number(conn.city_id ?? 0);
+    if (!cityId) {
+      const loc = await resolveStandLocation(db);
+      if (!loc.ok) return fail(action, `Não publicado: ${loc.error}.`);
+      cityId = loc.cityId;
+    }
+
     // A relação cars→car_media não está nos tipos gerados; a forma é esta.
     type Media = { storage_path: string; kind: string; position: number; is_cover: boolean };
     const media = [...(((car as unknown as { car_media?: Media[] }).car_media) ?? [])]
@@ -193,7 +203,7 @@ export async function syncListing(db: Db, carId: string): Promise<SyncOutcome> {
     const built = buildAdvert(advertCar, {
       categoryId: Number(category.category_id),
       attributeDefs: (category.attributes ?? []) as unknown as OlxAttributeDef[],
-      cityId: Number(conn.city_id ?? 0),
+      cityId,
       latitude: branding.company.geo?.lat,
       longitude: branding.company.geo?.lng,
       contactName: branding.companyName,
@@ -343,6 +353,10 @@ export interface CategoryLoadResult {
   ambiguous: Partial<Record<"car" | "motorcycle", OlxCategory[]>>;
   /** Alguns nomes lidos do OLX, para explicar quando não se encontra nada. */
   seen?: string[];
+  /** Cidade do stand no OLX, quando foi encontrada. */
+  location?: string;
+  /** Porque não se encontrou a cidade do stand. */
+  locationError?: string;
 }
 
 /**
@@ -418,6 +432,12 @@ export async function storeCategory(
 export async function loadCategories(db: Db): Promise<CategoryLoadResult> {
   const result: CategoryLoadResult = { ok: true, chosen: {}, ambiguous: {} };
 
+  // Primeiro a cidade do stand: assim fica guardada mesmo que as categorias
+  // falhem ou sejam escolhidas depois pela árvore.
+  const loc = await resolveStandLocation(db);
+  if (loc.ok) result.location = loc.cityName ?? `cidade ${loc.cityId}`;
+  else result.locationError = loc.error;
+
   // A árvore percorre-se por níveis; três chegam para Veículos → Carros.
   const todas: OlxCategory[] = [];
   let nivel: (number | null)[] = [null];
@@ -456,20 +476,48 @@ export async function loadCategories(db: Db): Promise<CategoryLoadResult> {
     }
   }
 
-  // Cidade do stand, a partir das coordenadas das Definições.
-  const branding = await getBranding();
-  const { lat, lng } = branding.company.geo ?? { lat: 0, lng: 0 };
-  if (lat && lng) {
-    const loc = await olxFetch<unknown>(db, `/locations?latitude=${lat}&longitude=${lng}`);
-    const primeira = loc.ok
-      ? (unwrap<{ city?: { id: number }; district?: { id: number } }[]>(loc.data) ?? [])[0]
-      : undefined;
-    if (primeira?.city?.id) {
-      await db
-        .from("olx_connection")
-        .update({ city_id: primeira.city.id, district_id: primeira.district?.id ?? null })
-        .eq("id", 1);
-    }
-  }
   return result;
+}
+
+type LocationItem = {
+  city?: { id?: number; name?: string } | null;
+  city_id?: number;
+  district?: { id?: number } | null;
+  district_id?: number;
+};
+
+/**
+ * Cidade (e bairro) do stand no OLX, a partir das coordenadas do ponto de
+ * venda principal, e guarda-a na ligação. Devolve um erro em português que diz
+ * o que corrigir, em vez de deixar o anúncio falhar sem explicação.
+ */
+export async function resolveStandLocation(
+  db: Db,
+): Promise<{ ok: true; cityId: number; cityName: string | null } | { ok: false; error: string }> {
+  const branding = await getBranding();
+  const geo = branding.company.geo;
+  // As coordenadas de exemplo do site.ts (Lisboa) não são as do stand: com
+  // elas o anúncio aparecia na cidade errada.
+  if (!geo?.lat || !geo?.lng || (geo.lat === site.geo.lat && geo.lng === site.geo.lng)) {
+    return {
+      ok: false,
+      error:
+        "falta a localização do stand — marque o ponto de venda principal no mapa (Página inicial → Pontos de venda)",
+    };
+  }
+  const r = await olxFetch<unknown>(db, `/locations?latitude=${geo.lat}&longitude=${geo.lng}`);
+  if (!r.ok) return { ok: false, error: `o OLX não devolveu a localização do stand (${r.error ?? "erro"})` };
+  const lista = unwrap<unknown>(r.data);
+  const first = (Array.isArray(lista) ? lista[0] : lista) as LocationItem | undefined;
+  const cityId = Number(first?.city?.id ?? first?.city_id ?? 0);
+  if (!cityId) {
+    return {
+      ok: false,
+      error:
+        "o OLX não encontrou uma cidade para as coordenadas do stand — confirme o ponto no mapa (Página inicial → Pontos de venda)",
+    };
+  }
+  const districtId = first?.district?.id ?? first?.district_id ?? null;
+  await db.from("olx_connection").update({ city_id: cityId, district_id: districtId }).eq("id", 1);
+  return { ok: true, cityId, cityName: first?.city?.name ?? null };
 }

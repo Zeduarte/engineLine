@@ -65,7 +65,7 @@ export function buildAdvert(car: AdvertCar, ctx: AdvertContext): AdvertResult {
   if (!car.year) problems.push("falta o ano da viatura");
   if (!ctx.images.length) problems.push("o OLX exige pelo menos uma fotografia");
   if (!ctx.contactPhone) problems.push("falta o telefone do stand em Definições");
-  if (!ctx.cityId) problems.push("falta a localização do stand no OLX (carregue as categorias)");
+  if (!ctx.cityId) problems.push("falta a localização do stand no OLX — marque o ponto de venda principal no mapa (Página inicial → Pontos de venda)");
 
   const marca = canonicalBrand(car.make);
   const nome = [marca, car.model, car.variant].filter(Boolean).join(" ");
