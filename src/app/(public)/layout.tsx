@@ -16,6 +16,7 @@ import { DealerJsonLd } from "@/components/seo/DealerJsonLd";
 import { getBadges, getBranding } from "@/lib/queries";
 import { BadgesProvider } from "@/components/site/BadgesContext";
 import { WorldEntrance } from "@/components/site/WorldEntrance";
+import { WorldArrival } from "@/components/site/WorldArrival";
 import { existingMedia } from "@/lib/hero-media";
 import { OPTIONAL_MEDIA } from "@/lib/media";
 
@@ -42,6 +43,8 @@ export default async function PublicLayout({
           cria caixa, por isso não altera o layout. */}
       <div className="site contents">
         <WorldEntrance name={branding.companyName} selected={selection} />
+        {/* Troca de mundo: a página abre tapada pela foto e revela-se. */}
+        <WorldArrival type={type} />
         {/* Salto para conteúdo — acessibilidade por teclado. */}
         <a
           href="#conteudo"

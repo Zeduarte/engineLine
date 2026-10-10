@@ -26,6 +26,8 @@ function load(file){file=resolve(file);if(cache.has(file))return cache.get(file)
  const source=readFileSync(file,'utf8');const {outputText}=ts.transpileModule(source,{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}});
  const custom=(id)=>{
   if(id==='server-only')return {};
+  // CSS modules: cada classe devolve o próprio nome.
+  if(id.endsWith('.css'))return new Proxy({}, {get:(_,key)=>key==='__esModule'?undefined:String(key)});
   if(id==='next/headers')return {cookies:async()=>({get:()=>({value:'car'})})};
   if(id==='next/navigation')return {usePathname:()=>pathname,useRouter:()=>({refresh(){}}),notFound(){throw Error('404');}};
   if(id==='next/link')return {__esModule:true,default:({href,children,scroll,...props})=>React.createElement('a',{href,...props},children)};

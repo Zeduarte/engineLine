@@ -1,8 +1,17 @@
 "use client";
 
+import { useEffect, useState, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import type { VehicleType } from "@/lib/vehicle-categories";
 import { WORLD_LABEL, otherWorld, pathHasWorld } from "@/lib/world";
+import { asset } from "@/lib/asset";
+import { mediaFor } from "@/lib/media";
+import { markWorldArrival, prefersReducedMotion } from "@/lib/world-arrival";
+import { WorldCoverArt, worldCoverStyles } from "./WorldCover";
+
+/** Quanto dura a entrada do outro mundo antes de mudar de página. */
+const DEPART_MS = 950;
 
 /**
  * Passagem para o outro mundo (carros ↔ motas).
@@ -12,7 +21,9 @@ import { WORLD_LABEL, otherWorld, pathHasWorld } from "@/lib/world";
  * legais), onde escolher um tipo não muda nada.
  *
  * É uma navegação completa (`<a>`, não `<Link>`): a rota grava o cookie do
- * mundo e volta, o que refaz todas as queries do servidor.
+ * mundo e volta, o que refaz todas as queries do servidor. Antes de sair, a
+ * foto do outro mundo entra por cima da página (o visual do ecrã de entrada)
+ * e a página nova abre tapada por ela e revela-se (`WorldArrival`).
  */
 export function WorldSwitch({
   world,
@@ -23,6 +34,15 @@ export function WorldSwitch({
   compact?: boolean;
 }) {
   const pathname = usePathname();
+  const [leaving, setLeaving] = useState(false);
+
+  // Voltar atrás para esta página (cache do browser) não pode ficar tapado.
+  useEffect(() => {
+    const onShow = (e: PageTransitionEvent) => e.persisted && setLeaving(false);
+    window.addEventListener("pageshow", onShow);
+    return () => window.removeEventListener("pageshow", onShow);
+  }, []);
+
   if (!pathHasWorld(pathname)) return null;
 
   const target = otherWorld(world);
@@ -30,15 +50,44 @@ export function WorldSwitch({
   // Numa ficha de viatura o slug é do mundo atual — volta ao stock.
   const destination = pathname.startsWith("/viaturas/") ? "/inventario" : pathname;
 
+  // A foto do outro mundo começa a carregar antes do clique.
+  const preload = () => {
+    new Image().src = asset(mediaFor(target).entrada);
+  };
+
+  function go(e: MouseEvent<HTMLAnchorElement>) {
+    // Abrir noutro separador ou "reduzir movimento": navegação normal.
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (prefersReducedMotion()) return;
+    e.preventDefault();
+    const href = e.currentTarget.href;
+    markWorldArrival(target);
+    setLeaving(true);
+    window.setTimeout(() => window.location.assign(href), DEPART_MS);
+  }
+
   return (
+    <>
     <a
       href={`/api/vehicle-context?area=public&type=${target}&target=${encodeURIComponent(destination)}`}
+      onClick={go}
+      onPointerEnter={preload}
+      onFocus={preload}
       className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-paper/60 transition-colors hover:border-accent hover:text-accent"
       title={`Mudar para o stock de ${label}`}
     >
       {target === "motorcycle" ? <MotoIcon /> : <CarIcon />}
       {compact ? capitalize(label) : `Ver stock de ${label}`}
     </a>
+    {leaving &&
+      createPortal(
+        <div className={`${worldCoverStyles.overlay} ${worldCoverStyles.depart}`} role="status">
+          <span className="sr-only">A mudar para {label}…</span>
+          <WorldCoverArt type={target} />
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }
 

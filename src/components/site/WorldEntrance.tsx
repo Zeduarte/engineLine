@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { VehicleType } from "@/lib/vehicle-categories";
 import { asset } from "@/lib/asset";
 import { mediaFor } from "@/lib/media";
+import { markWorldArrival } from "@/lib/world-arrival";
 import styles from "./WorldEntrance.module.css";
 
 /** First visit selects the persistent public vehicle category. */
@@ -61,6 +62,7 @@ export function WorldEntrance({ name, selected }: { name: string; selected: Vehi
     if (exiting.current) return;
     exiting.current = true;
     const finish = () => {
+      markWorldArrival(type);
       dialog.current?.close();
       setEntered(true);
       window.location.assign(
