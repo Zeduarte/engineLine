@@ -11,7 +11,7 @@ import { markWorldArrival, prefersReducedMotion } from "@/lib/world-arrival";
 import { WorldCoverArt, worldCoverStyles } from "./WorldCover";
 
 /** Quanto dura a entrada do outro mundo antes de mudar de página. */
-const DEPART_MS = 950;
+const DEPART_MS = 800;
 
 /**
  * Passagem para o outro mundo (carros ↔ motas).

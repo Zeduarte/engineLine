@@ -14,8 +14,8 @@ export function WorldArrivalExit() {
     const cover = document.getElementById("world-arrival");
     if (!cover?.hasAttribute("data-show")) return;
     // Uma pausa curta para a página nova assentar por baixo antes de se ver.
-    const leave = setTimeout(() => cover.setAttribute("data-leave", ""), 250);
-    const done = setTimeout(() => cover.setAttribute("data-done", ""), 250 + 900);
+    const leave = setTimeout(() => cover.setAttribute("data-leave", ""), 200);
+    const done = setTimeout(() => cover.setAttribute("data-done", ""), 200 + 780);
     return () => {
       clearTimeout(leave);
       clearTimeout(done);
